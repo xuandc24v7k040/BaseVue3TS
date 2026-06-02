@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TData">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, type ComponentPublicInstance } from 'vue'
 import type { Table } from '@tanstack/vue-table'
 import type { AcceptableValue } from 'reka-ui'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
@@ -17,16 +17,18 @@ interface DataTablePaginationProps {
   table: Table<TData>
   pageSizeOptions?: number[]
   selectedIds?: string[]
+  maxPageSize?: number
 }
 
 const props = withDefaults(defineProps<DataTablePaginationProps>(), {
   pageSizeOptions: () => [10, 20, 30, 50, 100],
   selectedIds: () => [],
+  maxPageSize: 1000,
 })
 
 const isCustomInput = ref(false)
-const customPageSize = ref('')
-const customInputRef = ref<HTMLInputElement | null>(null)
+const customPageSize = ref<string | number>('')
+const customInputRef = ref<ComponentPublicInstance | HTMLInputElement | null>(null)
 const customPageSizeError = ref('')
 
 const pagination = computed(() => props.table.getState().pagination)
@@ -46,9 +48,9 @@ function handlePageSizeChange(value: AcceptableValue) {
     return
   }
 
-  const nextSize = Number(value)
+  const nextSize = Number(toInputString(value))
   if (Number.isInteger(nextSize) && nextSize > 0) {
-    setPageSize(nextSize)
+    setPageSize(Math.min(nextSize, props.maxPageSize))
   }
 }
 
@@ -57,8 +59,9 @@ function openCustomInput() {
   customPageSize.value = String(pageSize.value)
   customPageSizeError.value = ''
   nextTick(() => {
-    customInputRef.value?.focus()
-    customInputRef.value?.select()
+    const input = getCustomInputElement()
+    input?.focus()
+    input?.select()
   })
 }
 
@@ -70,8 +73,9 @@ function setPageSize(nextSize: number) {
 }
 
 function submitCustomPageSize() {
-  const parsedSize = Number(customPageSize.value)
-  const errorMessage = validatePageSize(customPageSize.value, parsedSize)
+  const rawValue = toInputString(customPageSize.value)
+  const parsedSize = Number(rawValue)
+  const errorMessage = validatePageSize(rawValue, parsedSize)
 
   if (errorMessage) {
     customPageSizeError.value = errorMessage
@@ -89,7 +93,7 @@ function validatePageSize(rawValue: string, value: number): string | null {
   if (Number.isNaN(value)) return 'Số dòng/trang phải là số hợp lệ'
   if (!Number.isInteger(value)) return 'Số dòng/trang phải là số nguyên'
   if (value < 1) return 'Số dòng/trang phải lớn hơn 0'
-  if (value > 1000) return 'Số dòng/trang không được vượt quá 1000'
+  if (value > props.maxPageSize) return `Số dòng/trang không được vượt quá ${props.maxPageSize}`
   return null
 }
 
@@ -109,6 +113,21 @@ function handleCustomInputKeydown(event: KeyboardEvent) {
 function goToLastPage() {
   if (!hasKnownPageCount.value) return
   props.table.setPageIndex(Math.max(totalPages.value - 1, 0))
+}
+
+function toInputString(value: AcceptableValue | string | number | null | undefined): string {
+  if (typeof value === 'string' || typeof value === 'number') return String(value)
+  return ''
+}
+
+function getCustomInputElement(): HTMLInputElement | null {
+  const refValue = customInputRef.value
+  if (!refValue) return null
+  if (refValue instanceof HTMLInputElement) return refValue
+
+  const rootElement = refValue.$el
+  if (rootElement instanceof HTMLInputElement) return rootElement
+  return rootElement?.querySelector?.('input') ?? null
 }
 </script>
 
@@ -130,7 +149,7 @@ function goToLastPage() {
             v-model="customPageSize"
             type="number"
             min="1"
-            max="1000"
+            :max="maxPageSize"
             class="h-8 w-19 text-center"
             :aria-invalid="Boolean(customPageSizeError)"
             @blur="submitCustomPageSize"
@@ -168,6 +187,7 @@ function goToLastPage() {
             variant="outline"
             class="hidden h-8 w-8 p-0 lg:flex"
             :disabled="!table.getCanPreviousPage()"
+            aria-label="Trang đầu"
             @click="table.setPageIndex(0)"
           >
             <span class="sr-only">Trang đầu</span>
@@ -178,6 +198,7 @@ function goToLastPage() {
             variant="outline"
             class="h-8 w-8 p-0"
             :disabled="!table.getCanPreviousPage()"
+            aria-label="Trang trước"
             @click="table.previousPage()"
           >
             <span class="sr-only">Trang trước</span>
@@ -188,6 +209,7 @@ function goToLastPage() {
             variant="outline"
             class="h-8 w-8 p-0"
             :disabled="!table.getCanNextPage()"
+            aria-label="Trang sau"
             @click="table.nextPage()"
           >
             <span class="sr-only">Trang sau</span>
@@ -198,6 +220,7 @@ function goToLastPage() {
             variant="outline"
             class="hidden h-8 w-8 p-0 lg:flex"
             :disabled="!hasKnownPageCount || !table.getCanNextPage()"
+            aria-label="Trang cuối"
             @click="goToLastPage"
           >
             <span class="sr-only">Trang cuối</span>

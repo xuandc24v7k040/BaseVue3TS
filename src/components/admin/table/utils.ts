@@ -23,8 +23,8 @@ export function isDateRangeValue(value: unknown): value is DateRangeValue {
   return (
     typeof value === 'object' &&
     value !== null &&
-    typeof (value as Partial<DateRangeValue>).start === 'string' &&
-    typeof (value as Partial<DateRangeValue>).end === 'string'
+    (typeof (value as Partial<DateRangeValue>).start === 'string' ||
+      typeof (value as Partial<DateRangeValue>).end === 'string')
   )
 }
 
@@ -38,12 +38,16 @@ export function toDataTableFilterValue(value: unknown): DataTableFilterValue {
 export function formatDateRangeValue(value: unknown, locale = 'vi-VN'): string | null {
   if (!isDateRangeValue(value)) return null
 
-  const start = parseLocalDate(value.start)
-  const end = parseLocalDate(value.end)
+  const start = value.start ? parseLocalDate(value.start) : null
+  const end = value.end ? parseLocalDate(value.end) : null
 
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+  if (start && Number.isNaN(start.getTime())) return null
+  if (end && Number.isNaN(end.getTime())) return null
 
-  return `${start.toLocaleDateString(locale)} - ${end.toLocaleDateString(locale)}`
+  if (start && end) return `${start.toLocaleDateString(locale)} - ${end.toLocaleDateString(locale)}`
+  if (start) return `Từ ${start.toLocaleDateString(locale)}`
+  if (end) return `Đến ${end.toLocaleDateString(locale)}`
+  return null
 }
 
 export function parseLocalDate(value: string): Date {
@@ -62,4 +66,39 @@ export function parseLocalDate(value: string): Date {
   }
 
   return date
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+export function parseJsonSafe<TValue>(value: string): TValue | undefined {
+  try {
+    return JSON.parse(value) as TValue
+  } catch {
+    return undefined
+  }
+}
+
+export function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+  if (isRecord(value)) {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
+export function normalizePageIndex(value: unknown, fallback = 0): number {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
+}
+
+export function normalizePageSize(value: unknown, fallback: number, maxPageSize?: number): number {
+  const parsed = Number(value)
+  const max = maxPageSize && maxPageSize > 0 ? maxPageSize : undefined
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback
+  return max ? Math.min(parsed, max) : parsed
 }

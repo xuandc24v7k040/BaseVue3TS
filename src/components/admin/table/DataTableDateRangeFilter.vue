@@ -32,7 +32,7 @@ const isOpen = ref(false)
 const startDate = ref(props.modelValue?.start ?? '')
 const endDate = ref(props.modelValue?.end ?? '')
 
-const hasDateRange = computed(() => Boolean(startDate.value && endDate.value))
+const hasDateRange = computed(() => Boolean(startDate.value || endDate.value))
 const isInvalidRange = computed(() => {
   if (!startDate.value || !endDate.value) return false
   const start = parseLocalDate(startDate.value)
@@ -42,11 +42,12 @@ const isInvalidRange = computed(() => {
 
   return start.getTime() > end.getTime()
 })
-const canApply = computed(() => Boolean(startDate.value && endDate.value && !isInvalidRange.value))
+const canApply = computed(() => hasDateRange.value && !isInvalidRange.value)
 const formattedDateRange = computed(() => {
   if (!hasDateRange.value) return ''
-
-  return `${formatDate(startDate.value)} - ${formatDate(endDate.value)}`
+  if (startDate.value && endDate.value) return `${formatDate(startDate.value)} - ${formatDate(endDate.value)}`
+  if (startDate.value) return `Từ ${formatDate(startDate.value)}`
+  return `Đến ${formatDate(endDate.value)}`
 })
 
 function formatDate(value: string): string {
@@ -57,12 +58,11 @@ function formatDate(value: string): string {
 }
 
 function applyFilter() {
-  if (props.disabled) return
-  if (!canApply.value) return
+  if (props.disabled || !canApply.value) return
 
   emit('update:modelValue', {
-    start: startDate.value,
-    end: endDate.value,
+    start: startDate.value || undefined,
+    end: endDate.value || undefined,
   })
   isOpen.value = false
 }

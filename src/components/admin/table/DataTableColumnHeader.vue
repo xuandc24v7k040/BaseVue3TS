@@ -58,7 +58,12 @@ function clearSorting() {
   <div v-if="mode.type === 'sort'" :class="cn('flex items-center', props.class)">
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <Button variant="ghost" size="sm" class="-ml-3 h-8 gap-2 px-3 data-[state=open]:bg-accent">
+        <Button
+          variant="ghost"
+          size="sm"
+          class="-ml-3 h-8 gap-2 px-3 data-[state=open]:bg-accent"
+          :aria-label="`Sắp xếp cột ${title}`"
+        >
           <span class="truncate">{{ title }}</span>
           <ArrowDown v-if="sortDirection === 'desc'" class="h-4 w-4" />
           <ArrowUp v-else-if="sortDirection === 'asc'" class="h-4 w-4" />
@@ -93,7 +98,12 @@ function clearSorting() {
   <div v-else-if="mode.type === 'filter'" :class="cn('flex items-center', props.class)">
     <Popover>
       <PopoverTrigger as-child>
-        <Button variant="ghost" size="sm" class="-ml-3 h-8 gap-2 px-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          class="-ml-3 h-8 gap-2 px-3"
+          :aria-label="`Lọc cột ${title}`"
+        >
           <span class="truncate">{{ title }}</span>
           <ListFilter class="h-4 w-4 text-muted-foreground" />
           <Badge
@@ -152,7 +162,13 @@ function clearSorting() {
     <span class="truncate text-sm font-medium">{{ title }}</span>
     <DropdownMenu v-if="canHide">
       <DropdownMenuTrigger as-child>
-        <Button variant="ghost" size="icon" class="h-7 w-7 opacity-60 hover:opacity-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-7 w-7 opacity-60 hover:opacity-100"
+          :aria-label="`Tùy chọn cột ${title}`"
+        >
+          <span class="sr-only">Tùy chọn cột {{ title }}</span>
           <ChevronsUpDown class="h-3.5 w-3.5" />
         </Button>
       </DropdownMenuTrigger>

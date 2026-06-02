@@ -1,31 +1,18 @@
 import type { ColumnFiltersState, PaginationState, SortingState } from '@tanstack/vue-table'
-import { watch, type Ref } from 'vue'
-import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
-import type {
-  DataTableConfig,
-  DataTableFilterQuery,
-  DataTableFilterValue,
-  DataTableQuery,
-  DataTableRouteSyncConfig,
-} from '../interface'
-import { isDateRangeValue } from '../utils'
-
-interface RouteSyncedTableState {
-  columnFilters?: ColumnFiltersState
-  globalFilter?: string
-  pagination?: Partial<PaginationState>
-  sorting?: SortingState
-}
-
-interface ResolvedRouteSyncConfig {
-  keyPrefix: string
-  page: boolean
-  pageSize: boolean
-  search: boolean
-  sorting: boolean
-  filters: boolean
-  replace: boolean
-}
+import { ref, watch, type Ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { DataTableConfig, DataTableQuery } from '../interface'
+import {
+  areColumnFiltersEqual,
+  arePaginationStatesEqual,
+  areRouteQueriesEqual,
+  areSortingStatesEqual,
+  parseRouteQuery,
+  resolveRouteSyncConfig,
+  serializeRouteQuery,
+  type RouteSyncDefaults,
+  type RouteSyncedTableState,
+} from './route-sync'
 
 interface UseDataTableRouteSyncProps<TData> {
   config: Ref<DataTableConfig<TData>>
@@ -34,115 +21,12 @@ interface UseDataTableRouteSyncProps<TData> {
   globalFilter: Ref<string>
   pagination: Ref<PaginationState>
   sorting: Ref<SortingState>
-}
-
-function resolveRouteSyncConfig<TData>(
-  config: DataTableConfig<TData>,
-): ResolvedRouteSyncConfig | null {
-  if (!config.routeSync) return null
-
-  const routeSync =
-    typeof config.routeSync === 'object'
-      ? config.routeSync
-      : ({} satisfies DataTableRouteSyncConfig)
-  const keyPrefix = routeSync.keyPrefix ?? config.tableId ?? 'dt'
-
-  return {
-    keyPrefix,
-    page: routeSync.page ?? true,
-    pageSize: routeSync.pageSize ?? true,
-    search: routeSync.search ?? true,
-    sorting: routeSync.sorting ?? true,
-    filters: routeSync.filters ?? true,
-    replace: routeSync.replace ?? true,
-  }
-}
-
-function queryKey(config: ResolvedRouteSyncConfig, key: string): string {
-  return `${config.keyPrefix}.${key}`
-}
-
-function getQueryString(value: unknown): string | undefined {
-  if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : undefined
-  return typeof value === 'string' ? value : undefined
-}
-
-function parsePositiveInteger(value: unknown): number | undefined {
-  const parsed = Number(getQueryString(value))
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
-}
-
-function parseJsonArray<TValue>(value: unknown): TValue[] | undefined {
-  const rawValue = getQueryString(value)
-  if (!rawValue) return undefined
-
-  try {
-    const parsed = JSON.parse(rawValue)
-    return Array.isArray(parsed) ? (parsed as TValue[]) : undefined
-  } catch {
-    return undefined
-  }
-}
-
-function isRouteFilterValue(value: unknown): value is DataTableFilterValue {
-  return (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean' ||
-    Array.isArray(value) ||
-    isDateRangeValue(value)
-  )
-}
-
-function parseFilters(value: unknown): ColumnFiltersState | undefined {
-  const filters = parseJsonArray<DataTableFilterQuery>(value)
-  if (!filters) return undefined
-
-  return filters
-    .filter((filter) => filter.id && isRouteFilterValue(filter.value))
-    .map((filter) => ({
-      id: filter.id,
-      value: filter.value,
-    }))
-}
-
-function parseSorting(value: unknown): SortingState | undefined {
-  const sorting = parseJsonArray<{ id: string; desc: boolean }>(value)
-  if (!sorting) return undefined
-
-  return sorting
-    .filter((sort) => sort.id && typeof sort.desc === 'boolean')
-    .map((sort) => ({
-      id: sort.id,
-      desc: sort.desc,
-    }))
-}
-
-function getRouteSyncedStateFromQuery(
-  routeQuery: Record<string, unknown>,
-  config: ResolvedRouteSyncConfig,
-): RouteSyncedTableState {
-  const page = config.page ? parsePositiveInteger(routeQuery[queryKey(config, 'page')]) : undefined
-  const pageSize = config.pageSize
-    ? parsePositiveInteger(routeQuery[queryKey(config, 'pageSize')])
-    : undefined
-  const search = config.search ? getQueryString(routeQuery[queryKey(config, 'search')]) : undefined
-  const sorting = config.sorting ? parseSorting(routeQuery[queryKey(config, 'sort')]) : undefined
-  const filters = config.filters ? parseFilters(routeQuery[queryKey(config, 'filters')]) : undefined
-
-  return {
-    columnFilters: filters,
-    globalFilter: search,
-    pagination: {
-      pageIndex: page ? page - 1 : undefined,
-      pageSize,
-    },
-    sorting,
-  }
+  defaults: Ref<RouteSyncDefaults>
 }
 
 export function getDataTableRouteSyncedState<TData>(
   config: DataTableConfig<TData>,
+  defaults: RouteSyncDefaults = { pageIndex: 0, pageSize: config.pageSize ?? 10 },
 ): RouteSyncedTableState {
   if (typeof window === 'undefined') return {}
 
@@ -150,43 +34,16 @@ export function getDataTableRouteSyncedState<TData>(
   if (!routeSync) return {}
 
   const searchParams = new URLSearchParams(window.location.search)
-  const routeQuery = Object.fromEntries(searchParams.entries())
+  const routeQuery = Array.from(searchParams.keys()).reduce<Record<string, string | string[]>>(
+    (query, key) => {
+      const values = searchParams.getAll(key)
+      query[key] = values.length > 1 ? values : values[0]
+      return query
+    },
+    {},
+  )
 
-  return getRouteSyncedStateFromQuery(routeQuery, routeSync)
-}
-
-function queryToLocationQuery(
-  currentQuery: LocationQueryRaw,
-  tableQuery: DataTableQuery,
-  config: ResolvedRouteSyncConfig,
-): LocationQueryRaw {
-  const nextQuery: LocationQueryRaw = { ...currentQuery }
-
-  if (config.page) {
-    nextQuery[queryKey(config, 'page')] = tableQuery.page > 1 ? String(tableQuery.page) : undefined
-  }
-
-  if (config.pageSize) {
-    nextQuery[queryKey(config, 'pageSize')] = String(tableQuery.pageSize)
-  }
-
-  if (config.search) {
-    nextQuery[queryKey(config, 'search')] = tableQuery.search?.value || undefined
-  }
-
-  if (config.sorting) {
-    nextQuery[queryKey(config, 'sort')] = tableQuery.sort?.length
-      ? JSON.stringify(tableQuery.sort)
-      : undefined
-  }
-
-  if (config.filters) {
-    nextQuery[queryKey(config, 'filters')] = tableQuery.filters?.length
-      ? JSON.stringify(tableQuery.filters)
-      : undefined
-  }
-
-  return nextQuery
+  return parseRouteQuery(routeQuery, routeSync, defaults)
 }
 
 export function useDataTableRouteSync<TData>({
@@ -196,25 +53,38 @@ export function useDataTableRouteSync<TData>({
   globalFilter,
   pagination,
   sorting,
+  defaults,
 }: UseDataTableRouteSyncProps<TData>): void {
   const route = useRoute()
   const router = useRouter()
+  const syncingFromRoute = ref(false)
+  const syncingToRoute = ref(false)
 
   watch(
     query,
     async (nextQuery) => {
       const routeSync = resolveRouteSyncConfig(config.value)
-      if (!routeSync) return
+      if (!routeSync || syncingFromRoute.value) return
 
-      const nextRouteQuery = queryToLocationQuery(route.query, nextQuery, routeSync)
-      if (JSON.stringify(nextRouteQuery) === JSON.stringify(route.query)) return
+      const nextRouteQuery = serializeRouteQuery({
+        currentQuery: route.query,
+        tableQuery: nextQuery,
+        config: routeSync,
+        defaults: defaults.value,
+      })
 
-      if (routeSync.replace) {
-        await router.replace({ query: nextRouteQuery })
-        return
+      if (areRouteQueriesEqual(route.query, nextRouteQuery, routeSync, defaults.value)) return
+
+      syncingToRoute.value = true
+      try {
+        if (routeSync.replace) {
+          await router.replace({ query: nextRouteQuery })
+        } else {
+          await router.push({ query: nextRouteQuery })
+        }
+      } finally {
+        syncingToRoute.value = false
       }
-
-      await router.push({ query: nextRouteQuery })
     },
     { deep: true },
   )
@@ -225,22 +95,51 @@ export function useDataTableRouteSync<TData>({
       const routeSync = resolveRouteSyncConfig(config.value)
       if (!routeSync) return
 
-      const nextState = getRouteSyncedStateFromQuery(nextRouteQuery, routeSync)
+      if (syncingToRoute.value) {
+        const expectedRouteQuery = serializeRouteQuery({
+          currentQuery: nextRouteQuery,
+          tableQuery: query.value,
+          config: routeSync,
+          defaults: defaults.value,
+        })
 
-      if (nextState.columnFilters) {
-        columnFilters.value = nextState.columnFilters
+        if (areRouteQueriesEqual(nextRouteQuery, expectedRouteQuery, routeSync, defaults.value)) return
       }
-      if (typeof nextState.globalFilter === 'string') {
-        globalFilter.value = nextState.globalFilter
-      }
-      if (nextState.pagination) {
-        pagination.value = {
-          ...pagination.value,
-          ...nextState.pagination,
+
+      const nextState = parseRouteQuery(nextRouteQuery, routeSync, defaults.value)
+      syncingFromRoute.value = true
+
+      try {
+        if (
+          nextState.columnFilters &&
+          !areColumnFiltersEqual(columnFilters.value, nextState.columnFilters)
+        ) {
+          columnFilters.value = nextState.columnFilters
         }
-      }
-      if (nextState.sorting) {
-        sorting.value = nextState.sorting
+
+        if (
+          typeof nextState.globalFilter === 'string' &&
+          globalFilter.value !== nextState.globalFilter
+        ) {
+          globalFilter.value = nextState.globalFilter
+        }
+
+        if (nextState.pagination) {
+          const nextPagination = {
+            ...pagination.value,
+            ...nextState.pagination,
+          }
+
+          if (!arePaginationStatesEqual(pagination.value, nextPagination)) {
+            pagination.value = nextPagination
+          }
+        }
+
+        if (nextState.sorting && !areSortingStatesEqual(sorting.value, nextState.sorting)) {
+          sorting.value = nextState.sorting
+        }
+      } finally {
+        syncingFromRoute.value = false
       }
     },
     { deep: true },

@@ -11,12 +11,15 @@ import {
   type Updater,
   type VisibilityState,
 } from '@tanstack/vue-table'
-import { useDebounceFn } from '@vueuse/core'
 import { computed, ref, unref, watch, type Ref } from 'vue'
 import type {
   DataTableConfig,
+  DataTableDateColumn,
+  DataTableFilterableColumn,
   DataTableFilterOperator,
+  DataTableFilterQuery,
   DataTableQuery,
+  DataTableSearchableColumn,
 } from '../interface'
 import { isDateRangeValue, toDataTableFilterValue } from '../utils'
 import {
@@ -27,6 +30,7 @@ import {
   getDataTableRouteSyncedState,
   useDataTableRouteSync,
 } from './useDataTableRouteSync'
+import { normalizePageIndex, normalizePageSize, stableStringify } from '../utils'
 
 interface UseDataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[] | Ref<ColumnDef<TData, unknown>[]>
@@ -35,6 +39,9 @@ interface UseDataTableProps<TData> {
   rowCount?: number | Ref<number | undefined>
   config?: DataTableConfig<TData> | Ref<DataTableConfig<TData> | undefined>
   searchColumnIds?: string[] | Ref<string[]>
+  searchableColumns?: DataTableSearchableColumn[] | Ref<DataTableSearchableColumn[] | undefined>
+  filterableColumns?: DataTableFilterableColumn[] | Ref<DataTableFilterableColumn[] | undefined>
+  dateColumns?: DataTableDateColumn[] | Ref<DataTableDateColumn[] | undefined>
   selectedRowIds?: string[] | Ref<string[] | undefined>
   onQueryChange?: (query: DataTableQuery) => void
   onSelectionChange?: (ids: string[]) => void
@@ -61,17 +68,49 @@ function getRowIdFromKey<TData>(
   return String(value)
 }
 
-let hasWarnedMissingRowId = false
+function getMissingRowIdMessage(detail: string): string {
+  return `[DataTable] Row selection requires stable row ids. ${detail} Provide config.rowIdKey or config.getRowId; index-based row ids are unsafe with server-side pagination.`
+}
 
-function warnMissingRowId() {
-  if (hasWarnedMissingRowId) return
-  hasWarnedMissingRowId = true
+function assertRowSelectionHasStableId<TData>(config: DataTableConfig<TData>): void {
+  if (!config.enableRowSelection) return
+  if (config.rowIdKey || config.getRowId) return
 
-  if (import.meta.env.DEV) {
-    console.warn(
-      '[DataTable] Row selection is enabled but a row is missing a stable id. Provide config.rowIdKey or config.getRowId to avoid cross-page selection bugs.',
-    )
+  throw new Error(
+    getMissingRowIdMessage('Missing both config.rowIdKey and config.getRowId.'),
+  )
+}
+
+function resolveRowId<TData>(
+  row: TData,
+  index: number,
+  parent: TData | undefined,
+  config: DataTableConfig<TData>,
+): string {
+  if (config.getRowId) {
+    const id = config.getRowId(row, index, parent)
+
+    if (config.enableRowSelection && !id) {
+      throw new Error(getMissingRowIdMessage('config.getRowId returned an empty value.'))
+    }
+
+    return id || `row-${index}`
   }
+
+  if (!config.enableRowSelection) {
+    return getRowIdFromKey(row, index, config.rowIdKey || 'id')
+  }
+
+  if (!config.rowIdKey) {
+    throw new Error(getMissingRowIdMessage('Missing config.rowIdKey for the current row.'))
+  }
+
+  const value = (row as Record<string, unknown>)[config.rowIdKey]
+  if (value === null || value === undefined || value === '') {
+    throw new Error(getMissingRowIdMessage(`Row id field "${config.rowIdKey}" is empty.`))
+  }
+
+  return String(value)
 }
 
 function getFilterOperator(value: unknown): DataTableFilterOperator {
@@ -97,6 +136,14 @@ function areStringArraysEqual(first: string[], second: string[]): boolean {
   return first.every((value, index) => value === second[index])
 }
 
+function getInitialPageIndex<TData>(config: DataTableConfig<TData>): number {
+  return normalizePageIndex(config.initialPageIndex ?? config.initialPage ?? 0)
+}
+
+function toSearchText(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : ''
+}
+
 export function useDataTable<TData>({
   columns,
   data,
@@ -104,6 +151,9 @@ export function useDataTable<TData>({
   rowCount,
   config = {},
   searchColumnIds = [],
+  searchableColumns = [],
+  filterableColumns = [],
+  dateColumns = [],
   selectedRowIds,
   onQueryChange,
   onSelectionChange,
@@ -111,9 +161,33 @@ export function useDataTable<TData>({
 }: UseDataTableProps<TData>) {
   const resolvedConfig = computed(() => unref(config) ?? {})
   const resolvedSearchColumnIds = computed(() => unref(searchColumnIds))
+  const resolvedSearchableColumns = computed(() => unref(searchableColumns) ?? [])
+  const resolvedFilterableColumns = computed(() => unref(filterableColumns) ?? [])
+  const resolvedDateColumns = computed(() => unref(dateColumns) ?? [])
   const resolvedSelectedRowIds = computed(() => unref(selectedRowIds))
+  const routeSyncFilterIds = computed(() =>
+    Array.from(
+      new Set([
+        ...resolvedSearchableColumns.value.map((column) => column.id),
+        ...resolvedFilterableColumns.value.map((column) => column.id),
+        ...resolvedDateColumns.value.map((column) => column.id),
+        ...Object.keys(resolvedConfig.value.routeSync && typeof resolvedConfig.value.routeSync === 'object'
+          ? resolvedConfig.value.routeSync.filterParamMap ?? {}
+          : {}),
+      ]),
+    ),
+  )
+  const fallbackPageSize = computed(() =>
+    normalizePageSize(resolvedConfig.value.pageSize ?? unref(defaultPageSize), 10, resolvedConfig.value.maxPageSize),
+  )
+  const routeSyncDefaults = computed(() => ({
+    pageIndex: getInitialPageIndex(resolvedConfig.value),
+    pageSize: fallbackPageSize.value,
+    maxPageSize: resolvedConfig.value.maxPageSize,
+    filterIds: routeSyncFilterIds.value,
+  }))
   const persistedState = getDataTablePersistedState(resolvedConfig.value)
-  const routeSyncedState = getDataTableRouteSyncedState(resolvedConfig.value)
+  const routeSyncedState = getDataTableRouteSyncedState(resolvedConfig.value, routeSyncDefaults.value)
   const rowSelection = ref<RowSelectionState>(getRowSelectionFromIds(resolvedSelectedRowIds.value))
   const columnVisibility = ref<VisibilityState>(
     persistedState.columnVisibility ?? resolvedConfig.value.initialColumnVisibility ?? {},
@@ -125,27 +199,69 @@ export function useDataTable<TData>({
     routeSyncedState.sorting ?? persistedState.sorting ?? resolvedConfig.value.initialSorting ?? [],
   )
   const expanded = ref<ExpandedState>(resolvedConfig.value.initialExpanded || {})
-  const globalFilter = ref(routeSyncedState.globalFilter ?? resolvedConfig.value.initialSearch ?? '')
+  const globalFilter = ref(toSearchText(routeSyncedState.globalFilter ?? resolvedConfig.value.initialSearch))
 
   const pagination = ref<PaginationState>({
-    pageIndex: routeSyncedState.pagination?.pageIndex ?? resolvedConfig.value.initialPage ?? 0,
-    pageSize:
-      routeSyncedState.pagination?.pageSize ??
-      persistedState.pageSize ??
-      resolvedConfig.value.pageSize ??
-      unref(defaultPageSize),
+    pageIndex: normalizePageIndex(
+      routeSyncedState.pagination?.pageIndex ?? getInitialPageIndex(resolvedConfig.value),
+    ),
+    pageSize: normalizePageSize(
+      routeSyncedState.pagination?.pageSize ?? persistedState.pageSize ?? fallbackPageSize.value,
+      fallbackPageSize.value,
+      resolvedConfig.value.maxPageSize,
+    ),
   })
   const pageSize = computed(() => pagination.value.pageSize)
 
-  const resolveRowId = (row: TData, index: number) => {
-    const currentConfig = resolvedConfig.value
-    const idKey = currentConfig.rowIdKey || 'id'
-    const value = (row as Record<string, unknown>)[idKey]
-    if (currentConfig.enableRowSelection && (value === null || value === undefined || value === '')) {
-      warnMissingRowId()
+  watch(resolvedConfig, assertRowSelectionHasStableId, { immediate: true })
+
+  function getConfiguredFilterOperator(filterId: string, value: unknown): DataTableFilterOperator {
+    const searchableColumn = resolvedSearchableColumns.value.find((column) => column.id === filterId)
+    if (searchableColumn) return searchableColumn.operator ?? 'contains'
+
+    const filterableColumn = resolvedFilterableColumns.value.find((column) => column.id === filterId)
+    if (filterableColumn) return filterableColumn.operator ?? 'in'
+
+    const dateColumn = resolvedDateColumns.value.find((column) => column.id === filterId)
+    if (dateColumn) return dateColumn.operator ?? 'between'
+
+    return getFilterOperator(value)
+  }
+
+  function getFilterQuery(filter: ColumnFiltersState[number]): DataTableFilterQuery {
+    return {
+      id: filter.id,
+      value: toDataTableFilterValue(filter.value),
+      operator: getConfiguredFilterOperator(filter.id, filter.value),
+    }
+  }
+
+  function getFilterMetadata(filters: DataTableFilterQuery[]): DataTableQuery['metadata'] {
+    const columnSearchIds = new Set(resolvedSearchableColumns.value.map((column) => column.id))
+    const facetedFilterIds = new Set(resolvedFilterableColumns.value.map((column) => column.id))
+    const dateFilterIds = new Set(resolvedDateColumns.value.map((column) => column.id))
+
+    const metadata: DataTableQuery['metadata'] = {}
+    const searchValue = toSearchText(globalFilter.value).trim()
+
+    if (searchValue && resolvedSearchColumnIds.value.length > 0) {
+      metadata.globalSearch = {
+        value: searchValue,
+        columnIds: resolvedSearchColumnIds.value,
+      }
     }
 
-    return getRowIdFromKey(row, index, currentConfig.rowIdKey || 'id')
+    metadata.columnSearch = filters.filter((filter) => columnSearchIds.has(filter.id))
+    metadata.facetedFilters = filters.filter((filter) => facetedFilterIds.has(filter.id))
+    metadata.dateFilters = filters.filter((filter) => dateFilterIds.has(filter.id))
+
+    const hasMetadata =
+      Boolean(metadata.globalSearch) ||
+      metadata.columnSearch.length > 0 ||
+      metadata.facetedFilters.length > 0 ||
+      metadata.dateFilters.length > 0
+
+    return hasMetadata ? metadata : undefined
   }
 
   function resetPageIndex() {
@@ -205,14 +321,7 @@ export function useDataTable<TData>({
       return typeof value === 'number' ? value : undefined
     },
     getRowId: (row, index, parent) => {
-      const currentConfig = resolvedConfig.value
-      if (currentConfig.getRowId) {
-        const id = currentConfig.getRowId(row, index, parent?.original)
-        if (currentConfig.enableRowSelection && !id) warnMissingRowId()
-        return id || `row-${index}`
-      }
-
-      return resolveRowId(row, index)
+      return resolveRowId(row, index, parent?.original, resolvedConfig.value)
     },
     onSortingChange: (updaterOrValue) => {
       sorting.value = applyUpdater(sorting.value, updaterOrValue)
@@ -235,7 +344,7 @@ export function useDataTable<TData>({
       expanded.value = applyUpdater(expanded.value, updaterOrValue)
     },
     onGlobalFilterChange: (updaterOrValue) => {
-      globalFilter.value = applyUpdater(globalFilter.value, updaterOrValue)
+      globalFilter.value = toSearchText(applyUpdater(globalFilter.value, updaterOrValue))
       resetPageIndex()
     },
     getCoreRowModel: getCoreRowModel(),
@@ -246,7 +355,9 @@ export function useDataTable<TData>({
   })
 
   const query = computed<DataTableQuery>(() => {
-    const searchValue = globalFilter.value.trim()
+    const searchValue = toSearchText(globalFilter.value).trim()
+    const filters =
+      columnFilters.value.length > 0 ? columnFilters.value.map((filter) => getFilterQuery(filter)) : []
 
     return {
       page: pagination.value.pageIndex + 1,
@@ -259,24 +370,68 @@ export function useDataTable<TData>({
             }
           : undefined,
       sort: sorting.value.length > 0 ? sorting.value : undefined,
-      filters:
-        columnFilters.value.length > 0
-          ? columnFilters.value.map((filter) => ({
-              id: filter.id,
-              value: toDataTableFilterValue(filter.value),
-              operator: getFilterOperator(filter.value),
-            }))
-          : undefined,
+      filters: filters.length > 0 ? filters : undefined,
+      metadata: getFilterMetadata(filters),
     }
   })
 
-  const emitQuery = useDebounceFn((nextQuery: DataTableQuery) => {
+  let searchDebounceTimeout: ReturnType<typeof window.setTimeout> | undefined
+  let lastEmittedQueryKey = ''
+
+  function emitQuery(nextQuery: DataTableQuery) {
+    const queryKey = stableStringify(nextQuery)
+    if (queryKey === lastEmittedQueryKey) return
+
+    lastEmittedQueryKey = queryKey
     onQueryChange?.(nextQuery)
-  }, resolvedConfig.value.filterDebounce ?? 300)
+  }
+
+  function shouldDebounceQuery(nextQuery: DataTableQuery, previousQuery?: DataTableQuery): boolean {
+    if (!previousQuery) return false
+    if (stableStringify(nextQuery.sort) !== stableStringify(previousQuery.sort)) return false
+    if (nextQuery.pageSize !== previousQuery.pageSize) return false
+
+    const searchableIds = new Set(resolvedSearchableColumns.value.map((column) => column.id))
+    const previousSearch = previousQuery.search?.value ?? ''
+    const nextSearch = nextQuery.search?.value ?? ''
+    const globalSearchChanged = previousSearch !== nextSearch
+
+    const previousFilters = previousQuery.filters ?? []
+    const nextFilters = nextQuery.filters ?? []
+    const filtersChanged = stableStringify(previousFilters) !== stableStringify(nextFilters)
+    const searchFilterChanged =
+      filtersChanged &&
+      (nextFilters.some((filter) => searchableIds.has(filter.id)) ||
+        previousFilters.some((filter) => searchableIds.has(filter.id)))
+    const nonSearchFilterChanged =
+      filtersChanged &&
+      (nextFilters.some((filter) => !searchableIds.has(filter.id)) ||
+        previousFilters.some((filter) => !searchableIds.has(filter.id)))
+
+    if (!globalSearchChanged && !searchFilterChanged) return false
+    if (nonSearchFilterChanged) return false
+
+    return true
+  }
 
   watch(
     query,
-    (nextQuery) => {
+    (nextQuery, previousQuery) => {
+      if (searchDebounceTimeout) {
+        window.clearTimeout(searchDebounceTimeout)
+        searchDebounceTimeout = undefined
+      }
+
+      if (shouldDebounceQuery(nextQuery, previousQuery)) {
+        const delay =
+          resolvedConfig.value.searchDebounce ??
+          resolvedConfig.value.queryDebounce ??
+          resolvedConfig.value.filterDebounce ??
+          300
+        searchDebounceTimeout = window.setTimeout(() => emitQuery(nextQuery), delay)
+        return
+      }
+
       emitQuery(nextQuery)
     },
     { deep: true, immediate: resolvedConfig.value.emitInitialQuery ?? false },
@@ -306,10 +461,17 @@ export function useDataTable<TData>({
     { deep: true, immediate: true },
   )
 
-  // In server-side mode this only contains rows present in the current page data.
-  const selectedRows = computed(() => table.getSelectedRowModel().rows.map((row) => row.original))
+  const selectedCurrentPageRows = computed(() =>
+    table.getSelectedRowModel().rows.map((row) => row.original),
+  )
+  // Backward-compatible alias. In server-side mode this only contains current page rows.
+  const selectedRows = selectedCurrentPageRows
   const selectedIds = computed(() => getSelectedIds(rowSelection.value))
-  const hasFilters = computed(() => columnFilters.value.length > 0 || Boolean(globalFilter.value))
+  const hasSearchOrFilters = computed(() => columnFilters.value.length > 0 || Boolean(globalFilter.value))
+  const hasActiveControls = computed(
+    () => hasSearchOrFilters.value || sorting.value.length > 0 || selectedIds.value.length > 0,
+  )
+  const hasFilters = hasSearchOrFilters
 
   watch(
     resolvedSelectedRowIds,
@@ -334,6 +496,38 @@ export function useDataTable<TData>({
     },
   )
 
+  watch(
+    [() => query.value.page, () => query.value.pageSize],
+    () => {
+      if (!resolvedConfig.value.clearSelectionOnPageChange) return
+      resetSelection()
+    },
+  )
+
+  watch(
+    query,
+    () => {
+      if (!resolvedConfig.value.clearSelectionOnQueryChange) return
+      resetSelection()
+    },
+    { deep: true },
+  )
+
+  watch(
+    [() => unref(pageCount), () => pagination.value.pageIndex],
+    ([nextPageCount]) => {
+      if (typeof nextPageCount !== 'number') return
+
+      const maxPageIndex = Math.max(nextPageCount - 1, 0)
+      if (pagination.value.pageIndex <= maxPageIndex) return
+
+      pagination.value = {
+        ...pagination.value,
+        pageIndex: maxPageIndex,
+      }
+    },
+  )
+
   useDataTablePersistence({
     config: resolvedConfig,
     columnVisibility,
@@ -348,6 +542,7 @@ export function useDataTable<TData>({
     globalFilter,
     pagination,
     sorting,
+    defaults: routeSyncDefaults,
   })
 
   function resetSelection() {
@@ -364,8 +559,11 @@ export function useDataTable<TData>({
   return {
     table,
     selectedRows,
+    selectedCurrentPageRows,
     selectedIds,
     hasFilters,
+    hasSearchOrFilters,
+    hasActiveControls,
     resetSelection,
     resetFilters,
     rowSelection,

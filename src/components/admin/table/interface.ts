@@ -22,6 +22,7 @@ export interface DataTableSearchableColumn {
   id: string
   title: string
   placeholder?: string
+  operator?: DataTableFilterOperator
   getLabel?: (value: unknown) => string
 }
 
@@ -35,6 +36,7 @@ export interface DataTableFilterableColumn {
   id: string
   title: string
   options: DataTableFilterOption[]
+  operator?: DataTableFilterOperator
   getLabel?: (value: unknown, options: DataTableFilterOption[]) => string
 }
 
@@ -42,15 +44,28 @@ export interface DataTableDateColumn {
   id: string
   title: string
   placeholder?: string
+  operator?: DataTableFilterOperator
   getLabel?: (value: unknown) => string
 }
 
 export interface DateRangeValue {
-  start: string
-  end: string
+  start?: string
+  end?: string
 }
 
-export type DataTableFilterOperator = 'contains' | 'in' | 'between' | 'equals'
+export type DataTableFilterOperator =
+  | 'contains'
+  | 'in'
+  | 'between'
+  | 'equals'
+  | 'notEquals'
+  | 'notIn'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'startsWith'
+  | 'endsWith'
 export type DataTableFilterValue = string | string[] | number | boolean | DateRangeValue
 
 export interface DataTableConfig<TData = unknown> {
@@ -70,11 +85,21 @@ export interface DataTableConfig<TData = unknown> {
   initialSearch?: string
   initialFilters?: Array<{ id: string; value: DataTableFilterValue }>
   initialSorting?: Array<{ id: string; desc: boolean }>
+  /** 0-based TanStack page index. Prefer this over initialPage for clarity. */
+  initialPageIndex?: number
+  /** @deprecated 0-based alias kept for backward compatibility. */
   initialPage?: number
   initialExpanded?: Record<string, boolean>
   initialColumnVisibility?: Record<string, boolean>
+  /** @deprecated Use queryDebounce/searchDebounce. */
   filterDebounce?: number
+  queryDebounce?: number
+  searchDebounce?: number
   emitInitialQuery?: boolean
+  clearSelectionOnQueryChange?: boolean
+  clearSelectionOnPageChange?: boolean
+  maxPageSize?: number
+  enableColumnVisibility?: boolean
   enableExpanding?: boolean
   expandOnRowClick?: boolean
   autoExpandAll?: boolean
@@ -84,12 +109,17 @@ export interface DataTableConfig<TData = unknown> {
 
 export interface DataTablePersistenceConfig {
   key?: string
+  version?: number
   columns?: boolean
   pageSize?: boolean
   sorting?: boolean
 }
 
+export type DataTableRouteSyncMode = 'namespaced' | 'compact'
+
 export interface DataTableRouteSyncConfig {
+  enabled?: boolean
+  mode?: DataTableRouteSyncMode
   keyPrefix?: string
   page?: boolean
   pageSize?: boolean
@@ -97,6 +127,14 @@ export interface DataTableRouteSyncConfig {
   sorting?: boolean
   filters?: boolean
   replace?: boolean
+  paramNames?: {
+    search?: string
+    page?: string
+    pageSize?: string
+    sort?: string
+  }
+  filterParamMap?: Record<string, string>
+  arrayFormat?: 'comma' | 'repeated'
 }
 
 export interface DataTableServerParams {
@@ -134,6 +172,7 @@ export interface DataTableSearchQuery {
 }
 
 export interface DataTableQuery {
+  /** 1-based page number for API/server query params. */
   page: number
   pageSize: number
   search?: DataTableSearchQuery
@@ -142,12 +181,20 @@ export interface DataTableQuery {
     desc: boolean
   }>
   filters?: DataTableFilterQuery[]
+  metadata?: DataTableQueryMetadata
 }
 
 export interface DataTableFilterQuery {
   id: string
   value: DataTableFilterValue
   operator: DataTableFilterOperator
+}
+
+export interface DataTableQueryMetadata {
+  globalSearch?: DataTableSearchQuery
+  columnSearch?: DataTableFilterQuery[]
+  facetedFilters?: DataTableFilterQuery[]
+  dateFilters?: DataTableFilterQuery[]
 }
 
 export type ColumnHeaderMode =

@@ -1,8 +1,8 @@
 <script setup lang="ts" generic="TData">
-import { computed, toRef, useSlots } from 'vue'
+import { computed, toRef, useAttrs, useSlots } from 'vue'
 import type { ColumnDef, Row } from '@tanstack/vue-table'
 import { FlexRender } from '@tanstack/vue-table'
-import { AlertCircle, ChevronDown, ChevronRight, Inbox, Loader2 } from 'lucide-vue-next'
+import { ChevronDown, ChevronRight, Inbox } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import DataTablePagination from './DataTablePagination.vue'
+import DataTableStateOverlay from './DataTableStateOverlay.vue'
 import DataTableToolbar from './DataTableToolbar.vue'
 import { useDataTable } from './composables/useDataTable'
 import type {
@@ -58,8 +59,12 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
+const attrs = useAttrs()
 const isSelectionEnabled = computed(
   () => props.enableSelection || props.config?.enableRowSelection === true,
+)
+const isRowInteractive = computed(
+  () => Boolean(props.config?.expandOnRowClick) || Boolean(attrs.onRowClick),
 )
 const tableConfig = computed<DataTableConfig<TData>>(() => ({
   ...props.config,
@@ -71,6 +76,8 @@ const defaultPageSize = computed(() => props.pageSizeOptions[0] ?? 10)
 const {
   table,
   selectedIds,
+  // selectedRows is kept for backward-compatible slots/emits; in server-side mode
+  // it only contains rows from the current page.
   selectedRows: selectedCurrentPageRows,
   hasFilters,
   rowSelection,
@@ -82,6 +89,9 @@ const {
   rowCount: toRef(props, 'rowCount'),
   config: tableConfig,
   searchColumnIds,
+  searchableColumns: toRef(props, 'searchableColumns'),
+  filterableColumns: toRef(props, 'filterableColumns'),
+  dateColumns: toRef(props, 'dateColumns'),
   selectedRowIds: toRef(props, 'selectedRowIds'),
   onQueryChange: (nextQuery) => emit('update:query', nextQuery),
   onSelectionChange: (ids) => emit('update:selectedRowIds', ids),
@@ -142,6 +152,7 @@ function shouldIgnoreRowClick(target: HTMLElement) {
       :searchable-columns="searchableColumns"
       :filterable-columns="filterableColumns"
       :date-columns="dateColumns"
+      :config="tableConfig"
       :selected-ids="selectedIds"
       :selected-rows="selectedCurrentPageRows"
       :selected-current-page-rows="selectedCurrentPageRows"
@@ -179,44 +190,17 @@ function shouldIgnoreRowClick(target: HTMLElement) {
       role="region"
       aria-label="Bảng dữ liệu"
     >
-      <div
-        v-if="error"
-        class="absolute inset-0 z-50 flex items-center justify-center bg-background p-6"
-        role="alert"
-        aria-live="assertive"
-      >
-        <div class="max-w-md space-y-4 text-center">
-          <slot name="error" :error="error" :retry="() => emit('retry')">
-            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-              <AlertCircle class="h-5 w-5 text-destructive" />
-            </div>
-            <div class="space-y-1">
-              <h3 class="font-semibold text-foreground">Có lỗi xảy ra</h3>
-              <p class="text-sm text-muted-foreground">
-                {{ typeof error === 'string' ? error : error.message }}
-              </p>
-            </div>
-            <slot name="error-actions">
-              <Button size="sm" @click="emit('retry')">Thử lại</Button>
-            </slot>
-          </slot>
-        </div>
-      </div>
-
-      <div
-        v-else-if="isLoading"
-        class="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-        role="status"
-        aria-live="polite"
-        aria-label="Đang tải dữ liệu"
-      >
-        <slot name="loading">
-          <div class="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm shadow-sm">
-            <Loader2 class="h-4 w-4 animate-spin text-primary" />
-            <span>Đang tải...</span>
-          </div>
-        </slot>
-      </div>
+      <DataTableStateOverlay :is-loading="isLoading" :error="error" @retry="emit('retry')">
+        <template v-if="$slots.error" #error="{ error: currentError, retry }">
+          <slot name="error" :error="currentError" :retry="retry" />
+        </template>
+        <template v-if="$slots['error-actions']" #error-actions>
+          <slot name="error-actions" />
+        </template>
+        <template v-if="$slots.loading" #loading>
+          <slot name="loading" />
+        </template>
+      </DataTableStateOverlay>
 
       <div class="overflow-x-auto">
         <Table>
@@ -253,7 +237,10 @@ function shouldIgnoreRowClick(target: HTMLElement) {
                   :data-expanded="row.getIsExpanded?.() ? 'true' : undefined"
                   :aria-selected="row.getIsSelected()"
                   :aria-expanded="row.getCanExpand?.() ? row.getIsExpanded?.() : undefined"
-                  class="group cursor-pointer hover:bg-muted/40"
+                  :class="[
+                    'group hover:bg-muted/40',
+                    isRowInteractive ? 'cursor-pointer' : undefined,
+                  ]"
                   @click="(event: MouseEvent) => handleRowClick(event, row)"
                 >
                   <TableCell v-if="config?.enableExpanding" class="w-10 px-2">
@@ -263,8 +250,12 @@ function shouldIgnoreRowClick(target: HTMLElement) {
                       size="icon"
                       class="h-7 w-7"
                       data-action="true"
+                      :aria-label="row.getIsExpanded?.() ? `Thu gọn dòng ${row.id}` : `Mở rộng dòng ${row.id}`"
                       @click.stop="row.toggleExpanded()"
                     >
+                      <span class="sr-only">
+                        {{ row.getIsExpanded?.() ? 'Thu gọn dòng' : 'Mở rộng dòng' }}
+                      </span>
                       <component
                         :is="row.getIsExpanded?.() ? ChevronDown : ChevronRight"
                         class="h-4 w-4"
@@ -326,6 +317,7 @@ function shouldIgnoreRowClick(target: HTMLElement) {
         :table="table"
         :page-size-options="pageSizeOptions"
         :selected-ids="selectedIds"
+        :max-page-size="config?.maxPageSize"
       />
     </slot>
   </div>
