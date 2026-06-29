@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "gen:api": "orval --config ./orval.config.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@lucide/vue": "^1.17.0",
     "@radix-icons/vue": "^1.0.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/vue-query": "^5.100.10",
@@ -19,23 +21,27 @@
     "axios": "^1.16.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
-    "reka-ui": "^2.9.7",
+    "reka-ui": "^2.9.10",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
     "vee-validate": "^4.15.1",
+    "vercel": "^54.11.1",
     "vue": "^3.5.34",
     "vue-router": "^5.0.7",
+    "vue-sonner": "^2.0.9",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.12.3",
     "@vitejs/plugin-vue": "^6.0.6",
+    "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
+    "happy-dom": "^20.10.2",
     "orval": "^8.11.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.12",
+    "vitest": "^4.1.8",
     "vue-tsc": "^3.2.8"
   }
 }

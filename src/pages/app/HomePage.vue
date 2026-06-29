@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { ArrowRight } from 'lucide-vue-next'
-import { RouterLink } from 'vue-router'
-import { Button } from '@/components/ui/button'
+import { ArrowRight } from "@lucide/vue";
+import { RouterLink } from "vue-router";
+import { Button } from "@/components/ui/button";
 </script>
 
 <template>
   <section class="grid gap-6 py-12">
     <div class="max-w-3xl space-y-4">
-      <p class="text-sm font-medium text-primary">Vue 3 + TypeScript architecture</p>
+      <p class="text-sm font-medium text-primary">
+        Vue 3 + TypeScript architecture
+      </p>
       <h1 class="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
         Frontend foundation for REST, dashboard, and AI features.
       </h1>
       <p class="text-lg text-muted-foreground">
-        Pinia keeps client state. TanStack Query owns server state. Axios centralizes API and JWT handling.
+        Pinia keeps client state. TanStack Query owns server state. Axios
+        centralizes API and JWT handling.
       </p>
     </div>
 

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 import { computed, h, ref } from "vue";
 import type { Column, ColumnDef } from "@tanstack/vue-table";
 import {
@@ -13,7 +13,7 @@ import {
   User,
   Users,
   XCircle,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 
 import DataTable from "@/components/admin/table/DataTable.vue";
 import DataTableActions from "@/components/admin/table/DataTableActions.vue";
@@ -651,4 +651,16 @@ function sleep(ms: number) {
       <pre class="mt-2 text-xs">{{ selectedRowsInCurrentPage }}</pre>
     </div>
   </div>
+</template> -->
+
+<script setup lang="ts">
+import AdminPagePlaceholder from "@/components/AdminPagePlaceholder.vue";
+</script>
+
+<template>
+  <AdminPagePlaceholder
+    title="Người dùng"
+    description="Trang người dùng đang được giữ ở trạng thái placeholder để không chặn build."
+    scope="super-admin"
+  />
 </template>

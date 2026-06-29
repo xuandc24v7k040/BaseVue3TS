@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MoreHorizontal } from 'lucide-vue-next'
+import { MoreHorizontal } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,6 +17,14 @@ interface Props {
 }
 
 defineProps<Props>()
+
+async function handleActionClick(action: DataTableAction) {
+  try {
+    await action.onClick()
+  } catch (error) {
+    console.error('[DataTable Actions] Action execution failed:', error)
+  }
+}
 </script>
 
 <template>
@@ -33,7 +41,7 @@ defineProps<Props>()
         {{ label }}
       </DropdownMenuLabel>
 
-      <template v-for="action in actions" :key="action.key || action.label">
+      <template v-for="(action, index) in actions" :key="action.key || `${action.label}-${index}`">
         <DropdownMenuSeparator v-if="action.separator" />
         <DropdownMenuItem
           :disabled="action.disabled"
@@ -43,7 +51,7 @@ defineProps<Props>()
               ? 'text-destructive focus:bg-destructive/10 focus:text-destructive'
               : '',
           ]"
-          @click="!action.disabled && action.onClick()"
+          @select="handleActionClick(action)"
         >
           <component v-if="action.icon" :is="action.icon" class="h-4 w-4 text-muted-foreground" />
           <span>{{ action.label }}</span>

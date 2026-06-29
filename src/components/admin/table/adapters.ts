@@ -1,9 +1,12 @@
 import type {
   DataTableFilterQuery,
+  DataTableFilterValue,
   DataTableQuery,
   DataTableQueryMetadata,
   DataTableServerParams,
+  DateRangeValue,
 } from './interface'
+import { isDateRangeValue } from './utils'
 
 export type DataTableQueryAdapter<TParams> = (query: DataTableQuery) => TParams
 
@@ -13,7 +16,7 @@ interface DataTableServerParamOptions<TParams extends Record<string, unknown>> {
   serializeFilterMetadata?: (metadata: DataTableQueryMetadata) => Partial<DataTableServerParams>
 }
 
-interface DataTableApiQueryAdapterOptions<TParams extends Record<string, unknown>> {
+interface CreateDataTableApiQueryAdapterOptions<TParams extends Record<string, unknown>> {
   pageKey?: string
   pageSizeKey?: string
   searchKey?: string
@@ -27,7 +30,28 @@ interface DataTableApiQueryAdapterOptions<TParams extends Record<string, unknown
   map?: (params: Record<string, unknown>, query: DataTableQuery) => TParams
 }
 
-export interface BookoraNestJsTableParams extends Record<string, unknown> {
+export interface DataTableApiQueryAdapterOptions {
+  pageBase?: 0 | 1
+  pageKey?: string
+  pageSizeKey?: string
+  searchKey?: string
+  searchByKey?: string
+  includeSearchBy?: boolean
+  sortKey?: string
+  sortFormat?: 'array' | 'csv' | 'object'
+  dateFormat?: 'local' | 'iso'
+  /**
+   * Required for safe `dateFormat: 'iso'` conversion.
+   * Supported values: `Z` or fixed offsets such as `+07:00`.
+   * Without this option, local date strings are preserved to avoid assuming UTC.
+   */
+  timezone?: string
+  filterKeyMap?: Record<string, string>
+  sortKeyMap?: Record<string, string>
+  includeEmptyFilters?: boolean
+}
+
+export interface NestJsTableParams extends Record<string, unknown> {
   page: number
   limit: number
   search?: string
@@ -37,12 +61,12 @@ export interface BookoraNestJsTableParams extends Record<string, unknown> {
   filters?: string
 }
 
-interface BookoraNestJsQueryAdapterOptions<
+interface NestJsQueryAdapterOptions<
   TParams extends Record<string, unknown>,
 > {
   includeSearchBy?: boolean
   serializeFilters?: (filters: DataTableFilterQuery[], query: DataTableQuery) => string | undefined
-  map?: (params: BookoraNestJsTableParams, query: DataTableQuery) => TParams
+  map?: (params: NestJsTableParams, query: DataTableQuery) => TParams
 }
 
 function defaultSerializeFilters(filters: DataTableFilterQuery[]): string {
@@ -92,7 +116,7 @@ export function createDataTableQueryAdapter<TParams extends Record<string, unkno
 }
 
 export function createDataTableApiQueryAdapter<TParams extends Record<string, unknown> = Record<string, unknown>>(
-  options: DataTableApiQueryAdapterOptions<TParams> = {},
+  options: CreateDataTableApiQueryAdapterOptions<TParams> = {},
 ): DataTableQueryAdapter<TParams> {
   const {
     pageKey = 'page',
@@ -123,9 +147,11 @@ export function createDataTableApiQueryAdapter<TParams extends Record<string, un
         params[sortByKey] = query.sort.map((sort) => sort.id)
         params[sortOrderKey] = query.sort.map((sort) => (sort.desc ? 'desc' : 'asc'))
       } else {
-        const [primarySort] = query.sort
-        params[sortByKey] = primarySort.id
-        params[sortOrderKey] = primarySort.desc ? 'desc' : 'asc'
+        const primarySort = query.sort[0]
+        if (primarySort) {
+          params[sortByKey] = primarySort.id
+          params[sortOrderKey] = primarySort.desc ? 'desc' : 'asc'
+        }
       }
     }
 
@@ -142,35 +168,182 @@ export function createDataTableApiQueryAdapter<TParams extends Record<string, un
   }
 }
 
-export function toBookoraNestJsTableParams(query: DataTableQuery): BookoraNestJsTableParams {
-  return createBookoraNestJsQueryAdapter()(query)
+function isEmptyFilterValue(value: DataTableFilterValue): boolean {
+  if (Array.isArray(value)) return value.length === 0
+  if (typeof value === 'string') return value.trim() === ''
+  if (isDateRangeValue(value)) return !value.start && !value.end
+  return value === undefined || value === null
 }
 
-export function createBookoraNestJsQueryAdapter<
-  TParams extends Record<string, unknown> = BookoraNestJsTableParams,
+function normalizeLocalDateTimeForIso(
+  value: string,
+  bound: 'start' | 'end',
+  timezone?: string,
+): string {
+  if (!timezone) return value
+  if (timezone !== 'Z' && !/^[+-]\d{2}:\d{2}$/.test(timezone)) {
+    throw new Error(
+      `[DataTable Adapter] Unsupported timezone "${timezone}". Use "Z" or a fixed offset like "+07:00".`,
+    )
+  }
+
+  const [datePart, timePart] = value.split('T')
+  if (!datePart) return value
+
+  const normalizedTime =
+    timePart ??
+    (bound === 'start' ? '00:00:00.000' : '23:59:59.999')
+  const withSeconds = normalizedTime.includes(':')
+    ? normalizedTime.split(':').length === 2
+      ? `${normalizedTime}:00.000`
+      : normalizedTime.includes('.')
+        ? normalizedTime
+        : `${normalizedTime}.000`
+    : normalizedTime
+  const date = new Date(`${datePart}T${withSeconds}${timezone}`)
+
+  return Number.isNaN(date.getTime()) ? value : date.toISOString()
+}
+
+export function normalizeDataTableDateRangeFilter(
+  value: DateRangeValue,
+  options: Pick<DataTableApiQueryAdapterOptions, 'dateFormat' | 'timezone'> = {},
+): { from?: string; to?: string } {
+  const dateFormat = options.dateFormat ?? 'local'
+  const normalize = (dateValue: string | undefined, bound: 'start' | 'end') => {
+    if (!dateValue) return undefined
+    if (dateFormat === 'local') return dateValue
+    return normalizeLocalDateTimeForIso(dateValue, bound, options.timezone)
+  }
+
+  return {
+    from: normalize(value.start, 'start'),
+    to: normalize(value.end, 'end'),
+  }
+}
+
+export function serializeDataTableSort(
+  sort: DataTableQuery['sort'],
+  options: Pick<DataTableApiQueryAdapterOptions, 'sortFormat' | 'sortKeyMap'> = {},
+): string | string[] | Record<string, 'asc' | 'desc'> | undefined {
+  if (!sort?.length) return undefined
+
+  const mappedSort = sort
+    .map((item) => {
+      const id = options.sortKeyMap?.[item.id] ?? item.id
+      const direction = item.desc ? 'desc' : 'asc'
+      return id ? { id, direction } : null
+    })
+    .filter((item): item is { id: string; direction: 'asc' | 'desc' } => Boolean(item))
+
+  if (!mappedSort.length) return undefined
+
+  const format = options.sortFormat ?? 'csv'
+  if (format === 'array') return mappedSort.map((item) => `${item.id}:${item.direction}`)
+  if (format === 'object') {
+    return mappedSort.reduce<Record<string, 'asc' | 'desc'>>((params, item) => {
+      params[item.id] = item.direction
+      return params
+    }, {})
+  }
+
+  return mappedSort.map((item) => `${item.id}:${item.direction}`).join(',')
+}
+
+export function serializeDataTableFilters(
+  filters: DataTableFilterQuery[] | undefined,
+  options: Pick<
+    DataTableApiQueryAdapterOptions,
+    'dateFormat' | 'filterKeyMap' | 'includeEmptyFilters' | 'timezone'
+  > = {},
+): Record<string, unknown> {
+  const params: Record<string, unknown> = {}
+
+  filters?.forEach((filter) => {
+    if (!options.includeEmptyFilters && isEmptyFilterValue(filter.value)) return
+
+    const key = options.filterKeyMap?.[filter.id] ?? filter.id
+
+    if (isDateRangeValue(filter.value)) {
+      const range = normalizeDataTableDateRangeFilter(filter.value, options)
+      if (options.includeEmptyFilters || range.from) params[`${key}From`] = range.from
+      if (options.includeEmptyFilters || range.to) params[`${key}To`] = range.to
+      return
+    }
+
+    params[key] = filter.value
+  })
+
+  return params
+}
+
+export function toDataTableApiParams(
+  query: DataTableQuery,
+  options: DataTableApiQueryAdapterOptions = {},
+): Record<string, unknown> {
+  const {
+    pageBase = 1,
+    pageKey = 'page',
+    pageSizeKey = 'limit',
+    searchKey = 'search',
+    searchByKey = 'searchBy',
+    includeSearchBy = false,
+    sortKey = 'sort',
+  } = options
+
+  const params: Record<string, unknown> = {
+    [pageKey]: pageBase === 0 ? Math.max(query.page - 1, 0) : query.page,
+    [pageSizeKey]: query.pageSize,
+  }
+
+  const search = query.search ?? query.metadata?.globalSearch
+
+  if (search?.value) {
+    params[searchKey] = search.value
+    if (includeSearchBy) {
+      params[searchByKey] = [...search.columnIds]
+    }
+  }
+
+  const serializedSort = serializeDataTableSort(query.sort, options)
+  if (serializedSort !== undefined) {
+    params[sortKey] = serializedSort
+  }
+
+  Object.assign(params, serializeDataTableFilters(query.filters, options))
+
+  return params
+}
+
+export function toNestJsTableParams(query: DataTableQuery): NestJsTableParams {
+  return createNestJsQueryAdapter()(query)
+}
+
+export function createNestJsQueryAdapter<
+  TParams extends Record<string, unknown> = NestJsTableParams,
 >(
-  options: BookoraNestJsQueryAdapterOptions<TParams> = {},
+  options: NestJsQueryAdapterOptions<TParams> = {},
 ): DataTableQueryAdapter<TParams> {
   return (query) => {
-    const primarySort = query.sort?.[0]
-    const params: BookoraNestJsTableParams = {
-      page: query.page,
-      limit: query.pageSize,
+    const baseParams = toDataTableServerParams(query)
+    const params: NestJsTableParams = {
+      page: baseParams.page,
+      limit: baseParams.limit,
     }
 
-    if (query.search?.value) {
-      params.search = query.search.value
-      if (options.includeSearchBy) params.searchBy = query.search.columnIds
+    if (baseParams.search) {
+      params.search = baseParams.search
+      if (options.includeSearchBy) params.searchBy = baseParams.searchBy
     }
 
-    if (primarySort) {
-      params.sortBy = primarySort.id
-      params.sortOrder = primarySort.desc ? 'desc' : 'asc'
+    if (baseParams.sortBy) {
+      params.sortBy = baseParams.sortBy
+      params.sortOrder = baseParams.sortOrder
     }
 
     if (query.filters?.length) {
       const serializedFilters =
-        options.serializeFilters?.(query.filters, query) ?? defaultSerializeFilters(query.filters)
+        options.serializeFilters?.(query.filters, query) ?? baseParams.filters
       if (serializedFilters) params.filters = serializedFilters
     }
 

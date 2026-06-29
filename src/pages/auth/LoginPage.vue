@@ -4,7 +4,7 @@ import {
   ChartNoAxesCombined,
   CheckCircle2,
   ClipboardList,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import logoUrl from "@/assets/logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import LoginForm from "@/pages/auth/components/LoginForm.vue";

@@ -1,9 +1,14 @@
 import type { SortingState, VisibilityState } from '@tanstack/vue-table'
-import type { Ref } from 'vue'
-import { computed, watch } from 'vue'
+import type { InjectionKey, Ref } from 'vue'
+import { computed, getCurrentInstance, onUnmounted, watch } from 'vue'
 import type { DataTableConfig, DataTablePersistenceConfig } from '../interface'
+import { isRecord, isStorageAvailable } from '../utils'
 
-interface DataTablePersistedState {
+export const DATA_TABLE_STORAGE_PREFIX_KEY = Symbol(
+  'DataTableStoragePrefix',
+) as InjectionKey<string>
+
+export interface DataTablePersistedState {
   version?: number
   columnVisibility?: VisibilityState
   pageSize?: number
@@ -23,43 +28,34 @@ interface UseDataTablePersistenceProps<TData> {
   columnVisibility: Ref<VisibilityState>
   pageSize: Ref<number>
   sorting: Ref<SortingState>
+  storagePrefix?: string
 }
 
-const STORAGE_PREFIX = 'bookora:data-table'
-
-function isStorageAvailable(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
-}
-
-function getDefaultStorageKey(): string | null {
-  if (typeof window === 'undefined') return null
-  return `route:${window.location.pathname}`
-}
+const activePersistenceKeysRegistry = import.meta.env.DEV ? new Map<string, string>() : null
 
 function resolvePersistenceConfig<TData>(
   config: DataTableConfig<TData>,
+  injectedPrefix?: string,
 ): ResolvedPersistenceConfig | null {
-  if (config.persistence === false) return null
+  if (!config.persistence) return null
 
   const persistence =
     typeof config.persistence === 'object'
       ? config.persistence
       : ({} satisfies DataTablePersistenceConfig)
-  const rawKey = persistence.key ?? config.storageKey ?? config.tableId ?? getDefaultStorageKey()
+  const rawKey = persistence.key ?? config.storageKey ?? config.tableId
 
   if (!rawKey) return null
 
+  const prefix = persistence.storagePrefix ?? injectedPrefix ?? 'dt'
+
   return {
-    key: rawKey.startsWith(STORAGE_PREFIX) ? rawKey : `${STORAGE_PREFIX}:${rawKey}`,
+    key: rawKey.startsWith(prefix) ? rawKey : `${prefix}:${rawKey}`,
     version: persistence.version ?? 1,
     columns: persistence.columns ?? true,
     pageSize: persistence.pageSize ?? true,
     sorting: persistence.sorting ?? false,
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function isVisibilityState(value: unknown): value is VisibilityState {
@@ -70,8 +66,7 @@ function isSortingState(value: unknown): value is SortingState {
   return (
     Array.isArray(value) &&
     value.every(
-      (item) =>
-        isRecord(item) && typeof item.id === 'string' && typeof item.desc === 'boolean',
+      (item) => isRecord(item) && typeof item.id === 'string' && typeof item.desc === 'boolean',
     )
   )
 }
@@ -103,8 +98,9 @@ function writePersistedState(key: string, state: DataTablePersistedState): void 
 
 export function getDataTablePersistedState<TData>(
   config: DataTableConfig<TData>,
+  injectedPrefix?: string,
 ): DataTablePersistedState {
-  const persistence = resolvePersistenceConfig(config)
+  const persistence = resolvePersistenceConfig(config, injectedPrefix)
   if (!persistence) return {}
 
   const state = readPersistedState(persistence.key)
@@ -116,14 +112,16 @@ export function getDataTablePersistedState<TData>(
       persistence.columns && isVisibilityState(state.columnVisibility)
         ? state.columnVisibility
         : undefined,
-    pageSize:
-      persistence.pageSize && isValidPageSize(state.pageSize) ? state.pageSize : undefined,
+    pageSize: persistence.pageSize && isValidPageSize(state.pageSize) ? state.pageSize : undefined,
     sorting: persistence.sorting && isSortingState(state.sorting) ? state.sorting : undefined,
   }
 }
 
-export function clearDataTablePersistedState<TData>(config: DataTableConfig<TData>): void {
-  const persistence = resolvePersistenceConfig(config)
+export function clearDataTablePersistedState<TData>(
+  config: DataTableConfig<TData>,
+  injectedPrefix?: string,
+): void {
+  const persistence = resolvePersistenceConfig(config, injectedPrefix)
   if (!persistence || !isStorageAvailable()) return
 
   try {
@@ -138,26 +136,65 @@ export function useDataTablePersistence<TData>({
   columnVisibility,
   pageSize,
   sorting,
+  storagePrefix,
 }: UseDataTablePersistenceProps<TData>): void {
-  const persistence = computed(() => resolvePersistenceConfig(config.value))
+  const persistence = computed(() => resolvePersistenceConfig(config.value, storagePrefix))
   let lastWrittenState = ''
 
-  watch(
-    [persistence, columnVisibility, pageSize, sorting],
-    ([nextPersistence]) => {
-      if (!nextPersistence) return
+  if (import.meta.env.DEV) {
+    const conf = config.value
+    if (conf.persistence) {
+      const persistenceObj = typeof conf.persistence === 'object' ? conf.persistence : {}
+      const rawKey = persistenceObj.key ?? conf.storageKey ?? conf.tableId
+      if (!rawKey) {
+        console.warn(
+          '[DataTable] persistence requires tableId, storageKey, or persistence.key. Persistence disabled.',
+        )
+      }
+    }
 
-      const nextState: DataTablePersistedState = {
+    const instance = getCurrentInstance()
+    const initialPersistence = persistence.value
+    if (instance && initialPersistence && activePersistenceKeysRegistry) {
+      const instanceId = String(instance.uid)
+      const existing = activePersistenceKeysRegistry.get(initialPersistence.key)
+      if (existing && existing !== instanceId) {
+        console.warn(
+          `[DataTable] Duplicate persistence key "${initialPersistence.key}" detected. ` +
+            'Multiple mounted DataTable instances will overwrite the same localStorage table state. ' +
+            'Use a distinct tableId, storageKey, or persistence.key.',
+        )
+      }
+      activePersistenceKeysRegistry.set(initialPersistence.key, instanceId)
+
+      onUnmounted(() => {
+        if (activePersistenceKeysRegistry.get(initialPersistence.key) === instanceId) {
+          activePersistenceKeysRegistry.delete(initialPersistence.key)
+        }
+      })
+    }
+  }
+
+  watch(
+    () => {
+      const nextPersistence = persistence.value
+      if (!nextPersistence) return null
+      return {
+        key: nextPersistence.key,
         version: nextPersistence.version,
         columnVisibility: nextPersistence.columns ? columnVisibility.value : undefined,
         pageSize: nextPersistence.pageSize ? pageSize.value : undefined,
         sorting: nextPersistence.sorting ? sorting.value : undefined,
       }
+    },
+    (nextState) => {
+      if (!nextState) return
+
       const serializedState = JSON.stringify(nextState)
       if (serializedState === lastWrittenState) return
 
       lastWrittenState = serializedState
-      writePersistedState(nextPersistence.key, nextState)
+      writePersistedState(nextState.key, nextState)
     },
     { deep: true },
   )

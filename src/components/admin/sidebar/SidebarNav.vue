@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ChevronRight } from 'lucide-vue-next'
-import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { ChevronRight } from "@lucide/vue";
+import { computed } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -16,26 +16,28 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@/components/ui/sidebar'
-import type { SidebarNavItem } from './types'
+} from "@/components/ui/sidebar";
+import type { SidebarNavItem } from "./types";
 
 const props = defineProps<{
-  label: string
-  items: SidebarNavItem[]
-}>()
+  label: string;
+  items: SidebarNavItem[];
+}>();
 
-const route = useRoute()
+const route = useRoute();
 
 const activeParentUrls = computed(() => {
   return new Set(
     props.items
-      .filter((item) => item.children?.some((child) => route.path.startsWith(child.url)))
+      .filter((item) =>
+        item.children?.some((child) => route.path.startsWith(child.url)),
+      )
       .map((item) => item.title),
-  )
-})
+  );
+});
 
 function isActiveUrl(url: string): boolean {
-  return route.path === url || route.path.startsWith(`${url}/`)
+  return route.path === url || route.path.startsWith(`${url}/`);
 }
 </script>
 
@@ -45,7 +47,11 @@ function isActiveUrl(url: string): boolean {
     <SidebarMenu>
       <template v-for="item in items" :key="item.title">
         <SidebarMenuItem v-if="!item.children?.length && item.url">
-          <RouterLink v-slot="{ href, navigate, isActive }" :to="item.url" custom>
+          <RouterLink
+            v-slot="{ href, navigate, isActive }"
+            :to="item.url"
+            custom
+          >
             <SidebarMenuButton
               as="a"
               :href="href"
@@ -80,8 +86,15 @@ function isActiveUrl(url: string): boolean {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>
-                <SidebarMenuSubItem v-for="child in item.children" :key="child.url">
-                  <RouterLink v-slot="{ href, navigate }" :to="child.url" custom>
+                <SidebarMenuSubItem
+                  v-for="child in item.children"
+                  :key="child.url"
+                >
+                  <RouterLink
+                    v-slot="{ href, navigate }"
+                    :to="child.url"
+                    custom
+                  >
                     <SidebarMenuSubButton
                       as="a"
                       :href="href"

@@ -19,7 +19,9 @@ function serializeArrayValue(
   values: string[],
   arrayFormat: 'comma' | 'repeated',
 ): string | string[] | undefined {
-  const normalizedValues = values.map((value) => value.trim()).filter(Boolean)
+  const normalizedValues = values
+    .map((value) => value.trim())
+    .filter(Boolean)
   if (!normalizedValues.length) return undefined
   return arrayFormat === 'repeated' ? normalizedValues : normalizedValues.join(',')
 }
@@ -32,7 +34,7 @@ function serializeCompactFilterValue(
   if (isDateRangeValue(value)) return undefined
 
   const stringValue = String(value).trim()
-  return stringValue || undefined
+  return stringValue ? stringValue : undefined
 }
 
 function serializeCompactSort(
@@ -42,7 +44,7 @@ function serializeCompactSort(
 
   const serializedSort = sorting
     .map((sort) => {
-      const id = sort.id.trim()
+      const id = encodeURIComponent(sort.id.trim())
       return id ? `${id}:${sort.desc ? 'desc' : 'asc'}` : null
     })
     .filter((sort): sort is string => Boolean(sort))
@@ -81,8 +83,19 @@ export function serializeRouteQuery({
         const paramBase = compactFilterParamBase(config, filter.id)
 
         if (isDateRangeValue(filter.value)) {
-          nextQuery[`${paramBase}From`] = filter.value.start || undefined
-          nextQuery[`${paramBase}To`] = filter.value.end || undefined
+          const isDateFilter = defaults.dateColumnIds?.includes(filter.id) ?? false
+
+          if (isDateFilter) {
+            nextQuery[`${paramBase}From`] = filter.value.start || undefined
+            nextQuery[`${paramBase}To`] = filter.value.end || undefined
+          } else {
+            nextQuery[paramBase] = serializeCompactFilterValue(filter.value, config.arrayFormat)
+            if (import.meta.env.DEV) {
+              console.warn(
+                `[DataTable RouteSync] Filter "${filter.id}" has a DateRangeValue but is not registered in dateColumns. Add it to dateColumns so compact From/To params can be managed correctly.`,
+              )
+            }
+          }
           return
         }
 

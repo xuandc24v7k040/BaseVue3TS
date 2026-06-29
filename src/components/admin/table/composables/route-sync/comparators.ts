@@ -26,7 +26,7 @@ export function areRouteQueriesEqual(
   currentQuery: LocationQueryRaw,
   nextQuery: LocationQueryRaw,
   config: ResolvedRouteSyncConfig,
-  defaults?: Pick<RouteSyncDefaults, 'filterIds'>,
+  defaults?: Pick<RouteSyncDefaults, 'filterIds' | 'dateColumnIds'>,
 ): boolean {
   return getSyncedRouteQueryKeys(currentQuery, nextQuery, config, defaults).every((key) =>
     areRouteQueryValuesEqual(currentQuery[key], nextQuery[key]),
@@ -45,7 +45,7 @@ export function areSortingStatesEqual(first: SortingState, second: SortingState)
 
   return first.every((sort, index) => {
     const other = second[index]
-    return Boolean(other) && sort.id === other.id && sort.desc === other.desc
+    return other ? sort.id === other.id && sort.desc === other.desc : false
   })
 }
 
@@ -55,10 +55,12 @@ export function areColumnFiltersEqual(
 ): boolean {
   if (first.length !== second.length) return false
 
-  return first.every((filter, index) => {
-    const other = second[index]
-    if (!other || filter.id !== other.id) return false
+  const secondMap = new Map(
+    second.map((filter) => [filter.id, stableStringify(filter.value)])
+  )
 
-    return stableStringify(filter.value) === stableStringify(other.value)
+  return first.every((filter) => {
+    const secondValue = secondMap.get(filter.id)
+    return secondValue !== undefined && secondValue === stableStringify(filter.value)
   })
 }

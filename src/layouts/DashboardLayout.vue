@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Building2, Check, Search } from 'lucide-vue-next'
-import { computed } from 'vue'
-import { RouterView } from 'vue-router'
-import AppSidebar from '@/components/admin/sidebar/AppSidebar.vue'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Building2, Check, Search } from "@lucide/vue";
+import { computed } from "vue";
+import { RouterView } from "vue-router";
+import AppSidebar from "@/components/admin/sidebar/AppSidebar.vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,29 +12,29 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from '@/components/ui/sidebar'
-import { useAuthStore } from '@/stores/auth.store'
-import { useBranchStore } from '@/stores/branch.store'
+} from "@/components/ui/sidebar";
+import { useAuthStore } from "@/stores/auth.store";
+import { useBranchStore } from "@/stores/branch.store";
 
-const authStore = useAuthStore()
-const branchStore = useBranchStore()
+const authStore = useAuthStore();
+const branchStore = useBranchStore();
 
-branchStore.applyAuthContext(authStore.role, authStore.branchId)
+branchStore.applyAuthContext(authStore.role, authStore.branchId);
 
 const roleLabel = computed(() => {
-  return authStore.role === 'BRANCH_ADMIN' ? 'Branch Admin' : 'Super Admin'
-})
+  return authStore.role === "BRANCH_ADMIN" ? "Branch Admin" : "Super Admin";
+});
 
 function setManagementScope(value: unknown): void {
-  if (value === 'all' || value === 'can-tho' || value === 'hau-giang') {
-    branchStore.setManagementScope(value)
+  if (value === "all" || value === "can-tho" || value === "hau-giang") {
+    branchStore.setManagementScope(value);
   }
 }
 </script>
@@ -43,9 +43,13 @@ function setManagementScope(value: unknown): void {
   <SidebarProvider class="min-h-screen bg-muted/30 text-foreground">
     <AppSidebar />
 
-    <SidebarInset>
-      <header class="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
-        <div class="grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6">
+    <SidebarInset class="min-w-0 overflow-x-hidden" style="--admin-header-height: 4rem">
+      <header
+        class="fixed left-0 right-0 top-0 z-50 h-[var(--admin-header-height)] border-b bg-background/95 backdrop-blur md:left-(--sidebar-width) md:peer-data-[state=collapsed]:left-(--sidebar-width-icon)"
+      >
+        <div
+          class="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6"
+        >
           <div class="flex min-w-0 items-center gap-3">
             <SidebarTrigger />
             <Separator orientation="vertical" class="hidden h-6 sm:block" />
@@ -56,14 +60,16 @@ function setManagementScope(value: unknown): void {
                 <Badge variant="secondary">{{ roleLabel }}</Badge>
               </div>
               <p class="hidden truncate text-sm text-muted-foreground sm:block">
-                {{ authStore.email || 'admin@bookora.local' }}
+                {{ authStore.email || "admin@bookora.local" }}
               </p>
             </div>
           </div>
 
           <div class="flex min-w-0 justify-center">
             <div class="relative w-full max-w-[560px]">
-              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search
+                class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
               <Input
                 class="h-10 rounded-xl border-border bg-background pl-9 pr-3 shadow-sm sm:pr-20"
                 placeholder="Tìm kiếm nhanh đơn hàng, khách hàng, sản phẩm,..."
@@ -79,9 +85,15 @@ function setManagementScope(value: unknown): void {
           <div class="flex justify-end">
             <DropdownMenu v-if="authStore.role === 'SUPER_ADMIN'">
               <DropdownMenuTrigger as-child>
-                <Button type="button" variant="outline" class="h-10 justify-start gap-2 rounded-xl bg-background">
+                <Button
+                  type="button"
+                  variant="outline"
+                  class="h-10 justify-start gap-2 rounded-xl bg-background"
+                >
                   <Building2 class="h-4 w-4 text-muted-foreground" />
-                  <span class="hidden text-xs text-muted-foreground md:inline">Phạm vi</span>
+                  <span class="hidden text-xs text-muted-foreground md:inline"
+                    >Phạm vi</span
+                  >
                   <span class="max-w-20 truncate font-medium sm:max-w-36">
                     {{ branchStore.scopeLabel }}
                   </span>
@@ -90,7 +102,10 @@ function setManagementScope(value: unknown): void {
               <DropdownMenuContent align="end" class="w-56">
                 <DropdownMenuLabel>Phạm vi quản lý</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem class="gap-2" @click="setManagementScope('all')">
+                <DropdownMenuItem
+                  class="gap-2"
+                  @click="setManagementScope('all')"
+                >
                   <Building2 class="h-4 w-4 text-muted-foreground" />
                   <span>Toàn hệ thống</span>
                   <Check
@@ -127,7 +142,9 @@ function setManagementScope(value: unknown): void {
         </div>
       </header>
 
-      <main class="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:py-8">
+      <main
+        class="mx-auto flex min-h-[calc(100svh-var(--admin-header-height))] w-full min-w-0 max-w-7xl flex-col overflow-x-hidden px-4 pb-6 pt-[calc(var(--admin-header-height)+1.5rem)] sm:px-6 lg:pb-8 lg:pt-[calc(var(--admin-header-height)+2rem)]"
+      >
         <RouterView />
         <footer class="mt-auto pt-8 text-sm text-muted-foreground">
           © 2025 Bookora. All rights reserved.

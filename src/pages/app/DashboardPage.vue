@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2 } from "lucide-vue-next";
+import { Loader2 } from "@lucide/vue";
 import { useMeQuery } from "@/api/queries/useMeQuery";
 import { Button } from "@/components/ui/button";
 import {

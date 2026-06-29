@@ -1,6 +1,9 @@
 import type { LocationQueryRaw } from 'vue-router'
 import type { ResolvedRouteSyncConfig, RouteSyncDefaults } from './types'
 
+/** Subset of RouteSyncDefaults needed by key-management functions. */
+type KeyDefaults = Pick<RouteSyncDefaults, 'filterIds' | 'dateColumnIds'>
+
 export function routeQueryKey(config: ResolvedRouteSyncConfig, key: string): string {
   return `${config.keyPrefix}.${key}`
 }
@@ -32,7 +35,7 @@ export function getCompactFilterIds(
 
 export function getCompactManagedKeys(
   config: ResolvedRouteSyncConfig,
-  defaults?: Pick<RouteSyncDefaults, 'filterIds'>,
+  defaults?: KeyDefaults,
 ): string[] {
   const keys = new Set<string>()
 
@@ -42,11 +45,16 @@ export function getCompactManagedKeys(
   if (config.sorting) keys.add(config.paramNames.sort)
 
   if (config.filters) {
+    const dateColumnIds = new Set(defaults?.dateColumnIds ?? [])
+
     getCompactFilterIds(config, defaults).forEach((filterId) => {
       const base = compactFilterParamBase(config, filterId)
       keys.add(base)
-      keys.add(`${base}From`)
-      keys.add(`${base}To`)
+
+      if (dateColumnIds.has(filterId)) {
+        keys.add(`${base}From`)
+        keys.add(`${base}To`)
+      }
     })
   }
 
@@ -56,7 +64,7 @@ export function getCompactManagedKeys(
 export function isTableRouteQueryKey(
   config: ResolvedRouteSyncConfig,
   key: string,
-  defaults?: Pick<RouteSyncDefaults, 'filterIds'>,
+  defaults?: KeyDefaults,
 ): boolean {
   const isNamespacedKey =
     key === routeQueryKey(config, 'page') ||
@@ -79,7 +87,7 @@ export function isTableRouteQueryKey(
 export function clearTableRouteQueryKeys(
   query: LocationQueryRaw,
   config: ResolvedRouteSyncConfig,
-  defaults?: Pick<RouteSyncDefaults, 'filterIds'>,
+  defaults?: KeyDefaults,
 ): LocationQueryRaw {
   const nextQuery: LocationQueryRaw = { ...query }
 
@@ -96,7 +104,7 @@ export function getSyncedRouteQueryKeys(
   currentQuery: LocationQueryRaw,
   nextQuery: LocationQueryRaw,
   config: ResolvedRouteSyncConfig,
-  defaults?: Pick<RouteSyncDefaults, 'filterIds'>,
+  defaults?: KeyDefaults,
 ): string[] {
   return Array.from(
     new Set(
@@ -105,4 +113,33 @@ export function getSyncedRouteQueryKeys(
       ),
     ),
   )
+}
+
+function hasMeaningfulQueryValue(value: unknown): boolean {
+  if (value === undefined || value === null || value === '') return false
+
+  if (Array.isArray(value)) {
+    return value.some((item) => item !== undefined && item !== null && item !== '')
+  }
+
+  return true
+}
+
+/**
+ * Checks whether the given route query object contains at least one
+ * key that is managed by the table's route sync configuration.
+ *
+ * Used during initial mount and route watcher to decide whether URL
+ * changes are relevant to the table's state.
+ */
+export function hasManagedRouteQuery(
+  routeQuery: Record<string, unknown>,
+  config: ResolvedRouteSyncConfig,
+  defaults?: KeyDefaults,
+): boolean {
+  return Object.keys(routeQuery).some((key) => {
+    const value = routeQuery[key]
+    if (!hasMeaningfulQueryValue(value)) return false
+    return isTableRouteQueryKey(config, key, defaults)
+  })
 }

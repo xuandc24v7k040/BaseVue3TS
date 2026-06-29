@@ -10,6 +10,7 @@ export {
   compactFilterParamBase,
   getCompactFilterIds,
   getCompactManagedKeys,
+  hasManagedRouteQuery,
 } from './keys'
 export {
   areColumnFiltersEqual,

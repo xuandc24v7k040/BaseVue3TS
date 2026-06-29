@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { LogOut, UserRound } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar'
+import { LogOut, UserRound } from "@lucide/vue";
+import { useRouter } from "vue-router";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,30 +9,30 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar'
-import { useAuthStore } from '@/stores/auth.store'
+} from "@/components/ui/sidebar";
+import { useAuthStore } from "@/stores/auth.store";
 
 defineProps<{
   user: {
-    name: string
-    email: string
-    avatar: string
-  }
-}>()
+    name: string;
+    email: string;
+    avatar: string;
+  };
+}>();
 
-const authStore = useAuthStore()
-const router = useRouter()
-const { isMobile } = useSidebar()
+const authStore = useAuthStore();
+const router = useRouter();
+const { isMobile } = useSidebar();
 
 async function logout(): Promise<void> {
-  authStore.logout()
-  await router.replace({ name: 'admin-login' })
+  authStore.logout();
+  await router.replace({ name: "admin-login" });
 }
 </script>
 
@@ -70,7 +66,9 @@ async function logout(): Promise<void> {
           <DropdownMenuLabel class="p-0 font-normal">
             <div class="grid gap-1 px-2 py-1.5 text-sm">
               <span class="font-medium">{{ user.name }}</span>
-              <span class="text-xs text-muted-foreground">{{ user.email }}</span>
+              <span class="text-xs text-muted-foreground">{{
+                user.email
+              }}</span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

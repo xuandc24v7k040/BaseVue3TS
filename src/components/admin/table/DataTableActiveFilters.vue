@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="TData">
 import { computed, type Component } from 'vue'
 import type { Column, ColumnFilter, Table } from '@tanstack/vue-table'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type {
@@ -72,7 +72,7 @@ const activeFilters = computed<ActiveFilter[]>(() => {
     const columnConfig = columnConfigMap.value.get(filter.id)
     const valueLabel = getFilterLabel(filter, columnConfig, column)
 
-    if (!valueLabel) return
+    if (valueLabel === null) return
 
     filters.push({
       id: filter.id,
@@ -94,12 +94,25 @@ const activeFilters = computed<ActiveFilter[]>(() => {
     })
   })
 
-  return filters
+  const seen = new Set<string>()
+  return filters.filter((filter) => {
+    const key = `${filter.type}-${filter.id}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 })
 
 function getGlobalFilterText(): string {
   const value = props.table.getState().globalFilter
-  return typeof value === 'string' ? value : ''
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function isEmptyFilterValue(value: unknown): boolean {
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string') return value.trim() === ''
+  if (Array.isArray(value)) return value.length === 0
+  return false
 }
 
 function getFilterTitle(
@@ -117,27 +130,43 @@ function getFilterLabel(
   column: Column<TData, unknown> | undefined,
 ): string | null {
   if (columnConfig?.type === 'search') {
-    return (
-      columnConfig.config.getLabel?.(filter.value) ?? (filter.value ? String(filter.value) : null)
-    )
+    if (isEmptyFilterValue(filter.value)) return null
+    return columnConfig.config.getLabel?.(filter.value) ?? String(filter.value)
   }
 
   if (columnConfig?.type === 'filter') {
+    if (isEmptyFilterValue(filter.value)) return null
+
     if (columnConfig.config.getLabel) {
       return columnConfig.config.getLabel(filter.value, columnConfig.config.options)
     }
-    return getOptionLabels(filter.value, columnConfig.config.options) || null
+
+    return getOptionLabels(filter.value, columnConfig.config.options) || String(filter.value)
   }
 
   if (columnConfig?.type === 'date') {
     if (columnConfig.config.getLabel) return columnConfig.config.getLabel(filter.value)
-    return formatDateRangeValue(filter.value)
+    const formatted = formatDateRangeValue(
+      filter.value,
+      columnConfig.config.locale ?? 'vi-VN',
+      columnConfig.config.dateStyle ?? 'medium',
+      columnConfig.config.mode ?? 'range',
+      columnConfig.config.dateFormatPattern,
+    )
+    if (formatted) return formatted
+    if (typeof filter.value === 'object' && filter.value !== null) {
+      const obj = filter.value as Record<string, unknown>
+      if ('start' in obj || 'end' in obj) {
+        return 'Giá trị ngày không hợp lệ'
+      }
+    }
+    return String(filter.value)
   }
 
   const metaOptions = column?.columnDef.meta?.options as DataTableFilterOption[] | undefined
-  if (metaOptions?.length) return getOptionLabels(filter.value, metaOptions) || null
+  if (metaOptions?.length) return getOptionLabels(filter.value, metaOptions) || String(filter.value)
 
-  return filter.value ? String(filter.value) : null
+  return isEmptyFilterValue(filter.value) ? null : String(filter.value)
 }
 
 function removeFilter(filter: ActiveFilter) {
@@ -156,10 +185,19 @@ function removeFilter(filter: ActiveFilter) {
   column?.setFilterValue(undefined)
 }
 
+// NOTE: "Xóa tất cả" clears both filters and sorting to restore default table controls.
+// Since sorting chips also appear in the active filters bar, resetting both provides
+// a consistent user experience.
 function resetFilters() {
-  props.table.resetColumnFilters()
-  props.table.resetSorting()
-  props.table.setGlobalFilter('')
+  if (props.table.options.meta?.resetTableControls) {
+    props.table.options.meta.resetTableControls()
+  } else if (props.table.options.meta?.resetFilters) {
+    props.table.options.meta.resetFilters()
+  } else {
+    props.table.resetColumnFilters()
+    props.table.resetSorting()
+    props.table.setGlobalFilter('')
+  }
 }
 </script>
 
@@ -172,20 +210,20 @@ function resetFilters() {
   >
     <Badge
       v-for="filter in activeFilters"
-      :key="`${filter.type}-${filter.id}-${filter.value}`"
+      :key="`${filter.type}-${filter.id}`"
       variant="outline"
-      class="max-w-full gap-1.5 rounded-md border-dashed px-2 py-1 text-sm font-normal"
+      class="min-h-7 max-w-full items-center gap-1.5 overflow-hidden rounded-md border-border/70 bg-background/80 px-2 py-1 text-xs font-normal shadow-xs"
     >
-      <span class="text-muted-foreground">{{ filter.label }}</span>
-      <span class="h-3 w-px bg-border" />
-      <span class="max-w-55 truncate text-foreground">{{ filter.value }}</span>
+      <span class="min-w-0 max-w-36 shrink truncate text-muted-foreground">{{ filter.label }}</span>
+      <span class="h-3.5 w-px shrink-0 bg-border" />
+      <span class="min-w-0 max-w-60 truncate font-medium text-foreground">{{ filter.value }}</span>
       <button
         type="button"
         :aria-label="`Xóa điều kiện ${filter.label}`"
-        class="rounded-full p-0.5 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+        class="ml-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
         @click="removeFilter(filter)"
       >
-        <X class="h-3 w-3 text-muted-foreground" />
+        <X class="h-3.5 w-3.5" />
       </button>
     </Badge>
 
@@ -193,10 +231,10 @@ function resetFilters() {
       key="clear-all"
       variant="ghost"
       size="sm"
-      class="h-8 px-2 text-destructive hover:text-destructive"
+      class="h-auto min-h-8 max-w-full justify-start whitespace-normal px-2 text-left text-destructive hover:text-destructive"
       @click="resetFilters"
     >
-      Xóa tất cả điều kiện
+      Xóa tất cả bộ lọc và sắp xếp
     </Button>
   </TransitionGroup>
 </template>
