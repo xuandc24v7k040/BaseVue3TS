@@ -1,0 +1,51 @@
+diff --git a/node_modules/@orval/zod/dist/index.mjs b/node_modules/@orval/zod/dist/index.mjs
+index 574b26a..c2a5fc8 100644
+--- a/node_modules/@orval/zod/dist/index.mjs
++++ b/node_modules/@orval/zod/dist/index.mjs
+@@ -69,7 +69,8 @@ const predefinedZodFormats = new Set([
+ 	"email",
+ 	"uri",
+ 	"hostname",
+-	"uuid"
++	"uuid",
++	"ulid"
+ ]);
+ const resolveZodType = (schema) => {
+ 	const schemaTypeValue = schema.type;
+@@ -219,6 +220,7 @@ const generateZodValidationSchemaDefinition = (schema, context, name, strict, is
+ 	const multipleOf = schema.multipleOf;
+ 	const matches = schema.pattern ?? void 0;
+ 	const hasNonArrayEnum = !!schema.enum && type !== "array";
++	const shouldUseNativeUlid = isZodV4 && type === "string" && schema.format === "ulid";
+ 	let skipSwitchStatement = false;
+ 	if (schema.allOf || schema.oneOf || schema.anyOf) {
+ 		const separator = schema.allOf ? "allOf" : schema.oneOf ? "oneOf" : "anyOf";
+@@ -402,6 +404,10 @@ const generateZodValidationSchemaDefinition = (schema, context, name, strict, is
+ 				functions.push(["uuid", void 0]);
+ 				break;
+ 			}
++			if (schema.format === "ulid") {
++				functions.push(["ulid", void 0]);
++				break;
++			}
+ 			break;
+ 		default: {
+ 			const hasProperties = !!schema.properties;
+@@ -442,7 +448,7 @@ const generateZodValidationSchemaDefinition = (schema, context, name, strict, is
+ 			break;
+ 		}
+ 	}
+-	if (!hasNonArrayEnum && isString(type) && minAndMaxTypes.has(type)) {
++	if (!shouldUseNativeUlid && !hasNonArrayEnum && isString(type) && minAndMaxTypes.has(type)) {
+ 		const shouldUseExclusiveMin = exclusiveMinRaw !== void 0;
+ 		const shouldUseExclusiveMax = exclusiveMaxRaw !== void 0;
+ 		if (shouldUseExclusiveMin && exclusiveMin !== void 0) {
+@@ -467,7 +473,7 @@ const generateZodValidationSchemaDefinition = (schema, context, name, strict, is
+ 		if (exclusiveMin !== void 0 || min !== void 0 || exclusiveMax !== void 0 || multipleOf !== void 0 || max !== void 0) consts.push(`\n`);
+ 	}
+ 	const stringFormatAlreadyEmitted = isZodV4 && type === "string" && !!matches && !!schema.format && !predefinedZodFormats.has(schema.format ?? "");
+-	if (matches && !hasNonArrayEnum && type === "string" && !stringFormatAlreadyEmitted) {
++	if (matches && !shouldUseNativeUlid && !hasNonArrayEnum && type === "string" && !stringFormatAlreadyEmitted) {
+ 		const isStartWithSlash = matches.startsWith("/");
+ 		const isEndWithSlash = matches.endsWith("/");
+ 		const regexp = `new RegExp('${jsStringLiteralEscape(matches.slice(isStartWithSlash ? 1 : 0, isEndWithSlash ? -1 : void 0))}')`;
