@@ -1,46 +1,40 @@
-import axios from "axios";
+import { AxiosHeaders } from 'axios'
 import type {
   AxiosError,
   AxiosRequestConfig,
   AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
+  RawAxiosHeaders,
+} from 'axios'
+import { apiClient } from './http/client'
 
-const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
-
-const axiosInstance = axios.create({
-  baseURL: apiUrl,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-function attachAuthToken(
-  config: InternalAxiosRequestConfig,
-): InternalAxiosRequestConfig {
-  const token = localStorage.getItem("access_token");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
+function toAxiosHeaders(headers: AxiosRequestConfig['headers']): AxiosHeaders {
+  return AxiosHeaders.from(headers as AxiosHeaders | RawAxiosHeaders | undefined)
 }
 
-axiosInstance.interceptors.request.use(attachAuthToken);
+function mergeRequestConfig(
+  config: AxiosRequestConfig,
+  options?: AxiosRequestConfig,
+): AxiosRequestConfig {
+  if (!options) {
+    return config
+  }
+
+  return {
+    ...config,
+    ...options,
+    headers: AxiosHeaders.concat(toAxiosHeaders(config.headers), toAxiosHeaders(options.headers)),
+  }
+}
 
 export async function customInstance<T>(
   config: AxiosRequestConfig,
   options?: AxiosRequestConfig,
 ): Promise<T> {
-  const response = await axiosInstance.request<T>({
-    ...config,
-    ...options,
-  });
+  const response = await apiClient.request<T>(mergeRequestConfig(config, options))
 
-  return response.data;
+  return response.data
 }
 
-export type ErrorType<Error> = AxiosError<Error>;
-export type BodyType<BodyData> = BodyData;
-export type ResponseType<ResponseData> = AxiosResponse<ResponseData>;
+export type ErrorType<Error> = AxiosError<Error>
+export type BodyType<BodyData> = BodyData
+export type ResponseType<ResponseData> = AxiosResponse<ResponseData>

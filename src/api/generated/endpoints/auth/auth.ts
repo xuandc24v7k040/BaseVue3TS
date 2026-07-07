@@ -453,7 +453,7 @@ export const authGoogle = (
 ) => {
 
 
-      return customInstance<unknown>(
+      return customInstance<void>(
       {url: `/auth/google`, method: 'GET', signal
     },
       options);
@@ -469,7 +469,7 @@ export const getAuthGoogleQueryKey = () => {
     }
 
 
-export const getAuthGoogleQueryOptions = <TData = Awaited<ReturnType<typeof authGoogle>>, TError = ErrorType<void | ErrorResponseDto>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGoogle>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getAuthGoogleQueryOptions = <TData = Awaited<ReturnType<typeof authGoogle>>, TError = ErrorType<ErrorResponseDto>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGoogle>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -488,14 +488,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type AuthGoogleQueryResult = NonNullable<Awaited<ReturnType<typeof authGoogle>>>
-export type AuthGoogleQueryError = ErrorType<void | ErrorResponseDto>
+export type AuthGoogleQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary Đăng nhập bằng Google
  */
 
-export function useAuthGoogle<TData = Awaited<ReturnType<typeof authGoogle>>, TError = ErrorType<void | ErrorResponseDto>>(
+export function useAuthGoogle<TData = Awaited<ReturnType<typeof authGoogle>>, TError = ErrorType<ErrorResponseDto>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGoogle>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -524,7 +524,7 @@ export const authGoogleCallback = (
 ) => {
       params = unref(params);
 
-      return customInstance<unknown>(
+      return customInstance<void>(
       {url: `/auth/google/callback`, method: 'GET',
         params: unref(params), signal
     },
@@ -541,7 +541,7 @@ export const getAuthGoogleCallbackQueryKey = (params?: MaybeRef<AuthGoogleCallba
     }
 
 
-export const getAuthGoogleCallbackQueryOptions = <TData = Awaited<ReturnType<typeof authGoogleCallback>>, TError = ErrorType<void | ErrorResponseDto>>(params: MaybeRef<AuthGoogleCallbackParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGoogleCallback>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getAuthGoogleCallbackQueryOptions = <TData = Awaited<ReturnType<typeof authGoogleCallback>>, TError = ErrorType<ErrorResponseDto>>(params: MaybeRef<AuthGoogleCallbackParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGoogleCallback>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -560,14 +560,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type AuthGoogleCallbackQueryResult = NonNullable<Awaited<ReturnType<typeof authGoogleCallback>>>
-export type AuthGoogleCallbackQueryError = ErrorType<void | ErrorResponseDto>
+export type AuthGoogleCallbackQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary Xử lý callback Google
  */
 
-export function useAuthGoogleCallback<TData = Awaited<ReturnType<typeof authGoogleCallback>>, TError = ErrorType<void | ErrorResponseDto>>(
+export function useAuthGoogleCallback<TData = Awaited<ReturnType<typeof authGoogleCallback>>, TError = ErrorType<ErrorResponseDto>>(
  params: MaybeRef<AuthGoogleCallbackParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authGoogleCallback>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

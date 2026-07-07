@@ -9,5 +9,5 @@ export const envSchema = z
   })
   .transform((env) => ({
     ...env,
-    VITE_API_BASE_URL: env.VITE_API_BASE_URL ?? `${env.VITE_API_URL}/api`,
+    VITE_API_BASE_URL: env.VITE_API_BASE_URL ?? `${env.VITE_API_URL}/api/v1`,
   }))

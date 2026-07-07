@@ -15,7 +15,7 @@ app.use(pinia)
 app.use(router)
 app.use(VueQueryPlugin, { queryClient })
 
-setupApiInterceptors(pinia)
+setupApiInterceptors(pinia, { queryClient })
 
 useThemeStore(pinia).initTheme()
 

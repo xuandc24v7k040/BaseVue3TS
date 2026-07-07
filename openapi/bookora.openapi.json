@@ -43,6 +43,26 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "Kiểm tra trạng thái ứng dụng",
@@ -50,7 +70,11 @@
           "health"
         ],
         "description": "Kiểm tra trạng thái ứng dụng",
-        "security": []
+        "security": [
+          {
+            "accessToken": []
+          }
+        ]
       }
     },
     "/users": {
@@ -5024,6 +5048,26 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
           }
         },
         "summary": "Tạo CSRF token",
@@ -5031,7 +5075,11 @@
           "auth"
         ],
         "description": "Tạo CSRF token",
-        "security": []
+        "security": [
+          {
+            "accessToken": []
+          }
+        ]
       }
     },
     "/auth/google": {
@@ -5039,11 +5087,31 @@
         "operationId": "authGoogle",
         "parameters": [],
         "responses": {
-          "302": {
-            "description": "Chuyển hướng sang Google OAuth và set cookie oauthState đã ký."
+          "200": {
+            "description": ""
           },
           "400": {
             "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5058,7 +5126,11 @@
           "auth"
         ],
         "description": "Đăng nhập bằng Google",
-        "security": []
+        "security": [
+          {
+            "accessToken": []
+          }
+        ]
       }
     },
     "/auth/google/callback": {
@@ -5075,11 +5147,31 @@
           }
         ],
         "responses": {
-          "302": {
-            "description": "Chuyển hướng về frontend sau khi xác thực Google thành công hoặc thất bại."
+          "200": {
+            "description": ""
           },
           "400": {
             "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5094,7 +5186,11 @@
           "auth"
         ],
         "description": "Xử lý callback Google",
-        "security": []
+        "security": [
+          {
+            "accessToken": []
+          }
+        ]
       }
     }
   },
@@ -6481,7 +6577,7 @@
           },
           "code": {
             "type": "string",
-            "example": "VALIDATION_ERROR"
+            "example": "CSRF_INVALID"
           },
           "errors": {
             "type": "array",
