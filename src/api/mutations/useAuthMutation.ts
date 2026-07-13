@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRoute, useRouter } from 'vue-router'
-import { authKeys } from '@/api/keys/auth.key'
-import { authApi } from '@/api/modules/auth.api'
+import { clearCsrfToken } from '@/api/http/csrf-manager'
+import { clearAuthSensitiveQueries, syncAuthMeQuery } from '@/api/query-cache'
+import { dashboardRouteForUserType, safeRedirectForUser } from '@/router'
 import { useAuthStore } from '@/stores/auth.store'
 import type { LoginRequest } from '@/types/auth.type'
 
@@ -12,13 +13,13 @@ export function useLoginMutation() {
   const router = useRouter()
 
   return useMutation({
-    mutationFn: (payload: LoginRequest) => authApi.login(payload),
-    onSuccess: async (data) => {
-      authStore.setAuthenticated(data.user)
-      queryClient.setQueryData(authKeys.me, data.user)
-
-      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
-      await router.replace(redirect ?? { name: 'dashboard' })
+    mutationFn: (payload: LoginRequest) => authStore.login(payload),
+    onSuccess: async (user) => {
+      syncAuthMeQuery(queryClient, user)
+      await router.replace(
+        safeRedirectForUser(router, route.query.redirect, user.type)
+          ?? dashboardRouteForUserType(user.type),
+      )
     },
   })
 }
@@ -29,11 +30,12 @@ export function useLogoutMutation() {
   const router = useRouter()
 
   return useMutation({
-    mutationFn: authApi.logout,
-    onSettled: async () => {
-      authStore.setUnauthenticated()
-      queryClient.clear()
-      await router.replace({ name: 'login' })
+    mutationFn: () => authStore.logout(),
+    onSuccess: async (result) => {
+      if (!result.confirmed) return
+      clearAuthSensitiveQueries(queryClient)
+      clearCsrfToken()
+      await router.replace({ name: 'admin-login' })
     },
   })
 }

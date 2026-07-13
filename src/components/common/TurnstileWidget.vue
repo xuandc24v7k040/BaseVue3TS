@@ -13,6 +13,7 @@ interface TurnstileRenderOptions {
   sitekey: string;
   theme: "light" | "dark" | "auto";
   size: "normal" | "compact" | "flexible";
+  action?: string;
   callback: (token: string) => void;
   "expired-callback": () => void;
   "error-callback": () => void;
@@ -41,10 +42,12 @@ const props = withDefaults(
   defineProps<{
     siteKey?: string;
     disabled?: boolean;
+    action?: string;
   }>(),
   {
     siteKey: undefined,
     disabled: false,
+    action: undefined,
   },
 );
 
@@ -151,6 +154,7 @@ async function renderWidget(): Promise<void> {
       sitekey: resolvedSiteKey.value,
       theme: "light",
       size: widgetSize.value,
+      action: props.action,
       callback: (token) => emit("verified", token),
       "expired-callback": () => {
         emit("expired");

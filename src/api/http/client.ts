@@ -9,7 +9,7 @@ import type {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios'
-import type { CsrfTokenResponseDto } from '@/api/generated/models'
+import type { AuthCsrfToken200 } from '@/api/generated/models'
 import { env } from '@/lib/env'
 import { clearCsrfToken, configureCsrfTokenFetcher, getCsrfToken } from './csrf-manager'
 import { configureRefreshSession, refreshSession, resetRefreshSessionForTest } from './refresh-manager'
@@ -149,11 +149,11 @@ async function handleAuthError(error: AxiosError): Promise<AxiosResponse> {
 
 function createCsrfTokenRequest(): Promise<string> {
   return apiClient
-    .get<CsrfTokenResponseDto>('/auth/csrf-token', {
+    .get<AuthCsrfToken200>('/auth/csrf-token', {
       skipCsrf: true,
       skipAuthRefresh: true,
     })
-    .then((response) => response.data.csrfToken)
+    .then((response) => response.data.data.csrfToken)
 }
 
 function createRefreshSessionRequest(): Promise<void> {
@@ -211,4 +211,3 @@ export function resetHttpClientForTest(adapter?: AxiosAdapter): void {
 }
 
 setupHttpClient()
-

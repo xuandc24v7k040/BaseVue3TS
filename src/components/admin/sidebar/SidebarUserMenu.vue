@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { LogOut, UserRound } from "@lucide/vue";
-import { useRouter } from "vue-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,7 +15,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuthStore } from "@/stores/auth.store";
+import { useAuthLogout } from "@/composables/use-auth-logout";
 
 defineProps<{
   user: {
@@ -26,14 +25,8 @@ defineProps<{
   };
 }>();
 
-const authStore = useAuthStore();
-const router = useRouter();
 const { isMobile } = useSidebar();
-
-async function logout(): Promise<void> {
-  authStore.logout();
-  await router.replace({ name: "admin-login" });
-}
+const { isLoggingOut, logout } = useAuthLogout();
 </script>
 
 <template>
@@ -72,9 +65,9 @@ async function logout(): Promise<void> {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem @click="logout">
+          <DropdownMenuItem :disabled="isLoggingOut" @click="logout">
             <LogOut class="size-4" />
-            Đăng xuất
+            {{ isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất" }}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

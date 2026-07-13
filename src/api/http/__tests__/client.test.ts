@@ -7,6 +7,7 @@ import type {
 } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { healthGetHealth } from '@/api/generated/endpoints/health/health'
+import { authLogin, authMe } from '@/api/generated/endpoints/auth/auth'
 import { apiClient, getHttpInterceptorStatus, resetHttpClientForTest, setupHttpClient } from '@/api/http/client'
 import { clearCsrfToken, getCachedCsrfTokenForTest } from '@/api/http/csrf-manager'
 import { toBookoraApiError } from '@/api/http/errors'
@@ -25,6 +26,17 @@ function successResponse<T>(
     headers: {},
     config,
   }
+}
+
+function csrfSuccessResponse(
+  config: InternalAxiosRequestConfig,
+  token = CSRF_TOKEN,
+): AxiosResponse {
+  return successResponse(config, {
+    statusCode: 200,
+    message: 'ok',
+    data: { csrfToken: token },
+  })
 }
 
 function rejectResponse(
@@ -153,6 +165,43 @@ describe('shared HTTP boundary', () => {
 })
 
 describe('CSRF infrastructure', () => {
+  it('unwraps the CSRF envelope before sending a generated login request', async () => {
+    const seenRequests: InternalAxiosRequestConfig[] = []
+    const adapter: AxiosAdapter = async (config) => {
+      seenRequests.push(config)
+
+      if (config.url === '/auth/csrf-token') {
+        return csrfSuccessResponse(config)
+      }
+
+      return successResponse(config, {
+        statusCode: 200,
+        message: 'ok',
+        data: {
+          id: '01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T',
+          email: 'admin@example.com',
+          fullName: 'Admin',
+          type: 'SYSTEM',
+        },
+      })
+    }
+
+    resetHttpClientForTest(adapter)
+    setupHttpClient()
+
+    await authLogin({
+      email: 'admin@example.com',
+      password: 'Password1',
+    })
+
+    expect(seenRequests.map((request) => request.url)).toEqual([
+      '/auth/csrf-token',
+      '/auth/login',
+    ])
+    expect(getHeader(seenRequests[1], 'X-CSRF-Token')).toBe(CSRF_TOKEN)
+    expect(seenRequests[1]?.withCredentials).toBe(true)
+  })
+
   it('does not fetch or attach CSRF for GET requests', async () => {
     const seenRequests: InternalAxiosRequestConfig[] = []
     const adapter: AxiosAdapter = async (config) => {
@@ -177,7 +226,7 @@ describe('CSRF infrastructure', () => {
         seenRequests.push(config)
 
         if (config.url === '/auth/csrf-token') {
-          return successResponse(config, { csrfToken: CSRF_TOKEN })
+          return csrfSuccessResponse(config)
         }
 
         return successResponse(config, {})
@@ -204,7 +253,7 @@ describe('CSRF infrastructure', () => {
     const adapter: AxiosAdapter = async (config) => {
       if (config.url === '/auth/csrf-token') {
         csrfCount += 1
-        return successResponse(config, { csrfToken: CSRF_TOKEN })
+        return csrfSuccessResponse(config)
       }
 
       return successResponse(config, {})
@@ -233,7 +282,7 @@ describe('CSRF infrastructure', () => {
           return rejectResponse(config, 500, { message: 'csrf failed' })
         }
 
-        return successResponse(config, { csrfToken: CSRF_TOKEN })
+        return csrfSuccessResponse(config)
       }
 
       mutationCount += 1
@@ -263,7 +312,7 @@ describe('CSRF infrastructure', () => {
       if (config.url === '/auth/csrf-token') {
         const token = csrfTokens[csrfCount] ?? CSRF_TOKEN
         csrfCount += 1
-        return successResponse(config, { csrfToken: token })
+        return csrfSuccessResponse(config, token)
       }
 
       return successResponse(config, {})
@@ -289,6 +338,82 @@ describe('CSRF infrastructure', () => {
 })
 
 describe('refresh infrastructure', () => {
+  it('does not refresh a silent login-page /auth/me check', async () => {
+    let meCount = 0
+    let refreshCount = 0
+    const adapter: AxiosAdapter = async (config) => {
+      if (config.url === '/auth/me') {
+        meCount += 1
+        return rejectResponse(config, 401, {
+          statusCode: 401,
+          message: 'anonymous',
+        })
+      }
+
+      if (config.url === '/auth/refresh') {
+        refreshCount += 1
+      }
+
+      return successResponse(config, {})
+    }
+
+    resetHttpClientForTest(adapter)
+    setupHttpClient()
+
+    await expect(
+      authMe({ skipAuthRefresh: true }),
+    ).rejects.toBeInstanceOf(AxiosError)
+    expect(meCount).toBe(1)
+    expect(refreshCount).toBe(0)
+  })
+
+  it('still refreshes a protected /auth/me request', async () => {
+    let meCount = 0
+    let refreshCount = 0
+    const adapter: AxiosAdapter = async (config) => {
+      if (config.url === '/auth/csrf-token') {
+        return csrfSuccessResponse(config)
+      }
+
+      if (config.url === '/auth/refresh') {
+        refreshCount += 1
+        return successResponse(config, {
+          statusCode: 200,
+          message: 'refreshed',
+          data: null,
+        })
+      }
+
+      if (config.url === '/auth/me') {
+        meCount += 1
+
+        if (meCount === 1) {
+          return rejectResponse(config, 401, {
+            statusCode: 401,
+            message: 'expired',
+          })
+        }
+
+        return successResponse(config, {
+          statusCode: 200,
+          message: 'ok',
+          data: { id: 'user-1' },
+        })
+      }
+
+      return successResponse(config, {})
+    }
+
+    resetHttpClientForTest(adapter)
+    setupHttpClient()
+
+    await expect(authMe()).resolves.toMatchObject({
+      data: { id: 'user-1' },
+    })
+    expect(meCount).toBe(2)
+    expect(refreshCount).toBe(1)
+  })
+
   it('single-flights concurrent refresh and retries each original request once', async () => {
     let csrfCount = 0
     let refreshCount = 0
@@ -296,7 +421,7 @@ describe('refresh infrastructure', () => {
     const adapter: AxiosAdapter = async (config) => {
       if (config.url === '/auth/csrf-token') {
         csrfCount += 1
-        return successResponse(config, { csrfToken: CSRF_TOKEN })
+        return csrfSuccessResponse(config)
       }
 
       if (config.url === '/auth/refresh') {
@@ -337,7 +462,7 @@ describe('refresh infrastructure', () => {
     let protectedCount = 0
     const adapter: AxiosAdapter = async (config) => {
       if (config.url === '/auth/csrf-token') {
-        return successResponse(config, { csrfToken: CSRF_TOKEN })
+        return csrfSuccessResponse(config)
       }
 
       if (config.url === '/auth/refresh') {
@@ -364,7 +489,7 @@ describe('refresh infrastructure', () => {
     const onSessionExpired = vi.fn()
     const adapter: AxiosAdapter = async (config) => {
       if (config.url === '/auth/csrf-token') {
-        return successResponse(config, { csrfToken: CSRF_TOKEN })
+        return csrfSuccessResponse(config)
       }
 
       if (config.url === '/auth/refresh') {
@@ -422,7 +547,7 @@ describe('refresh infrastructure', () => {
     let refreshCount = 0
     const adapter: AxiosAdapter = async (config) => {
       if (config.url === '/auth/csrf-token') {
-        return successResponse(config, { csrfToken: CSRF_TOKEN })
+        return csrfSuccessResponse(config)
       }
 
       if (config.url === '/auth/refresh') {

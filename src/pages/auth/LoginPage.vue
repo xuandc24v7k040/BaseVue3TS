@@ -5,9 +5,59 @@ import {
   CheckCircle2,
   ClipboardList,
 } from "@lucide/vue";
+import axios from "axios";
+import { onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import logoUrl from "@/assets/logo.png";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import LoginForm from "@/pages/auth/components/LoginForm.vue";
+import {
+  clearSessionHint,
+  hasSessionHint,
+} from "@/features/auth/session-hint";
+import { dashboardRouteForUserType } from "@/router";
+import { useAuthStore } from "@/stores/auth.store";
+
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+const isCheckingSession = ref(
+  authStore.status === "authenticated" ||
+    (authStore.status === "unknown" && hasSessionHint()),
+);
+let hasStartedSessionCheck = false;
+
+async function checkExistingSession(): Promise<void> {
+  if (hasStartedSessionCheck) return;
+  hasStartedSessionCheck = true;
+
+  try {
+    if (authStore.status === "unknown" && hasSessionHint()) {
+      await authStore.refreshCurrentUser({ skipAuthRefresh: true });
+    }
+
+    if (
+      route.name === "admin-login" &&
+      authStore.status === "authenticated" &&
+      authStore.user
+    ) {
+      await router.replace(dashboardRouteForUserType(authStore.user.type));
+    }
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      clearSessionHint();
+    }
+  } finally {
+    if (route.name === "admin-login") {
+      isCheckingSession.value = false;
+    }
+  }
+}
+
+onMounted(() => {
+  void checkExistingSession();
+});
 
 const highlights = [
   "Quản lý chi nhánh Cần Thơ và Hậu Giang",
@@ -18,7 +68,7 @@ const highlights = [
 const demoStats = [
   { label: "2 chi nhánh", icon: Building2 },
   { label: "316 đơn hàng mới", icon: ClipboardList },
-  { label: "128M doanh thu demo", icon: ChartNoAxesCombined },
+  { label: "128M doanh thu", icon: ChartNoAxesCombined },
 ];
 </script>
 
@@ -34,7 +84,26 @@ const demoStats = [
       <div class="flex min-h-0 flex-1 items-center justify-center">
         <Card class="w-full max-w-md rounded-3xl border-border/70 shadow-sm">
           <CardContent class="p-5 sm:p-6">
-            <LoginForm />
+            <div
+              v-if="isCheckingSession"
+              class="space-y-5"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div class="space-y-2">
+                <Skeleton class="h-7 w-52" />
+                <Skeleton class="h-4 w-full" />
+              </div>
+              <div class="space-y-3">
+                <Skeleton class="h-9 w-full" />
+                <Skeleton class="h-9 w-full" />
+                <Skeleton class="h-9 w-full" />
+              </div>
+              <p class="text-center text-sm text-muted-foreground">
+                Đang kiểm tra phiên đăng nhập...
+              </p>
+            </div>
+            <LoginForm v-else />
           </CardContent>
         </Card>
       </div>

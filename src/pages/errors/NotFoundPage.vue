@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
       <h1 class="mt-2 text-3xl font-bold tracking-tight">Không tìm thấy trang</h1>
       <p class="mt-3 text-muted-foreground">Đường dẫn bạn yêu cầu không tồn tại.</p>
       <Button as-child class="mt-6">
-        <RouterLink :to="{ name: 'home' }">Về trang chủ</RouterLink>
+        <RouterLink :to="{ name: 'client-home' }">Về trang chủ</RouterLink>
       </Button>
     </section>
   </main>

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { authKeys } from '@/api/keys/auth.key'
-import { authApi } from '@/api/modules/auth.api'
+import { fetchCurrentUser } from '@/api/modules/auth.api'
 import { useAuthStore } from '@/stores/auth.store'
 
 export function useMeQuery() {
@@ -9,7 +9,7 @@ export function useMeQuery() {
 
   return useQuery({
     queryKey: authKeys.me,
-    queryFn: authApi.me,
+    queryFn: () => fetchCurrentUser(),
     enabled: computed(() => authStore.isAuthenticated),
   })
 }

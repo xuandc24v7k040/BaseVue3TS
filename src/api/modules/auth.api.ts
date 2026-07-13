@@ -1,58 +1,55 @@
-import { loginSchema } from '@/schemas/auth.schema'
-import type { LoginRequest, LoginResponse, User } from '@/types/auth.type'
+import {
+  authLogin,
+  authLogout,
+  authMe,
+  authRegister,
+} from '@/api/generated/endpoints/auth/auth'
+import type {
+  AuthMeResponseDto,
+  AuthMutationResponseDto,
+  LoginDto,
+  PublicAuthUserResponseDto,
+  RegisterDto,
+} from '@/api/generated/models'
+import type { AxiosRequestConfig } from 'axios'
+import { getCsrfToken } from '@/api/http/csrf-manager'
 
-export const MOCK_AUTH_ACCOUNT = {
-  email: 'student@example.com',
-  password: '123456',
-} as const
+export type FetchCurrentUserOptions = Pick<
+  AxiosRequestConfig,
+  'skipAuthRefresh'
+>
 
-const mockUser: User = {
-  id: 'mock-user-1',
-  email: MOCK_AUTH_ACCOUNT.email,
-  name: 'Sinh viên Demo',
-  role: 'SUPER_ADMIN',
-  branchId: null,
-  branchName: null,
-  scopes: ['all', 'can-tho', 'hau-giang'],
-  avatarUrl: null,
+export async function loginWithPassword(
+  payload: LoginDto,
+): Promise<PublicAuthUserResponseDto> {
+  await getCsrfToken()
+  const response = await authLogin(payload)
+  return response.data
 }
 
-let mockAuthenticated = false
+export async function registerCustomer(
+  payload: RegisterDto,
+): Promise<PublicAuthUserResponseDto> {
+  await getCsrfToken()
+  const response = await authRegister(payload)
+  return response.data
+}
+
+export async function fetchCurrentUser(
+  options?: FetchCurrentUserOptions,
+): Promise<AuthMeResponseDto> {
+  const response = await authMe(options)
+  return response.data
+}
+
+export async function logoutCurrentAccount(): Promise<AuthMutationResponseDto> {
+  const response = await authLogout()
+  return response.data
+}
 
 export const authApi = {
-  async login(payload: LoginRequest): Promise<LoginResponse> {
-    const validatedPayload = loginSchema.parse(payload)
-
-    if (
-      validatedPayload.email !== MOCK_AUTH_ACCOUNT.email ||
-      validatedPayload.password !== MOCK_AUTH_ACCOUNT.password
-    ) {
-      throw {
-        message: 'Email hoặc mật khẩu không đúng',
-        statusCode: 401,
-      }
-    }
-
-    mockAuthenticated = true
-
-    return {
-      user: mockUser,
-    }
-  },
-
-  async me(): Promise<User> {
-    if (!mockAuthenticated) {
-      throw {
-        message: 'Chưa đăng nhập',
-        statusCode: 401,
-      }
-    }
-
-    return mockUser
-  },
-
-  async logout(): Promise<void> {
-    mockAuthenticated = false
-    return Promise.resolve()
-  },
+  loginWithPassword,
+  registerCustomer,
+  fetchCurrentUser,
+  logoutCurrentAccount,
 }

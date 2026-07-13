@@ -60,6 +60,14 @@
   select {
     font: inherit;
   }
+
+  input[data-slot="input"]:-webkit-autofill,
+  input[data-slot="input"]:-webkit-autofill:hover,
+  input[data-slot="input"]:-webkit-autofill:focus {
+    box-shadow: 0 0 0 1000px var(--color-background) inset;
+    -webkit-text-fill-color: var(--color-foreground);
+    caret-color: var(--color-foreground);
+  }
 }
 
 :root {
