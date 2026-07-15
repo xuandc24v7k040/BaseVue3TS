@@ -22,7 +22,12 @@ export const branchesListQueryLimitMax = 100;
 export const BranchesListQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(branchesListQueryPageDefault),
   "limit": zod.number().min(1).max(branchesListQueryLimitMax).default(branchesListQueryLimitDefault),
-  "search": zod.string().optional()
+  "search": zod.string().optional(),
+  "isActive": zod.boolean().optional(),
+  "sortBy": zod.enum(['code', 'name', 'isActive', 'createdAt', 'updatedAt']).optional(),
+  "sortOrder": zod.enum(['asc', 'desc']).optional(),
+  "createdFrom": zod.iso.date().optional().describe('Ngày tạo bắt đầu, inclusive theo múi giờ Việt Nam.'),
+  "createdTo": zod.iso.date().optional().describe('Ngày tạo kết thúc, inclusive theo múi giờ Việt Nam.')
 })
 
 export const BranchesListHeader = zod.strictObject({
@@ -33,11 +38,24 @@ export const BranchesListHeader = zod.strictObject({
  * Create branch
  * @summary Create branch
  */
+export const branchesCreateBodyLatitudeMin = -90;
+export const branchesCreateBodyLatitudeMax = 90;
+
+export const branchesCreateBodyLongitudeMin = -180;
+export const branchesCreateBodyLongitudeMax = 180;
+
+export const branchesCreateBodyIsActiveDefault = true;
+
 export const BranchesCreateBody = zod.strictObject({
   "name": zod.string(),
   "code": zod.string(),
   "address": zod.string(),
-  "phone": zod.string().optional()
+  "phone": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "ward": zod.string().nullish(),
+  "latitude": zod.number().min(branchesCreateBodyLatitudeMin).max(branchesCreateBodyLatitudeMax).nullish(),
+  "longitude": zod.number().min(branchesCreateBodyLongitudeMin).max(branchesCreateBodyLongitudeMax).nullish(),
+  "isActive": zod.boolean().default(branchesCreateBodyIsActiveDefault).describe('true = Đang hoạt động, false = Ngừng hoạt động.')
 })
 
 /**
@@ -64,11 +82,24 @@ export const BranchesUpdateHeader = zod.strictObject({
   "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
+export const branchesUpdateBodyLatitudeMin = -90;
+export const branchesUpdateBodyLatitudeMax = 90;
+
+export const branchesUpdateBodyLongitudeMin = -180;
+export const branchesUpdateBodyLongitudeMax = 180;
+
+
+
 export const BranchesUpdateBody = zod.strictObject({
   "name": zod.string().optional(),
   "code": zod.string().optional(),
   "address": zod.string().optional(),
-  "phone": zod.string().optional()
+  "phone": zod.string().nullish(),
+  "province": zod.string().nullish(),
+  "ward": zod.string().nullish(),
+  "latitude": zod.number().min(branchesUpdateBodyLatitudeMin).max(branchesUpdateBodyLatitudeMax).nullish(),
+  "longitude": zod.number().min(branchesUpdateBodyLongitudeMin).max(branchesUpdateBodyLongitudeMax).nullish(),
+  "isActive": zod.boolean().optional().describe('true = Đang hoạt động, false = Ngừng hoạt động.')
 })
 
 /**

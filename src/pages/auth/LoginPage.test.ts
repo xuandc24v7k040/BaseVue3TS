@@ -15,21 +15,42 @@ vi.mock('@/api/modules/auth.api', () => ({
   logoutCurrentAccount: vi.fn(),
 }))
 
+const branch = {
+  id: '01K00000000000000000000001',
+  code: 'can-tho',
+  name: 'Cần Thơ',
+  isPrimary: true,
+}
+
 function makeUser(type: AuthMeResponseDto['type']): AuthMeResponseDto {
   return {
     id: '01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T',
     email: 'admin@example.com',
     fullName: 'Bookora Admin',
+    phone: null,
+    gender: null,
+    birthday: null,
     type,
     roles: [],
     permissions: [],
     globalRoles: [],
-    globalPermissions: [],
-    branchAssignments: [],
+    globalPermissions: type === 'SYSTEM' ? ['dashboard.read'] : [],
+    branchAssignments: type === 'BRANCH'
+      ? [{
+          branchId: branch.id,
+          userBranchId: 'assignment-a',
+          branch,
+          isPrimary: true,
+          isActive: true,
+          roles: [],
+          permissions: ['dashboard.read'],
+          maxRoleLevel: 0,
+        }]
+      : [],
     maxRoleLevel: 0,
     isSuperAdmin: type === 'SYSTEM',
-    branches: [],
-    primaryBranchId: null,
+    branches: type === 'BRANCH' ? [branch] : [],
+    primaryBranchId: type === 'BRANCH' ? branch.id : null,
   }
 }
 
@@ -40,6 +61,7 @@ async function setup() {
     history: createMemoryHistory(),
     routes: [
       { path: '/admin/login', name: 'admin-login', component: {} },
+      { path: '/admin-home', name: 'admin-home', component: {} },
       {
         path: '/super-admin/dashboard',
         name: 'super-admin-dashboard',

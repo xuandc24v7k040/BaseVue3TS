@@ -10,6 +10,7 @@ import {
   logoutCurrentAccount,
 } from '@/api/modules/auth.api'
 import { useAuthStore } from '@/stores/auth.store'
+import { useBranchStore } from '@/stores/branch.store'
 
 vi.mock('@/api/modules/auth.api', () => ({
   fetchCurrentUser: vi.fn(),
@@ -26,6 +27,9 @@ function makeUser(type: AuthMeResponseDto['type'] = 'SYSTEM'): AuthMeResponseDto
     id: '01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T',
     email: 'admin@example.com',
     fullName: 'Bookora Admin',
+    phone: null,
+    gender: null,
+    birthday: null,
     type,
     roles: [],
     permissions: [],
@@ -83,6 +87,7 @@ describe('auth store bootstrap', () => {
     expect(store.status).toBe('authenticated')
     expect(store.user).toStrictEqual(user)
     expect(store.bootstrapError).toBeNull()
+    expect(useBranchStore().isInitialized).toBe(true)
   })
 
   it('treats only a final 401 as anonymous', async () => {
@@ -191,6 +196,7 @@ describe('auth store session actions', () => {
 
   it('marks an expired session anonymous without calling logout', () => {
     const store = useAuthStore()
+    useBranchStore().initialize(makeUser())
     localStorage.setItem('bookora.session_hint', '1')
     store.markSessionExpired()
 
@@ -198,15 +204,21 @@ describe('auth store session actions', () => {
     expect(store.user).toBeNull()
     expect(logoutRequest).not.toHaveBeenCalled()
     expect(localStorage.getItem('bookora.session_hint')).toBeNull()
+    expect(useBranchStore().isInitialized).toBe(false)
   })
 
   it('removes the session hint after confirmed logout', async () => {
     const store = useAuthStore()
+    useBranchStore().initialize(makeUser())
     localStorage.setItem('bookora.session_hint', '1')
     logoutRequest.mockResolvedValue({ success: true })
 
     await expect(store.logout()).resolves.toEqual({ confirmed: true })
+    expect(store.isLogoutNavigationPending).toBe(true)
+    store.completeLogoutNavigation()
+    expect(store.isLogoutNavigationPending).toBe(false)
 
     expect(localStorage.getItem('bookora.session_hint')).toBeNull()
+    expect(useBranchStore().isInitialized).toBe(false)
   })
 })

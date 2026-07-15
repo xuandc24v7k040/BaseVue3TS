@@ -6,6 +6,7 @@ export const envSchema = z
     VITE_API_BASE_URL: z.string().url().optional(),
     VITE_TURNSTILE_ENABLED: z.string().default('false'),
     VITE_TURNSTILE_SITE_KEY: z.string().default(''),
+    VITE_VIETMAP_TILEMAP_KEY: z.string().default(''),
   })
   .transform((env) => ({
     ...env,

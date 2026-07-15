@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { healthGetHealth } from '@/api/generated/endpoints/health/health'
 import { authLogin, authMe } from '@/api/generated/endpoints/auth/auth'
 import { apiClient, getHttpInterceptorStatus, resetHttpClientForTest, setupHttpClient } from '@/api/http/client'
+import { BranchScopeRequiredError } from '@/api/http/branch-scope'
 import { clearCsrfToken, getCachedCsrfTokenForTest } from '@/api/http/csrf-manager'
 import { toBookoraApiError } from '@/api/http/errors'
 
@@ -620,5 +621,93 @@ describe('refresh infrastructure', () => {
 
     expect(refreshCount).toBe(0)
     expect(onSessionExpired).not.toHaveBeenCalled()
+  })
+})
+
+describe('branch-scoped HTTP boundary', () => {
+  it('attaches X-Branch-Id only to explicitly branch-scoped requests', async () => {
+    const seenRequests: InternalAxiosRequestConfig[] = []
+    const adapter: AxiosAdapter = async (config) => {
+      seenRequests.push(config)
+      return successResponse(config, {})
+    }
+
+    resetHttpClientForTest(adapter)
+    setupHttpClient({ getSelectedBranchId: () => '01K00000000000000000000001' })
+
+    await apiClient.get('/staff', { branchScoped: true })
+    await apiClient.get('/health')
+
+    expect(getHeader(seenRequests[0]!, 'X-Branch-Id')).toBe('01K00000000000000000000001')
+    expect(getHeader(seenRequests[1]!, 'X-Branch-Id')).toBeUndefined()
+    expect(getHeader(seenRequests[0]!, 'branchScoped')).toBeUndefined()
+  })
+
+  it.each([
+    '/auth/me',
+    '/auth/login',
+    '/auth/logout',
+    '/auth/refresh',
+    '/auth/csrf-token',
+    '/books',
+  ])('does not attach a branch header to unmarked request %s', async (url) => {
+    const seenRequests: InternalAxiosRequestConfig[] = []
+    const adapter: AxiosAdapter = async (config) => {
+      seenRequests.push(config)
+      return successResponse(config, {})
+    }
+
+    resetHttpClientForTest(adapter)
+    setupHttpClient({ getSelectedBranchId: () => '01K00000000000000000000001' })
+
+    await apiClient.get(url)
+    expect(getHeader(seenRequests[0]!, 'X-Branch-Id')).toBeUndefined()
+  })
+
+  it('fails before sending when a branch-scoped request has no selected branch', async () => {
+    const adapter = vi.fn<AxiosAdapter>(async (config) => successResponse(config, {}))
+    resetHttpClientForTest(adapter)
+    setupHttpClient({ getSelectedBranchId: () => null })
+
+    await expect(apiClient.get('/staff', { branchScoped: true })).rejects.toBeInstanceOf(
+      BranchScopeRequiredError,
+    )
+    expect(adapter).not.toHaveBeenCalled()
+  })
+
+  it('preserves a caller-provided branch header', async () => {
+    const seenRequests: InternalAxiosRequestConfig[] = []
+    const adapter: AxiosAdapter = async (config) => {
+      seenRequests.push(config)
+      return successResponse(config, {})
+    }
+    resetHttpClientForTest(adapter)
+    setupHttpClient({ getSelectedBranchId: () => '01K00000000000000000000001' })
+
+    await apiClient.get('/staff', {
+      branchScoped: true,
+      headers: { 'X-Branch-Id': '01K00000000000000000000002' },
+    })
+
+    expect(getHeader(seenRequests[0]!, 'X-Branch-Id')).toBe('01K00000000000000000000002')
+  })
+
+  it('reports branch-scoped 403 without expiring the session', async () => {
+    const forbidden = vi.fn()
+    const expired = vi.fn()
+    const adapter: AxiosAdapter = (config) => rejectResponse(config, 403, {
+      statusCode: 403,
+      code: 'BRANCH_SCOPE_DENIED',
+    })
+    resetHttpClientForTest(adapter)
+    setupHttpClient({
+      getSelectedBranchId: () => '01K00000000000000000000001',
+      onBranchScopeForbidden: forbidden,
+      onSessionExpired: expired,
+    })
+
+    await expect(apiClient.get('/staff', { branchScoped: true })).rejects.toBeInstanceOf(AxiosError)
+    expect(forbidden).toHaveBeenCalledOnce()
+    expect(expired).not.toHaveBeenCalled()
   })
 })

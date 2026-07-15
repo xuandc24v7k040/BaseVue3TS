@@ -9,6 +9,7 @@ import {
 } from '@/api/modules/auth.api'
 import type { FetchCurrentUserOptions } from '@/api/modules/auth.api'
 import { clearSessionHint, setSessionHint } from '@/features/auth/session-hint'
+import { useBranchStore } from '@/stores/branch.store'
 import type { AdminRole, BranchId } from '@/types/auth.type'
 
 export type AuthStatus = 'unknown' | 'anonymous' | 'authenticated'
@@ -42,10 +43,12 @@ function legacyBranchId(user: AuthMeResponseDto | null): BranchId | null {
 }
 
 export const useAuthStore = defineStore('auth', () => {
+  const branchStore = useBranchStore()
   const status = ref<AuthStatus>('unknown')
   const user = ref<AuthMeResponseDto | null>(null)
   const isBootstrapping = ref(false)
   const bootstrapError = ref<unknown | null>(null)
+  const isLogoutNavigationPending = ref(false)
 
   const isAuthenticated = computed(() => status.value === 'authenticated')
 
@@ -62,12 +65,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setAuthenticated(nextUser: AuthMeResponseDto): void {
     user.value = nextUser
+    branchStore.initialize(nextUser)
     status.value = 'authenticated'
     bootstrapError.value = null
   }
 
   function setAnonymous(): void {
     user.value = null
+    branchStore.reset()
     status.value = 'anonymous'
     bootstrapError.value = null
     isBootstrapping.value = false
@@ -76,6 +81,10 @@ export const useAuthStore = defineStore('auth', () => {
   function markSessionExpired(): void {
     clearSessionHint()
     setAnonymous()
+  }
+
+  function completeLogoutNavigation(): void {
+    isLogoutNavigationPending.value = false
   }
 
   async function refreshCurrentUser(
@@ -94,6 +103,7 @@ export const useAuthStore = defineStore('auth', () => {
       await refreshCurrentUser(options)
     } catch (error: unknown) {
       user.value = null
+      branchStore.reset()
 
       if (isFinalUnauthorized(error)) {
         clearSessionHint()
@@ -139,6 +149,7 @@ export const useAuthStore = defineStore('auth', () => {
       return currentUser
     } catch (error: unknown) {
       user.value = null
+      branchStore.reset()
 
       if (isFinalUnauthorized(error)) {
         status.value = 'anonymous'
@@ -156,6 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await logoutCurrentAccount()
       clearSessionHint()
+      isLogoutNavigationPending.value = true
       setAnonymous()
       return { confirmed: true }
     } catch (error: unknown) {
@@ -168,6 +180,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isBootstrapping,
     bootstrapError,
+    isLogoutNavigationPending,
     isAuthenticated,
     role,
     email,
@@ -180,6 +193,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshCurrentUser,
     login,
     logout,
+    completeLogoutNavigation,
     markSessionExpired,
     setAnonymous,
     retryBootstrap,

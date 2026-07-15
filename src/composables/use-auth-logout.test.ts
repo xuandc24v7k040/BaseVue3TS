@@ -77,6 +77,7 @@ describe('shared logout flow', () => {
       public: true,
     })
     expect(context.router.currentRoute.value.path).toBe('/admin/login')
+    expect(context.router.currentRoute.value.fullPath).toBe('/admin/login')
     expect(toastSuccess).toHaveBeenCalledOnce()
   })
 

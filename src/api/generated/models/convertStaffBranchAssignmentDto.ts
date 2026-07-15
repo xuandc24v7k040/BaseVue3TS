@@ -9,6 +9,7 @@ import type { ConvertStaffPermissionDto } from './convertStaffPermissionDto';
 
 export interface ConvertStaffBranchAssignmentDto {
   /**
+     * Mỗi branchId chỉ được xuất hiện một lần trong toàn bộ payload.
      * @minLength 26
      * @maxLength 26
      * @pattern ^[0-7][0-9A-HJKMNP-TV-Z]{25}$
@@ -22,5 +23,6 @@ export interface ConvertStaffBranchAssignmentDto {
      * @items.pattern ^[0-7][0-9A-HJKMNP-TV-Z]{25}$
      */
   roleIds: string[];
+  /** permissionId phải unique trong assignment; dangerous permissions bị backend từ chối cho cả ALLOW và DENY. */
   permissions?: ConvertStaffPermissionDto[];
 }

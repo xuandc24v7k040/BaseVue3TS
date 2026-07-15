@@ -37,6 +37,7 @@ import type {
   BranchesListParams,
   BranchesUpdate200,
   CreateBranchDto,
+  ErrorResponseDto,
   UpdateBranchDto
 } from '../../models';
 
@@ -75,7 +76,7 @@ export const getBranchesListQueryKey = (params?: MaybeRef<BranchesListParams>,) 
     }
 
 
-export const getBranchesListQueryOptions = <TData = Awaited<ReturnType<typeof branchesList>>, TError = ErrorType<void>>(params?: MaybeRef<BranchesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchesList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getBranchesListQueryOptions = <TData = Awaited<ReturnType<typeof branchesList>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<BranchesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchesList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -94,14 +95,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type BranchesListQueryResult = NonNullable<Awaited<ReturnType<typeof branchesList>>>
-export type BranchesListQueryError = ErrorType<void>
+export type BranchesListQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary List branches in scope
  */
 
-export function useBranchesList<TData = Awaited<ReturnType<typeof branchesList>>, TError = ErrorType<void>>(
+export function useBranchesList<TData = Awaited<ReturnType<typeof branchesList>>, TError = ErrorType<ErrorResponseDto>>(
  params?: MaybeRef<BranchesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchesList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -140,7 +141,7 @@ export const branchesCreate = (
 
 
 
-export const getBranchesCreateMutationOptions = <TError = ErrorType<void>,
+export const getBranchesCreateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchesCreate>>, TError,{data: BodyType<CreateBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchesCreate>>, TError,{data: BodyType<CreateBranchDto>}, TContext> => {
 
@@ -169,12 +170,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchesCreateMutationResult = NonNullable<Awaited<ReturnType<typeof branchesCreate>>>
     export type BranchesCreateMutationBody = BodyType<CreateBranchDto>
-    export type BranchesCreateMutationError = ErrorType<void>
+    export type BranchesCreateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Create branch
  */
-export const useBranchesCreate = <TError = ErrorType<void>,
+export const useBranchesCreate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchesCreate>>, TError,{data: BodyType<CreateBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchesCreate>>,
@@ -210,7 +211,7 @@ export const getBranchesGetQueryKey = (id: MaybeRef<string>,) => {
     }
 
 
-export const getBranchesGetQueryOptions = <TData = Awaited<ReturnType<typeof branchesGet>>, TError = ErrorType<void>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchesGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getBranchesGetQueryOptions = <TData = Awaited<ReturnType<typeof branchesGet>>, TError = ErrorType<ErrorResponseDto>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchesGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -229,14 +230,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type BranchesGetQueryResult = NonNullable<Awaited<ReturnType<typeof branchesGet>>>
-export type BranchesGetQueryError = ErrorType<void>
+export type BranchesGetQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary Get branch in scope
  */
 
-export function useBranchesGet<TData = Awaited<ReturnType<typeof branchesGet>>, TError = ErrorType<void>>(
+export function useBranchesGet<TData = Awaited<ReturnType<typeof branchesGet>>, TError = ErrorType<ErrorResponseDto>>(
  id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchesGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -277,7 +278,7 @@ updateBranchDto = unref(updateBranchDto);
 
 
 
-export const getBranchesUpdateMutationOptions = <TError = ErrorType<void>,
+export const getBranchesUpdateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchesUpdate>>, TError,{id: string;data: BodyType<UpdateBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchesUpdate>>, TError,{id: string;data: BodyType<UpdateBranchDto>}, TContext> => {
 
@@ -306,12 +307,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof branchesUpdate>>>
     export type BranchesUpdateMutationBody = BodyType<UpdateBranchDto>
-    export type BranchesUpdateMutationError = ErrorType<void>
+    export type BranchesUpdateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Update branch
  */
-export const useBranchesUpdate = <TError = ErrorType<void>,
+export const useBranchesUpdate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchesUpdate>>, TError,{id: string;data: BodyType<UpdateBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchesUpdate>>,
@@ -339,7 +340,7 @@ export const branchesDeactivate = (
 
 
 
-export const getBranchesDeactivateMutationOptions = <TError = ErrorType<void>,
+export const getBranchesDeactivateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchesDeactivate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchesDeactivate>>, TError,{id: string}, TContext> => {
 
@@ -368,12 +369,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchesDeactivateMutationResult = NonNullable<Awaited<ReturnType<typeof branchesDeactivate>>>
 
-    export type BranchesDeactivateMutationError = ErrorType<void>
+    export type BranchesDeactivateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Deactivate branch
  */
-export const useBranchesDeactivate = <TError = ErrorType<void>,
+export const useBranchesDeactivate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchesDeactivate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchesDeactivate>>,

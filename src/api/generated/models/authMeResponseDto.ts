@@ -19,6 +19,21 @@ export interface AuthMeResponseDto {
   id: string;
   email: string;
   fullName: string;
+  /**
+     * Số điện thoại hồ sơ, null nếu chưa cập nhật.
+     * @nullable
+     */
+  phone: string | null;
+  /**
+     * Giới tính dạng chuỗi hồ sơ, null nếu chưa cập nhật.
+     * @nullable
+     */
+  gender: string | null;
+  /**
+     * Ngày sinh theo lịch, định dạng YYYY-MM-DD.
+     * @nullable
+     */
+  birthday: string | null;
   type: AuthMeResponseDtoType;
   /** Legacy request-effective roles. Empty for BRANCH users until a branch-scoped request resolves X-Branch-Id. */
   roles: AuthMeRoleDto[];

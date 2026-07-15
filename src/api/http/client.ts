@@ -11,6 +11,7 @@ import type {
 } from 'axios'
 import type { AuthCsrfToken200 } from '@/api/generated/models'
 import { env } from '@/lib/env'
+import { BRANCH_HEADER_NAME, BranchScopeRequiredError } from './branch-scope'
 import { clearCsrfToken, configureCsrfTokenFetcher, getCsrfToken } from './csrf-manager'
 import { configureRefreshSession, refreshSession, resetRefreshSessionForTest } from './refresh-manager'
 
@@ -32,6 +33,8 @@ const REFRESH_TOKEN_REUSE_CODES = new Set([
 
 interface SetupHttpClientOptions {
   onSessionExpired?: (error: unknown) => void
+  getSelectedBranchId?: () => string | null
+  onBranchScopeForbidden?: (error: AxiosError) => void
 }
 
 interface InterceptorIds {
@@ -41,6 +44,8 @@ interface InterceptorIds {
 
 let interceptorIds: InterceptorIds | null = null
 let onSessionExpired: ((error: unknown) => void) | null = null
+let getSelectedBranchId: (() => string | null) | null = null
+let onBranchScopeForbidden: ((error: AxiosError) => void) | null = null
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: env.apiBaseUrl,
@@ -122,6 +127,29 @@ async function attachCsrfToken(
   return config
 }
 
+function attachBranchContext(
+  config: InternalAxiosRequestConfig,
+): InternalAxiosRequestConfig {
+  if (!config.branchScoped) return config
+
+  const branchId = getSelectedBranchId?.() ?? null
+  if (!branchId) throw new BranchScopeRequiredError()
+
+  const headers = AxiosHeaders.from(config.headers)
+  if (config.branchHeaderAttached || !headers.has(BRANCH_HEADER_NAME)) {
+    headers.set(BRANCH_HEADER_NAME, branchId)
+    config.branchHeaderAttached = true
+  }
+  config.headers = headers
+  return config
+}
+
+async function prepareRequest(
+  config: InternalAxiosRequestConfig,
+): Promise<InternalAxiosRequestConfig> {
+  return attachCsrfToken(attachBranchContext(config))
+}
+
 async function handleAuthError(error: AxiosError): Promise<AxiosResponse> {
   const originalConfig = error.config
 
@@ -169,8 +197,18 @@ function handleRefreshFailure(error: unknown): void {
   onSessionExpired?.(error)
 }
 
+function handleResponseError(error: AxiosError): Promise<AxiosResponse> {
+  if (error.response?.status === 403 && error.config?.branchScoped) {
+    onBranchScopeForbidden?.(error)
+  }
+
+  return handleAuthError(error)
+}
+
 export function setupHttpClient(options: SetupHttpClientOptions = {}): void {
   onSessionExpired = options.onSessionExpired ?? onSessionExpired
+  getSelectedBranchId = options.getSelectedBranchId ?? getSelectedBranchId
+  onBranchScopeForbidden = options.onBranchScopeForbidden ?? onBranchScopeForbidden
   configureCsrfTokenFetcher(createCsrfTokenRequest)
   configureRefreshSession({
     request: createRefreshSessionRequest,
@@ -182,10 +220,10 @@ export function setupHttpClient(options: SetupHttpClientOptions = {}): void {
   }
 
   interceptorIds = {
-    request: apiClient.interceptors.request.use(attachCsrfToken),
+    request: apiClient.interceptors.request.use(prepareRequest),
     response: apiClient.interceptors.response.use(
       (response) => response,
-      (error: AxiosError) => handleAuthError(error),
+      (error: AxiosError) => handleResponseError(error),
     ),
   }
 }
@@ -204,6 +242,8 @@ export function resetHttpClientForTest(adapter?: AxiosAdapter): void {
 
   interceptorIds = null
   onSessionExpired = null
+  getSelectedBranchId = null
+  onBranchScopeForbidden = null
   clearCsrfToken()
   resetRefreshSessionForTest()
   apiClient.defaults.baseURL = env.apiBaseUrl

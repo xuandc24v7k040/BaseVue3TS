@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Building2, Check, Search } from "@lucide/vue";
-import { computed } from "vue";
 import { RouterView } from "vue-router";
 import AppSidebar from "@/components/admin/sidebar/AppSidebar.vue";
 import { Badge } from "@/components/ui/badge";
@@ -22,20 +21,16 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBranchStore } from "@/stores/branch.store";
+import { useAdminIdentity } from "@/composables/use-admin-identity";
+import { useAdminRouteReevaluation } from "@/composables/use-admin-route-reevaluation";
 
 const authStore = useAuthStore();
 const branchStore = useBranchStore();
+const { roleLabel } = useAdminIdentity();
+useAdminRouteReevaluation();
 
-branchStore.applyAuthContext(authStore.role, authStore.branchId);
-
-const roleLabel = computed(() => {
-  return authStore.role === "BRANCH_ADMIN" ? "Branch Admin" : "Super Admin";
-});
-
-function setManagementScope(value: unknown): void {
-  if (value === "all" || value === "can-tho" || value === "hau-giang") {
-    branchStore.setManagementScope(value);
-  }
+async function setSelectedBranch(branchId: string | null): Promise<void> {
+  await branchStore.setSelectedBranch(branchId);
 }
 </script>
 
@@ -83,7 +78,9 @@ function setManagementScope(value: unknown): void {
           </div>
 
           <div class="flex justify-end">
-            <DropdownMenu v-if="authStore.role === 'SUPER_ADMIN'">
+            <DropdownMenu
+              v-if="branchStore.isInitialized && (authStore.user?.type === 'SYSTEM' || branchStore.availableBranches.length > 1)"
+            >
               <DropdownMenuTrigger as-child>
                 <Button
                   type="button"
@@ -103,26 +100,27 @@ function setManagementScope(value: unknown): void {
                 <DropdownMenuLabel>Phạm vi quản lý</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  v-if="authStore.user?.type === 'SYSTEM'"
                   class="gap-2"
-                  @click="setManagementScope('all')"
+                  @click="setSelectedBranch(null)"
                 >
                   <Building2 class="h-4 w-4 text-muted-foreground" />
                   <span>Toàn hệ thống</span>
                   <Check
-                    v-if="branchStore.managementScope === 'all'"
+                    v-if="branchStore.isSystemScope"
                     class="ml-auto h-4 w-4 text-primary"
                   />
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  v-for="branch in branchStore.branches"
+                  v-for="branch in branchStore.availableBranches"
                   :key="branch.id"
                   class="gap-2"
-                  @click="setManagementScope(branch.id)"
+                  @click="setSelectedBranch(branch.id)"
                 >
                   <Building2 class="h-4 w-4 text-muted-foreground" />
                   <span>{{ branch.name }}</span>
                   <Check
-                    v-if="branch.id === branchStore.managementScope"
+                    v-if="branch.id === branchStore.selectedBranchId"
                     class="ml-auto h-4 w-4 text-primary"
                   />
                 </DropdownMenuItem>
@@ -135,7 +133,7 @@ function setManagementScope(value: unknown): void {
             >
               <Building2 class="h-4 w-4 text-muted-foreground" />
               <span class="max-w-24 truncate sm:max-w-40">
-                {{ authStore.branchName ?? branchStore.selectedBranch.name }}
+                {{ branchStore.scopeLabel }}
               </span>
             </div>
           </div>

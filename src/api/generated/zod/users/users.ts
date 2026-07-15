@@ -12,10 +12,16 @@ import * as zod from 'zod';
  * Tạo người dùng
  * @summary Tạo người dùng
  */
+export const usersCreateBodyGenderMax = 20;
+
+
+
 export const UsersCreateBody = zod.strictObject({
   "fullName": zod.string(),
   "email": zod.string(),
-  "phone": zod.string().optional()
+  "phone": zod.string().nullish(),
+  "gender": zod.string().max(usersCreateBodyGenderMax).nullish(),
+  "birthday": zod.iso.date().nullish()
 })
 
 /**
@@ -34,7 +40,9 @@ export const UsersFindAllQueryParams = zod.strictObject({
   "limit": zod.number().min(1).max(usersFindAllQueryLimitMax).default(usersFindAllQueryLimitDefault),
   "search": zod.string().optional(),
   "sortBy": zod.enum(['createdAt', 'updatedAt', 'email', 'fullName']).optional(),
-  "sortOrder": zod.enum(['asc', 'desc']).optional()
+  "sortOrder": zod.enum(['asc', 'desc']).optional(),
+  "type": zod.enum(['SYSTEM', 'BRANCH', 'CUSTOMER']).optional(),
+  "isActive": zod.boolean().optional()
 })
 
 /**
@@ -53,10 +61,16 @@ export const UsersUpdateParams = zod.strictObject({
   "id": zod.ulid()
 })
 
+export const usersUpdateBodyGenderMax = 20;
+
+
+
 export const UsersUpdateBody = zod.strictObject({
   "fullName": zod.string().optional(),
   "email": zod.string().optional(),
-  "phone": zod.string().optional()
+  "phone": zod.string().nullish(),
+  "gender": zod.string().max(usersUpdateBodyGenderMax).nullish(),
+  "birthday": zod.iso.date().nullish()
 })
 
 /**
@@ -64,6 +78,14 @@ export const UsersUpdateBody = zod.strictObject({
  * @summary Xóa người dùng theo id
  */
 export const UsersRemoveParams = zod.strictObject({
+  "id": zod.ulid()
+})
+
+/**
+ * Kích hoạt lại người dùng theo id
+ * @summary Kích hoạt lại người dùng theo id
+ */
+export const UsersActivateParams = zod.strictObject({
   "id": zod.ulid()
 })
 

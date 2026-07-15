@@ -33,9 +33,11 @@ import type {
   ChangePrimaryBranchDto,
   ConvertStaffDto,
   CreateStaffDto,
+  ErrorResponseDto,
   StaffActivateBranch200,
   StaffAssignBranch201,
   StaffAssignRole201,
+  StaffAssignments200,
   StaffConvert201,
   StaffCreate201,
   StaffDeactivateBranch200,
@@ -90,7 +92,7 @@ export const getStaffListQueryKey = (params?: MaybeRef<StaffListParams>,) => {
     }
 
 
-export const getStaffListQueryOptions = <TData = Awaited<ReturnType<typeof staffList>>, TError = ErrorType<void>>(params?: MaybeRef<StaffListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getStaffListQueryOptions = <TData = Awaited<ReturnType<typeof staffList>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<StaffListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -109,14 +111,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type StaffListQueryResult = NonNullable<Awaited<ReturnType<typeof staffList>>>
-export type StaffListQueryError = ErrorType<void>
+export type StaffListQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary List staff in branch scope
  */
 
-export function useStaffList<TData = Awaited<ReturnType<typeof staffList>>, TError = ErrorType<void>>(
+export function useStaffList<TData = Awaited<ReturnType<typeof staffList>>, TError = ErrorType<ErrorResponseDto>>(
  params?: MaybeRef<StaffListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -155,7 +157,7 @@ export const staffCreate = (
 
 
 
-export const getStaffCreateMutationOptions = <TError = ErrorType<void>,
+export const getStaffCreateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffCreate>>, TError,{data: BodyType<CreateStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffCreate>>, TError,{data: BodyType<CreateStaffDto>}, TContext> => {
 
@@ -184,12 +186,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffCreateMutationResult = NonNullable<Awaited<ReturnType<typeof staffCreate>>>
     export type StaffCreateMutationBody = BodyType<CreateStaffDto>
-    export type StaffCreateMutationError = ErrorType<void>
+    export type StaffCreateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Create staff in selected branch
  */
-export const useStaffCreate = <TError = ErrorType<void>,
+export const useStaffCreate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffCreate>>, TError,{data: BodyType<CreateStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffCreate>>,
@@ -200,6 +202,77 @@ export const useStaffCreate = <TError = ErrorType<void>,
       return useMutation(getStaffCreateMutationOptions(options), queryClient);
     }
     /**
+ * Get all branch assignments for a Staff user
+ * @summary Get all branch assignments for a Staff user
+ */
+export const staffAssignments = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      id = unref(id);
+
+      return customInstance<StaffAssignments200>(
+      {url: `/staff/${id}/assignments`, method: 'GET', signal
+    },
+      options);
+    }
+
+
+
+
+export const getStaffAssignmentsQueryKey = (id: MaybeRef<string>,) => {
+    return [
+    'staff',id,'assignments'
+    ] as const;
+    }
+
+
+export const getStaffAssignmentsQueryOptions = <TData = Awaited<ReturnType<typeof staffAssignments>>, TError = ErrorType<ErrorResponseDto>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAssignments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getStaffAssignmentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffAssignments>>> = ({ signal }) => staffAssignments(id, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => unref(id) !== null && unref(id) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffAssignments>>, TError, TData>
+}
+
+export type StaffAssignmentsQueryResult = NonNullable<Awaited<ReturnType<typeof staffAssignments>>>
+export type StaffAssignmentsQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary Get all branch assignments for a Staff user
+ */
+
+export function useStaffAssignments<TData = Awaited<ReturnType<typeof staffAssignments>>, TError = ErrorType<ErrorResponseDto>>(
+ id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAssignments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffAssignmentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
  * Get staff in branch scope
  * @summary Get staff in branch scope
  */
@@ -225,7 +298,7 @@ export const getStaffGetQueryKey = (id: MaybeRef<string>,) => {
     }
 
 
-export const getStaffGetQueryOptions = <TData = Awaited<ReturnType<typeof staffGet>>, TError = ErrorType<void>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getStaffGetQueryOptions = <TData = Awaited<ReturnType<typeof staffGet>>, TError = ErrorType<ErrorResponseDto>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -244,14 +317,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type StaffGetQueryResult = NonNullable<Awaited<ReturnType<typeof staffGet>>>
-export type StaffGetQueryError = ErrorType<void>
+export type StaffGetQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary Get staff in branch scope
  */
 
-export function useStaffGet<TData = Awaited<ReturnType<typeof staffGet>>, TError = ErrorType<void>>(
+export function useStaffGet<TData = Awaited<ReturnType<typeof staffGet>>, TError = ErrorType<ErrorResponseDto>>(
  id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -292,7 +365,7 @@ updateStaffDto = unref(updateStaffDto);
 
 
 
-export const getStaffUpdateMutationOptions = <TError = ErrorType<void>,
+export const getStaffUpdateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffUpdate>>, TError,{id: string;data: BodyType<UpdateStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffUpdate>>, TError,{id: string;data: BodyType<UpdateStaffDto>}, TContext> => {
 
@@ -321,12 +394,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof staffUpdate>>>
     export type StaffUpdateMutationBody = BodyType<UpdateStaffDto>
-    export type StaffUpdateMutationError = ErrorType<void>
+    export type StaffUpdateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Update staff
  */
-export const useStaffUpdate = <TError = ErrorType<void>,
+export const useStaffUpdate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffUpdate>>, TError,{id: string;data: BodyType<UpdateStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffUpdate>>,
@@ -354,7 +427,7 @@ export const staffDisable = (
 
 
 
-export const getStaffDisableMutationOptions = <TError = ErrorType<void>,
+export const getStaffDisableMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffDisable>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffDisable>>, TError,{id: string}, TContext> => {
 
@@ -383,12 +456,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffDisableMutationResult = NonNullable<Awaited<ReturnType<typeof staffDisable>>>
 
-    export type StaffDisableMutationError = ErrorType<void>
+    export type StaffDisableMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Deactivate staff employment in selected branch
  */
-export const useStaffDisable = <TError = ErrorType<void>,
+export const useStaffDisable = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffDisable>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffDisable>>,
@@ -420,7 +493,7 @@ convertStaffDto = unref(convertStaffDto);
 
 
 
-export const getStaffConvertMutationOptions = <TError = ErrorType<void>,
+export const getStaffConvertMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffConvert>>, TError,{id: string;data: BodyType<ConvertStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffConvert>>, TError,{id: string;data: BodyType<ConvertStaffDto>}, TContext> => {
 
@@ -449,12 +522,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffConvertMutationResult = NonNullable<Awaited<ReturnType<typeof staffConvert>>>
     export type StaffConvertMutationBody = BodyType<ConvertStaffDto>
-    export type StaffConvertMutationError = ErrorType<void>
+    export type StaffConvertMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Convert Customer to Staff
  */
-export const useStaffConvert = <TError = ErrorType<void>,
+export const useStaffConvert = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffConvert>>, TError,{id: string;data: BodyType<ConvertStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffConvert>>,
@@ -486,7 +559,7 @@ transferStaffBranchDto = unref(transferStaffBranchDto);
 
 
 
-export const getStaffTransferBranchMutationOptions = <TError = ErrorType<void>,
+export const getStaffTransferBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffTransferBranch>>, TError,{id: string;data: BodyType<TransferStaffBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffTransferBranch>>, TError,{id: string;data: BodyType<TransferStaffBranchDto>}, TContext> => {
 
@@ -515,12 +588,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffTransferBranchMutationResult = NonNullable<Awaited<ReturnType<typeof staffTransferBranch>>>
     export type StaffTransferBranchMutationBody = BodyType<TransferStaffBranchDto>
-    export type StaffTransferBranchMutationError = ErrorType<void>
+    export type StaffTransferBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Chuyển hẳn Staff sang chi nhánh khác
  */
-export const useStaffTransferBranch = <TError = ErrorType<void>,
+export const useStaffTransferBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffTransferBranch>>, TError,{id: string;data: BodyType<TransferStaffBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffTransferBranch>>,
@@ -550,7 +623,7 @@ roleId = unref(roleId);
 
 
 
-export const getStaffAssignRoleMutationOptions = <TError = ErrorType<void>,
+export const getStaffAssignRoleMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAssignRole>>, TError,{id: string;roleId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffAssignRole>>, TError,{id: string;roleId: string}, TContext> => {
 
@@ -579,12 +652,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffAssignRoleMutationResult = NonNullable<Awaited<ReturnType<typeof staffAssignRole>>>
 
-    export type StaffAssignRoleMutationError = ErrorType<void>
+    export type StaffAssignRoleMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Assign role to staff
  */
-export const useStaffAssignRole = <TError = ErrorType<void>,
+export const useStaffAssignRole = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAssignRole>>, TError,{id: string;roleId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffAssignRole>>,
@@ -614,7 +687,7 @@ roleId = unref(roleId);
 
 
 
-export const getStaffRemoveRoleMutationOptions = <TError = ErrorType<void>,
+export const getStaffRemoveRoleMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffRemoveRole>>, TError,{id: string;roleId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffRemoveRole>>, TError,{id: string;roleId: string}, TContext> => {
 
@@ -643,12 +716,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffRemoveRoleMutationResult = NonNullable<Awaited<ReturnType<typeof staffRemoveRole>>>
 
-    export type StaffRemoveRoleMutationError = ErrorType<void>
+    export type StaffRemoveRoleMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Remove role from staff
  */
-export const useStaffRemoveRole = <TError = ErrorType<void>,
+export const useStaffRemoveRole = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffRemoveRole>>, TError,{id: string;roleId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffRemoveRole>>,
@@ -682,7 +755,7 @@ upsertUserPermissionDto = unref(upsertUserPermissionDto);
 
 
 
-export const getStaffPermissionMutationOptions = <TError = ErrorType<void>,
+export const getStaffPermissionMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffPermission>>, TError,{id: string;permissionId: string;data: BodyType<UpsertUserPermissionDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffPermission>>, TError,{id: string;permissionId: string;data: BodyType<UpsertUserPermissionDto>}, TContext> => {
 
@@ -711,12 +784,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffPermissionMutationResult = NonNullable<Awaited<ReturnType<typeof staffPermission>>>
     export type StaffPermissionMutationBody = BodyType<UpsertUserPermissionDto>
-    export type StaffPermissionMutationError = ErrorType<void>
+    export type StaffPermissionMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Create or update staff permission override
  */
-export const useStaffPermission = <TError = ErrorType<void>,
+export const useStaffPermission = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffPermission>>, TError,{id: string;permissionId: string;data: BodyType<UpsertUserPermissionDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffPermission>>,
@@ -746,7 +819,7 @@ permissionId = unref(permissionId);
 
 
 
-export const getStaffRemovePermissionMutationOptions = <TError = ErrorType<void>,
+export const getStaffRemovePermissionMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffRemovePermission>>, TError,{id: string;permissionId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffRemovePermission>>, TError,{id: string;permissionId: string}, TContext> => {
 
@@ -775,12 +848,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffRemovePermissionMutationResult = NonNullable<Awaited<ReturnType<typeof staffRemovePermission>>>
 
-    export type StaffRemovePermissionMutationError = ErrorType<void>
+    export type StaffRemovePermissionMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Remove staff permission override
  */
-export const useStaffRemovePermission = <TError = ErrorType<void>,
+export const useStaffRemovePermission = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffRemovePermission>>, TError,{id: string;permissionId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffRemovePermission>>,
@@ -810,7 +883,7 @@ branchId = unref(branchId);
 
 
 
-export const getStaffAssignBranchMutationOptions = <TError = ErrorType<void>,
+export const getStaffAssignBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAssignBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffAssignBranch>>, TError,{id: string;branchId: string}, TContext> => {
 
@@ -839,12 +912,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffAssignBranchMutationResult = NonNullable<Awaited<ReturnType<typeof staffAssignBranch>>>
 
-    export type StaffAssignBranchMutationError = ErrorType<void>
+    export type StaffAssignBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Assign branch to staff
  */
-export const useStaffAssignBranch = <TError = ErrorType<void>,
+export const useStaffAssignBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAssignBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffAssignBranch>>,
@@ -878,7 +951,7 @@ changePrimaryBranchDto = unref(changePrimaryBranchDto);
 
 
 
-export const getStaffRemoveBranchMutationOptions = <TError = ErrorType<void>,
+export const getStaffRemoveBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffRemoveBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffRemoveBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext> => {
 
@@ -907,12 +980,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffRemoveBranchMutationResult = NonNullable<Awaited<ReturnType<typeof staffRemoveBranch>>>
     export type StaffRemoveBranchMutationBody = BodyType<ChangePrimaryBranchDto>
-    export type StaffRemoveBranchMutationError = ErrorType<void>
+    export type StaffRemoveBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Remove staff branch assignment
  */
-export const useStaffRemoveBranch = <TError = ErrorType<void>,
+export const useStaffRemoveBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffRemoveBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffRemoveBranch>>,
@@ -942,7 +1015,7 @@ branchId = unref(branchId);
 
 
 
-export const getStaffActivateBranchMutationOptions = <TError = ErrorType<void>,
+export const getStaffActivateBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffActivateBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffActivateBranch>>, TError,{id: string;branchId: string}, TContext> => {
 
@@ -971,12 +1044,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffActivateBranchMutationResult = NonNullable<Awaited<ReturnType<typeof staffActivateBranch>>>
 
-    export type StaffActivateBranchMutationError = ErrorType<void>
+    export type StaffActivateBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Activate staff branch assignment
  */
-export const useStaffActivateBranch = <TError = ErrorType<void>,
+export const useStaffActivateBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffActivateBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffActivateBranch>>,
@@ -1010,7 +1083,7 @@ changePrimaryBranchDto = unref(changePrimaryBranchDto);
 
 
 
-export const getStaffDeactivateBranchMutationOptions = <TError = ErrorType<void>,
+export const getStaffDeactivateBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffDeactivateBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffDeactivateBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext> => {
 
@@ -1039,12 +1112,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffDeactivateBranchMutationResult = NonNullable<Awaited<ReturnType<typeof staffDeactivateBranch>>>
     export type StaffDeactivateBranchMutationBody = BodyType<ChangePrimaryBranchDto>
-    export type StaffDeactivateBranchMutationError = ErrorType<void>
+    export type StaffDeactivateBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Deactivate staff branch assignment
  */
-export const useStaffDeactivateBranch = <TError = ErrorType<void>,
+export const useStaffDeactivateBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffDeactivateBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffDeactivateBranch>>,
@@ -1074,7 +1147,7 @@ branchId = unref(branchId);
 
 
 
-export const getStaffPrimaryMutationOptions = <TError = ErrorType<void>,
+export const getStaffPrimaryMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffPrimary>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof staffPrimary>>, TError,{id: string;branchId: string}, TContext> => {
 
@@ -1103,12 +1176,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type StaffPrimaryMutationResult = NonNullable<Awaited<ReturnType<typeof staffPrimary>>>
 
-    export type StaffPrimaryMutationError = ErrorType<void>
+    export type StaffPrimaryMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Set staff primary branch
  */
-export const useStaffPrimary = <TError = ErrorType<void>,
+export const useStaffPrimary = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffPrimary>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof staffPrimary>>,

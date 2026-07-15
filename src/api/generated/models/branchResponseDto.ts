@@ -17,7 +17,23 @@ export interface BranchResponseDto {
   name: string;
   address: string;
   /** @nullable */
-  phone?: string | null;
+  phone: string | null;
+  /** @nullable */
+  province: string | null;
+  /** @nullable */
+  ward: string | null;
+  /**
+     * @minimum -90
+     * @maximum 90
+     * @nullable
+     */
+  latitude: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     * @nullable
+     */
+  longitude: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

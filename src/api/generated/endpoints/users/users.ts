@@ -33,6 +33,7 @@ import type {
   CreateUserDto,
   ErrorResponseDto,
   UpdateUserDto,
+  UsersActivate200,
   UsersCreate201,
   UsersFindAll200,
   UsersFindAllParams,
@@ -383,4 +384,66 @@ export const useUsersRemove = <TError = ErrorType<ErrorResponseDto>,
         TContext
       > => {
       return useMutation(getUsersRemoveMutationOptions(options), queryClient);
+    }
+    /**
+ * Kích hoạt lại người dùng theo id
+ * @summary Kích hoạt lại người dùng theo id
+ */
+export const usersActivate = (
+    id: MaybeRef<string>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      id = unref(id);
+
+      return customInstance<UsersActivate200>(
+      {url: `/users/${id}/activate`, method: 'PATCH', signal
+    },
+      options);
+    }
+
+
+
+export const getUsersActivateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof usersActivate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof usersActivate>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['usersActivate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof usersActivate>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  usersActivate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UsersActivateMutationResult = NonNullable<Awaited<ReturnType<typeof usersActivate>>>
+
+    export type UsersActivateMutationError = ErrorType<ErrorResponseDto>
+
+    /**
+ * @summary Kích hoạt lại người dùng theo id
+ */
+export const useUsersActivate = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof usersActivate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof usersActivate>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getUsersActivateMutationOptions(options), queryClient);
     }

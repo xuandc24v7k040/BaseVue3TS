@@ -15,7 +15,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
-import { dashboardRouteForUserType, safeRedirectForUser } from "@/router";
+import { resolveAdminPostAuthRoute } from "@/router";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBranchStore } from "@/stores/branch.store";
 
@@ -152,15 +152,8 @@ async function login(): Promise<void> {
     const user = await authStore.login(validation.data);
     syncAuthMeQuery(queryClient, user);
 
-    if (user.type === "SYSTEM") {
-      branchStore.setManagementScope("all");
-    } else if (user.type === "BRANCH") {
-      branchStore.applyAuthContext(authStore.role, authStore.branchId);
-    }
-
     await router.replace(
-      safeRedirectForUser(router, route.query.redirect, user.type) ??
-        dashboardRouteForUserType(user.type),
+      resolveAdminPostAuthRoute(router, route.query.redirect, user, branchStore),
     );
   } catch (error: unknown) {
     setLoginError(error);

@@ -15,6 +15,7 @@ export function useAuthLogout() {
   async function logout(): Promise<void> {
     if (isLoggingOut.value) return
     isLoggingOut.value = true
+    let didConfirmLogout = false
 
     try {
       const result = await authStore.logout()
@@ -25,12 +26,14 @@ export function useAuthLogout() {
         )
         return
       }
+      didConfirmLogout = true
 
       clearAuthSensitiveQueries(queryClient)
       clearCsrfToken()
       await router.replace({ name: 'admin-login' })
       toast.success('Đã đăng xuất.')
     } finally {
+      if (didConfirmLogout) authStore.completeLogoutNavigation()
       isLoggingOut.value = false
     }
   }

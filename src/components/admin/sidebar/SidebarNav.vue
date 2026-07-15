@@ -30,14 +30,14 @@ const activeParentUrls = computed(() => {
   return new Set(
     props.items
       .filter((item) =>
-        item.children?.some((child) => route.path.startsWith(child.url)),
+        item.children?.some((child) => route.name === child.routeName),
       )
-      .map((item) => item.title),
+      .map((item) => item.id),
   );
 });
 
-function isActiveUrl(url: string): boolean {
-  return route.path === url || route.path.startsWith(`${url}/`);
+function isActiveRoute(routeName: string): boolean {
+  return route.name === routeName;
 }
 </script>
 
@@ -45,11 +45,11 @@ function isActiveUrl(url: string): boolean {
   <SidebarGroup>
     <SidebarGroupLabel>{{ label }}</SidebarGroupLabel>
     <SidebarMenu>
-      <template v-for="item in items" :key="item.title">
-        <SidebarMenuItem v-if="!item.children?.length && item.url">
+      <template v-for="item in items" :key="item.id">
+        <SidebarMenuItem v-if="!item.children?.length && item.routeName">
           <RouterLink
             v-slot="{ href, navigate, isActive }"
-            :to="item.url"
+            :to="{ name: item.routeName }"
             custom
           >
             <SidebarMenuButton
@@ -68,13 +68,13 @@ function isActiveUrl(url: string): boolean {
         <Collapsible
           v-else
           as-child
-          :default-open="activeParentUrls.has(item.title)"
+          :default-open="activeParentUrls.has(item.id)"
           class="group/collapsible"
         >
           <SidebarMenuItem>
             <CollapsibleTrigger as-child>
               <SidebarMenuButton
-                :is-active="activeParentUrls.has(item.title)"
+                :is-active="activeParentUrls.has(item.id)"
                 :tooltip="item.title"
               >
                 <component :is="item.icon" />
@@ -88,17 +88,17 @@ function isActiveUrl(url: string): boolean {
               <SidebarMenuSub>
                 <SidebarMenuSubItem
                   v-for="child in item.children"
-                  :key="child.url"
+                  :key="child.id"
                 >
                   <RouterLink
                     v-slot="{ href, navigate }"
-                    :to="child.url"
+                    :to="{ name: child.routeName }"
                     custom
                   >
                     <SidebarMenuSubButton
                       as="a"
                       :href="href"
-                      :is-active="isActiveUrl(child.url)"
+                      :is-active="isActiveRoute(child.routeName)"
                       @click="navigate"
                     >
                       <span>{{ child.title }}</span>

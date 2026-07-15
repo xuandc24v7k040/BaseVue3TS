@@ -22,6 +22,7 @@
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/vue-query": "^5.100.10",
     "@tanstack/vue-table": "^8.21.3",
+    "@vietmap/vietmap-gl-js": "^7.0.0-pre.1",
     "@vueuse/core": "^14.3.0",
     "axios": "^1.16.1",
     "class-variance-authority": "^0.7.1",

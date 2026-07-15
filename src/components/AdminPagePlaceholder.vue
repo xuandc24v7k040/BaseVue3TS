@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBranchStore } from "@/stores/branch.store";
+import { useAdminIdentity } from "@/composables/use-admin-identity";
 
 interface StatCard {
   label: string;
@@ -47,6 +48,7 @@ const props = defineProps<{
 
 const authStore = useAuthStore();
 const branchStore = useBranchStore();
+const { roleLabel } = useAdminIdentity();
 
 const stats = computed<StatCard[]>(() => {
   if (props.scope === "branch-admin") {
@@ -54,7 +56,7 @@ const stats = computed<StatCard[]>(() => {
       {
         label: "Đơn trong ngày",
         value: "42",
-        description: "Theo chi nhánh được gán",
+        description: branchStore.scopeLabel,
         trend: "↑ 12.5% so với hôm qua",
         icon: ClipboardList,
         iconClass: "bg-blue-50 text-blue-600",
@@ -62,7 +64,7 @@ const stats = computed<StatCard[]>(() => {
       {
         label: "Sản phẩm còn hàng",
         value: "1,284",
-        description: "Theo chi nhánh được gán",
+        description: branchStore.scopeLabel,
         trend: "↑ 8.2% so với hôm qua",
         icon: PackageCheck,
         iconClass: "bg-emerald-50 text-emerald-600",
@@ -97,7 +99,9 @@ const stats = computed<StatCard[]>(() => {
     },
     {
       label: "Chi nhánh hoạt động",
-      value: branchStore.managementScope === "all" ? "2" : "1",
+      value: branchStore.isSystemScope
+        ? String(branchStore.availableBranches.length)
+        : "1",
       description: branchStore.scopeLabel,
       trend: "— Không đổi",
       icon: Building2,
@@ -114,13 +118,9 @@ const stats = computed<StatCard[]>(() => {
   ];
 });
 
-const roleLabel = computed(() => {
-  return authStore.role === "BRANCH_ADMIN" ? "Branch Admin" : "Super Admin";
-});
-
 const contextLabel = computed(() => {
-  if (authStore.role === "BRANCH_ADMIN") {
-    return `Chi nhánh được gán: ${authStore.branchName ?? branchStore.selectedBranch.name}`;
+  if (authStore.user?.type === "BRANCH") {
+    return `Chi nhánh được gán: ${branchStore.scopeLabel}`;
   }
 
   return `Phạm vi quản lý: ${branchStore.scopeLabel}`;

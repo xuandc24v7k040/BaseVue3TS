@@ -12,4 +12,5 @@ export const env = {
   apiBaseUrl: parsedEnv.VITE_API_BASE_URL,
   turnstileEnabled,
   turnstileSiteKey: parsedEnv.VITE_TURNSTILE_SITE_KEY,
+  vietMapTilemapKey: parsedEnv.VITE_VIETMAP_TILEMAP_KEY,
 } as const

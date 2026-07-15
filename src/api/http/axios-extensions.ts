@@ -5,6 +5,7 @@ declare module 'axios' {
     skipCsrf?: boolean
     skipAuthRefresh?: boolean
     retryAttempted?: boolean
+    branchScoped?: boolean
+    branchHeaderAttached?: boolean
   }
 }
-

@@ -7,6 +7,7 @@
  */
 import type { UsersFindAllSortBy } from './usersFindAllSortBy';
 import type { UsersFindAllSortOrder } from './usersFindAllSortOrder';
+import type { UsersFindAllType } from './usersFindAllType';
 
 export type UsersFindAllParams = {
 /**
@@ -21,4 +22,6 @@ limit?: number;
 search?: string;
 sortBy?: UsersFindAllSortBy;
 sortOrder?: UsersFindAllSortOrder;
+type?: UsersFindAllType;
+isActive?: boolean;
 };

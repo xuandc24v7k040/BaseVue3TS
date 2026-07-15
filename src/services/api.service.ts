@@ -3,11 +3,13 @@ import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 import type { Pinia } from 'pinia'
 import type { Router } from 'vue-router'
+import { toast } from 'vue-sonner'
 import { apiClient, setupHttpClient } from '@/api/http/client'
 import { clearCsrfToken } from '@/api/http/csrf-manager'
 import { toBookoraApiError } from '@/api/http/errors'
 import { clearAuthSensitiveQueries } from '@/api/query-cache'
 import { useAuthStore } from '@/stores/auth.store'
+import { useBranchStore } from '@/stores/branch.store'
 import type { ApiError } from '@/types/api.type'
 
 interface SetupApiInterceptorsOptions {
@@ -26,8 +28,13 @@ export function setupApiInterceptors(
   options: SetupApiInterceptorsOptions = {},
 ): void {
   const authStore = useAuthStore(pinia)
+  const branchStore = useBranchStore(pinia)
 
   setupHttpClient({
+    getSelectedBranchId: () => branchStore.selectedBranchId,
+    onBranchScopeForbidden: () => {
+      toast.error('Bạn không còn quyền truy cập chi nhánh đang chọn.')
+    },
     onSessionExpired: (error) => {
       if (!axios.isAxiosError(error) || error.response?.status !== 401) {
         return

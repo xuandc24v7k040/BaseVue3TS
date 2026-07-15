@@ -52,6 +52,14 @@ export const StaffCreateBody = zod.strictObject({
 })
 
 /**
+ * Get all branch assignments for a Staff user
+ * @summary Get all branch assignments for a Staff user
+ */
+export const StaffAssignmentsParams = zod.strictObject({
+  "id": zod.ulid()
+})
+
+/**
  * Get staff in branch scope
  * @summary Get staff in branch scope
  */
@@ -105,14 +113,14 @@ export const StaffConvertParams = zod.strictObject({
 
 export const StaffConvertBody = zod.strictObject({
   "branchAssignments": zod.array(zod.strictObject({
-  "branchId": zod.ulid(),
+  "branchId": zod.ulid().describe('Mỗi branchId chỉ được xuất hiện một lần trong toàn bộ payload.'),
   "isPrimary": zod.boolean(),
   "roleIds": zod.array(zod.ulid()).min(1),
   "permissions": zod.array(zod.strictObject({
   "permissionId": zod.ulid(),
   "effect": zod.enum(['ALLOW', 'DENY'])
-})).optional()
-}))
+})).optional().describe('permissionId phải unique trong assignment; dangerous permissions bị backend từ chối cho cả ALLOW và DENY.')
+})).describe('Danh sách branch phải unique và phải có đúng một assignment isPrimary=true. OpenAPI không biểu diễn đầy đủ cross-field invariant này; client vẫn phải validate bổ sung.')
 })
 
 /**

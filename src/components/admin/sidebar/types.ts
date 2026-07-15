@@ -1,13 +1,15 @@
-import type { LucideIcon } from "@lucide/vue";
+import type { Component } from "vue";
 
 export interface SidebarNavChild {
+  id: string;
   title: string;
-  url: string;
+  routeName: string;
 }
 
 export interface SidebarNavItem {
+  id: string;
   title: string;
-  url?: string;
-  icon: LucideIcon;
+  routeName?: string;
+  icon: Component;
   children?: SidebarNavChild[];
 }

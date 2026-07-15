@@ -5,10 +5,10 @@
  * Contract OpenAPI chính thức cho backend Bookora. Frontend dùng cookie credentials, cookie accessToken/refreshToken và header X-CSRF-Token cho mutation cần CSRF.
  * OpenAPI spec version: 1.0
  */
-import type { MutationCountResponseDto } from './mutationCountResponseDto';
+import type { PermissionDetailResponseDto } from './permissionDetailResponseDto';
 
 export type PermissionsRemove200 = {
   statusCode: number;
   message: string;
-  data: MutationCountResponseDto;
+  data: PermissionDetailResponseDto;
 };

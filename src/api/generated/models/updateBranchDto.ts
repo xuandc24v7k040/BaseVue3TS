@@ -10,5 +10,24 @@ export interface UpdateBranchDto {
   name?: string;
   code?: string;
   address?: string;
-  phone?: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  province?: string | null;
+  /** @nullable */
+  ward?: string | null;
+  /**
+     * @minimum -90
+     * @maximum 90
+     * @nullable
+     */
+  latitude?: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     * @nullable
+     */
+  longitude?: number | null;
+  /** true = Đang hoạt động, false = Ngừng hoạt động. */
+  isActive?: boolean;
 }

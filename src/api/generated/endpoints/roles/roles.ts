@@ -31,6 +31,7 @@ import type {
 
 import type {
   CreateRoleDto,
+  ErrorResponseDto,
   RolesAssignPermission201,
   RolesCreate201,
   RolesDeactivate200,
@@ -78,7 +79,7 @@ export const getRolesListQueryKey = (params?: MaybeRef<RolesListParams>,) => {
     }
 
 
-export const getRolesListQueryOptions = <TData = Awaited<ReturnType<typeof rolesList>>, TError = ErrorType<void>>(params?: MaybeRef<RolesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getRolesListQueryOptions = <TData = Awaited<ReturnType<typeof rolesList>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<RolesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -97,14 +98,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type RolesListQueryResult = NonNullable<Awaited<ReturnType<typeof rolesList>>>
-export type RolesListQueryError = ErrorType<void>
+export type RolesListQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary List roles
  */
 
-export function useRolesList<TData = Awaited<ReturnType<typeof rolesList>>, TError = ErrorType<void>>(
+export function useRolesList<TData = Awaited<ReturnType<typeof rolesList>>, TError = ErrorType<ErrorResponseDto>>(
  params?: MaybeRef<RolesListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -143,7 +144,7 @@ export const rolesCreate = (
 
 
 
-export const getRolesCreateMutationOptions = <TError = ErrorType<void>,
+export const getRolesCreateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesCreate>>, TError,{data: BodyType<CreateRoleDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof rolesCreate>>, TError,{data: BodyType<CreateRoleDto>}, TContext> => {
 
@@ -172,12 +173,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RolesCreateMutationResult = NonNullable<Awaited<ReturnType<typeof rolesCreate>>>
     export type RolesCreateMutationBody = BodyType<CreateRoleDto>
-    export type RolesCreateMutationError = ErrorType<void>
+    export type RolesCreateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Create custom role
  */
-export const useRolesCreate = <TError = ErrorType<void>,
+export const useRolesCreate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesCreate>>, TError,{data: BodyType<CreateRoleDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof rolesCreate>>,
@@ -213,7 +214,7 @@ export const getRolesGetQueryKey = (id: MaybeRef<string>,) => {
     }
 
 
-export const getRolesGetQueryOptions = <TData = Awaited<ReturnType<typeof rolesGet>>, TError = ErrorType<void>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getRolesGetQueryOptions = <TData = Awaited<ReturnType<typeof rolesGet>>, TError = ErrorType<ErrorResponseDto>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -232,14 +233,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type RolesGetQueryResult = NonNullable<Awaited<ReturnType<typeof rolesGet>>>
-export type RolesGetQueryError = ErrorType<void>
+export type RolesGetQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary Get role detail
  */
 
-export function useRolesGet<TData = Awaited<ReturnType<typeof rolesGet>>, TError = ErrorType<void>>(
+export function useRolesGet<TData = Awaited<ReturnType<typeof rolesGet>>, TError = ErrorType<ErrorResponseDto>>(
  id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -280,7 +281,7 @@ updateRoleDto = unref(updateRoleDto);
 
 
 
-export const getRolesUpdateMutationOptions = <TError = ErrorType<void>,
+export const getRolesUpdateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesUpdate>>, TError,{id: string;data: BodyType<UpdateRoleDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof rolesUpdate>>, TError,{id: string;data: BodyType<UpdateRoleDto>}, TContext> => {
 
@@ -309,12 +310,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RolesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof rolesUpdate>>>
     export type RolesUpdateMutationBody = BodyType<UpdateRoleDto>
-    export type RolesUpdateMutationError = ErrorType<void>
+    export type RolesUpdateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Update role
  */
-export const useRolesUpdate = <TError = ErrorType<void>,
+export const useRolesUpdate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesUpdate>>, TError,{id: string;data: BodyType<UpdateRoleDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof rolesUpdate>>,
@@ -342,7 +343,7 @@ export const rolesDeactivate = (
 
 
 
-export const getRolesDeactivateMutationOptions = <TError = ErrorType<void>,
+export const getRolesDeactivateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesDeactivate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof rolesDeactivate>>, TError,{id: string}, TContext> => {
 
@@ -371,12 +372,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RolesDeactivateMutationResult = NonNullable<Awaited<ReturnType<typeof rolesDeactivate>>>
 
-    export type RolesDeactivateMutationError = ErrorType<void>
+    export type RolesDeactivateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Deactivate role
  */
-export const useRolesDeactivate = <TError = ErrorType<void>,
+export const useRolesDeactivate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesDeactivate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof rolesDeactivate>>,
@@ -412,7 +413,7 @@ export const getRolesPermissionsQueryKey = (id: MaybeRef<string>,) => {
     }
 
 
-export const getRolesPermissionsQueryOptions = <TData = Awaited<ReturnType<typeof rolesPermissions>>, TError = ErrorType<void>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesPermissions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getRolesPermissionsQueryOptions = <TData = Awaited<ReturnType<typeof rolesPermissions>>, TError = ErrorType<ErrorResponseDto>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesPermissions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -431,14 +432,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type RolesPermissionsQueryResult = NonNullable<Awaited<ReturnType<typeof rolesPermissions>>>
-export type RolesPermissionsQueryError = ErrorType<void>
+export type RolesPermissionsQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary List role permissions
  */
 
-export function useRolesPermissions<TData = Awaited<ReturnType<typeof rolesPermissions>>, TError = ErrorType<void>>(
+export function useRolesPermissions<TData = Awaited<ReturnType<typeof rolesPermissions>>, TError = ErrorType<ErrorResponseDto>>(
  id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof rolesPermissions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -477,7 +478,7 @@ permissionId = unref(permissionId);
 
 
 
-export const getRolesAssignPermissionMutationOptions = <TError = ErrorType<void>,
+export const getRolesAssignPermissionMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesAssignPermission>>, TError,{id: string;permissionId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof rolesAssignPermission>>, TError,{id: string;permissionId: string}, TContext> => {
 
@@ -506,12 +507,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RolesAssignPermissionMutationResult = NonNullable<Awaited<ReturnType<typeof rolesAssignPermission>>>
 
-    export type RolesAssignPermissionMutationError = ErrorType<void>
+    export type RolesAssignPermissionMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Assign permission to role
  */
-export const useRolesAssignPermission = <TError = ErrorType<void>,
+export const useRolesAssignPermission = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesAssignPermission>>, TError,{id: string;permissionId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof rolesAssignPermission>>,
@@ -541,7 +542,7 @@ permissionId = unref(permissionId);
 
 
 
-export const getRolesRemovePermissionMutationOptions = <TError = ErrorType<void>,
+export const getRolesRemovePermissionMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesRemovePermission>>, TError,{id: string;permissionId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof rolesRemovePermission>>, TError,{id: string;permissionId: string}, TContext> => {
 
@@ -570,12 +571,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RolesRemovePermissionMutationResult = NonNullable<Awaited<ReturnType<typeof rolesRemovePermission>>>
 
-    export type RolesRemovePermissionMutationError = ErrorType<void>
+    export type RolesRemovePermissionMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Remove permission from role
  */
-export const useRolesRemovePermission = <TError = ErrorType<void>,
+export const useRolesRemovePermission = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rolesRemovePermission>>, TError,{id: string;permissionId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof rolesRemovePermission>>,

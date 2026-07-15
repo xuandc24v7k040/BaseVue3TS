@@ -2,12 +2,14 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRoute, useRouter } from 'vue-router'
 import { clearCsrfToken } from '@/api/http/csrf-manager'
 import { clearAuthSensitiveQueries, syncAuthMeQuery } from '@/api/query-cache'
-import { dashboardRouteForUserType, safeRedirectForUser } from '@/router'
+import { resolveAdminPostAuthRoute } from '@/router'
 import { useAuthStore } from '@/stores/auth.store'
+import { useBranchStore } from '@/stores/branch.store'
 import type { LoginRequest } from '@/types/auth.type'
 
 export function useLoginMutation() {
   const authStore = useAuthStore()
+  const branchStore = useBranchStore()
   const queryClient = useQueryClient()
   const route = useRoute()
   const router = useRouter()
@@ -17,8 +19,7 @@ export function useLoginMutation() {
     onSuccess: async (user) => {
       syncAuthMeQuery(queryClient, user)
       await router.replace(
-        safeRedirectForUser(router, route.query.redirect, user.type)
-          ?? dashboardRouteForUserType(user.type),
+        resolveAdminPostAuthRoute(router, route.query.redirect, user, branchStore),
       )
     },
   })
@@ -33,9 +34,13 @@ export function useLogoutMutation() {
     mutationFn: () => authStore.logout(),
     onSuccess: async (result) => {
       if (!result.confirmed) return
-      clearAuthSensitiveQueries(queryClient)
-      clearCsrfToken()
-      await router.replace({ name: 'admin-login' })
+      try {
+        clearAuthSensitiveQueries(queryClient)
+        clearCsrfToken()
+        await router.replace({ name: 'admin-login' })
+      } finally {
+        authStore.completeLogoutNavigation()
+      }
     },
   })
 }

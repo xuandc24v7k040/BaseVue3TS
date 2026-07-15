@@ -51,8 +51,8 @@ const { isLoggingOut, logout } = useAuthLogout();
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          class="w-(--reka-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-          :side="isMobile ? 'bottom' : 'right'"
+          class="z-[60] w-(--reka-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          :side="isMobile ? 'top' : 'right'"
           align="end"
           :side-offset="4"
         >

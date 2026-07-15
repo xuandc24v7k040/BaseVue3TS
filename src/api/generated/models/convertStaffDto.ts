@@ -8,5 +8,6 @@
 import type { ConvertStaffBranchAssignmentDto } from './convertStaffBranchAssignmentDto';
 
 export interface ConvertStaffDto {
+  /** Danh sách branch phải unique và phải có đúng một assignment isPrimary=true. OpenAPI không biểu diễn đầy đủ cross-field invariant này; client vẫn phải validate bổ sung. */
   branchAssignments: ConvertStaffBranchAssignmentDto[];
 }

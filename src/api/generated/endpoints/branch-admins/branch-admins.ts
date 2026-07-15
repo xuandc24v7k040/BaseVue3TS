@@ -42,7 +42,8 @@ import type {
   BranchAdminsRemoveBranch200,
   ChangePrimaryBranchDto,
   ConvertBranchAdminDto,
-  CreateInternalUserDto
+  CreateInternalUserDto,
+  ErrorResponseDto
 } from '../../models';
 
 import { customInstance } from '../../../mutator';
@@ -80,7 +81,7 @@ export const getBranchAdminsListQueryKey = (params?: MaybeRef<BranchAdminsListPa
     }
 
 
-export const getBranchAdminsListQueryOptions = <TData = Awaited<ReturnType<typeof branchAdminsList>>, TError = ErrorType<void>>(params?: MaybeRef<BranchAdminsListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchAdminsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getBranchAdminsListQueryOptions = <TData = Awaited<ReturnType<typeof branchAdminsList>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<BranchAdminsListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchAdminsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -99,14 +100,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type BranchAdminsListQueryResult = NonNullable<Awaited<ReturnType<typeof branchAdminsList>>>
-export type BranchAdminsListQueryError = ErrorType<void>
+export type BranchAdminsListQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary List Branch Admins
  */
 
-export function useBranchAdminsList<TData = Awaited<ReturnType<typeof branchAdminsList>>, TError = ErrorType<void>>(
+export function useBranchAdminsList<TData = Awaited<ReturnType<typeof branchAdminsList>>, TError = ErrorType<ErrorResponseDto>>(
  params?: MaybeRef<BranchAdminsListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchAdminsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -145,7 +146,7 @@ export const branchAdminsCreate = (
 
 
 
-export const getBranchAdminsCreateMutationOptions = <TError = ErrorType<void>,
+export const getBranchAdminsCreateMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsCreate>>, TError,{data: BodyType<CreateInternalUserDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchAdminsCreate>>, TError,{data: BodyType<CreateInternalUserDto>}, TContext> => {
 
@@ -174,12 +175,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchAdminsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof branchAdminsCreate>>>
     export type BranchAdminsCreateMutationBody = BodyType<CreateInternalUserDto>
-    export type BranchAdminsCreateMutationError = ErrorType<void>
+    export type BranchAdminsCreateMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Create Branch Admin
  */
-export const useBranchAdminsCreate = <TError = ErrorType<void>,
+export const useBranchAdminsCreate = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsCreate>>, TError,{data: BodyType<CreateInternalUserDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchAdminsCreate>>,
@@ -215,7 +216,7 @@ export const getBranchAdminsGetQueryKey = (id: MaybeRef<string>,) => {
     }
 
 
-export const getBranchAdminsGetQueryOptions = <TData = Awaited<ReturnType<typeof branchAdminsGet>>, TError = ErrorType<void>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchAdminsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getBranchAdminsGetQueryOptions = <TData = Awaited<ReturnType<typeof branchAdminsGet>>, TError = ErrorType<ErrorResponseDto>>(id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchAdminsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -234,14 +235,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type BranchAdminsGetQueryResult = NonNullable<Awaited<ReturnType<typeof branchAdminsGet>>>
-export type BranchAdminsGetQueryError = ErrorType<void>
+export type BranchAdminsGetQueryError = ErrorType<ErrorResponseDto>
 
 
 /**
  * @summary Get Branch Admin detail
  */
 
-export function useBranchAdminsGet<TData = Awaited<ReturnType<typeof branchAdminsGet>>, TError = ErrorType<void>>(
+export function useBranchAdminsGet<TData = Awaited<ReturnType<typeof branchAdminsGet>>, TError = ErrorType<ErrorResponseDto>>(
  id: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof branchAdminsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -282,7 +283,7 @@ convertBranchAdminDto = unref(convertBranchAdminDto);
 
 
 
-export const getBranchAdminsConvertMutationOptions = <TError = ErrorType<void>,
+export const getBranchAdminsConvertMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsConvert>>, TError,{id: string;data: BodyType<ConvertBranchAdminDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchAdminsConvert>>, TError,{id: string;data: BodyType<ConvertBranchAdminDto>}, TContext> => {
 
@@ -311,12 +312,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchAdminsConvertMutationResult = NonNullable<Awaited<ReturnType<typeof branchAdminsConvert>>>
     export type BranchAdminsConvertMutationBody = BodyType<ConvertBranchAdminDto>
-    export type BranchAdminsConvertMutationError = ErrorType<void>
+    export type BranchAdminsConvertMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Convert Customer to Branch Admin
  */
-export const useBranchAdminsConvert = <TError = ErrorType<void>,
+export const useBranchAdminsConvert = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsConvert>>, TError,{id: string;data: BodyType<ConvertBranchAdminDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchAdminsConvert>>,
@@ -346,7 +347,7 @@ branchId = unref(branchId);
 
 
 
-export const getBranchAdminsAssignBranchMutationOptions = <TError = ErrorType<void>,
+export const getBranchAdminsAssignBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsAssignBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchAdminsAssignBranch>>, TError,{id: string;branchId: string}, TContext> => {
 
@@ -375,12 +376,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchAdminsAssignBranchMutationResult = NonNullable<Awaited<ReturnType<typeof branchAdminsAssignBranch>>>
 
-    export type BranchAdminsAssignBranchMutationError = ErrorType<void>
+    export type BranchAdminsAssignBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Assign branch to Branch Admin
  */
-export const useBranchAdminsAssignBranch = <TError = ErrorType<void>,
+export const useBranchAdminsAssignBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsAssignBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchAdminsAssignBranch>>,
@@ -414,7 +415,7 @@ changePrimaryBranchDto = unref(changePrimaryBranchDto);
 
 
 
-export const getBranchAdminsRemoveBranchMutationOptions = <TError = ErrorType<void>,
+export const getBranchAdminsRemoveBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsRemoveBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchAdminsRemoveBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext> => {
 
@@ -443,12 +444,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchAdminsRemoveBranchMutationResult = NonNullable<Awaited<ReturnType<typeof branchAdminsRemoveBranch>>>
     export type BranchAdminsRemoveBranchMutationBody = BodyType<ChangePrimaryBranchDto>
-    export type BranchAdminsRemoveBranchMutationError = ErrorType<void>
+    export type BranchAdminsRemoveBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Remove Branch Admin branch
  */
-export const useBranchAdminsRemoveBranch = <TError = ErrorType<void>,
+export const useBranchAdminsRemoveBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsRemoveBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchAdminsRemoveBranch>>,
@@ -478,7 +479,7 @@ branchId = unref(branchId);
 
 
 
-export const getBranchAdminsActivateBranchMutationOptions = <TError = ErrorType<void>,
+export const getBranchAdminsActivateBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsActivateBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchAdminsActivateBranch>>, TError,{id: string;branchId: string}, TContext> => {
 
@@ -507,12 +508,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchAdminsActivateBranchMutationResult = NonNullable<Awaited<ReturnType<typeof branchAdminsActivateBranch>>>
 
-    export type BranchAdminsActivateBranchMutationError = ErrorType<void>
+    export type BranchAdminsActivateBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Activate Branch Admin branch assignment
  */
-export const useBranchAdminsActivateBranch = <TError = ErrorType<void>,
+export const useBranchAdminsActivateBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsActivateBranch>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchAdminsActivateBranch>>,
@@ -546,7 +547,7 @@ changePrimaryBranchDto = unref(changePrimaryBranchDto);
 
 
 
-export const getBranchAdminsDeactivateBranchMutationOptions = <TError = ErrorType<void>,
+export const getBranchAdminsDeactivateBranchMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsDeactivateBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchAdminsDeactivateBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext> => {
 
@@ -575,12 +576,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchAdminsDeactivateBranchMutationResult = NonNullable<Awaited<ReturnType<typeof branchAdminsDeactivateBranch>>>
     export type BranchAdminsDeactivateBranchMutationBody = BodyType<ChangePrimaryBranchDto>
-    export type BranchAdminsDeactivateBranchMutationError = ErrorType<void>
+    export type BranchAdminsDeactivateBranchMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Deactivate Branch Admin branch assignment
  */
-export const useBranchAdminsDeactivateBranch = <TError = ErrorType<void>,
+export const useBranchAdminsDeactivateBranch = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsDeactivateBranch>>, TError,{id: string;branchId: string;data: BodyType<ChangePrimaryBranchDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchAdminsDeactivateBranch>>,
@@ -610,7 +611,7 @@ branchId = unref(branchId);
 
 
 
-export const getBranchAdminsPrimaryMutationOptions = <TError = ErrorType<void>,
+export const getBranchAdminsPrimaryMutationOptions = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsPrimary>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof branchAdminsPrimary>>, TError,{id: string;branchId: string}, TContext> => {
 
@@ -639,12 +640,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type BranchAdminsPrimaryMutationResult = NonNullable<Awaited<ReturnType<typeof branchAdminsPrimary>>>
 
-    export type BranchAdminsPrimaryMutationError = ErrorType<void>
+    export type BranchAdminsPrimaryMutationError = ErrorType<ErrorResponseDto>
 
     /**
  * @summary Set Branch Admin primary branch
  */
-export const useBranchAdminsPrimary = <TError = ErrorType<void>,
+export const useBranchAdminsPrimary = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof branchAdminsPrimary>>, TError,{id: string;branchId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof branchAdminsPrimary>>,

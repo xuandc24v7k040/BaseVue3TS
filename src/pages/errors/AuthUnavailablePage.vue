@@ -12,12 +12,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { dashboardRouteForUserType, safeRedirectForUser } from "@/router";
+import { resolveAdminPostAuthRoute } from "@/router";
 import { useAuthStore } from "@/stores/auth.store";
+import { useBranchStore } from "@/stores/branch.store";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const branchStore = useBranchStore();
 const isRetrying = ref(false);
 
 async function retry(): Promise<void> {
@@ -29,8 +31,12 @@ async function retry(): Promise<void> {
 
     if (authStore.status === "authenticated" && authStore.user) {
       await router.replace(
-        safeRedirectForUser(router, route.query.redirect, authStore.user.type) ??
-          dashboardRouteForUserType(authStore.user.type),
+        resolveAdminPostAuthRoute(
+          router,
+          route.query.redirect,
+          authStore.user,
+          branchStore,
+        ),
       );
     } else if (authStore.status === "anonymous") {
       await router.replace({ name: "admin-login" });

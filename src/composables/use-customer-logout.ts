@@ -15,6 +15,7 @@ export function useCustomerLogout() {
   async function logoutCustomer(): Promise<void> {
     if (isLoggingOut.value) return
     isLoggingOut.value = true
+    let didConfirmLogout = false
 
     try {
       const result = await authStore.logout()
@@ -22,12 +23,14 @@ export function useCustomerLogout() {
         toast.warning('Không xác nhận được đăng xuất từ máy chủ. Vui lòng thử lại.')
         return
       }
+      didConfirmLogout = true
 
       clearAuthSensitiveQueries(queryClient)
       clearCsrfToken()
       await router.replace({ name: 'client-home' })
       toast.success('Đã đăng xuất.')
     } finally {
+      if (didConfirmLogout) authStore.completeLogoutNavigation()
       isLoggingOut.value = false
     }
   }

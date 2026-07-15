@@ -39,21 +39,45 @@ vi.mock('@/api/modules/auth.api', () => ({
   logoutCurrentAccount: vi.fn(),
 }))
 
-function makeUser(type: AuthMeResponseDto['type']): AuthMeResponseDto {
+const branch = {
+  id: '01K00000000000000000000001',
+  code: 'can-tho',
+  name: 'Cần Thơ',
+  isPrimary: true,
+}
+
+function makeUser(
+  type: AuthMeResponseDto['type'],
+  permissions: string[] = ['dashboard.read'],
+): AuthMeResponseDto {
   return {
     id: '01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T',
     email: 'admin@example.com',
     fullName: 'Bookora Admin',
+    phone: null,
+    gender: null,
+    birthday: null,
     type,
     roles: [],
     permissions: [],
     globalRoles: [],
-    globalPermissions: [],
-    branchAssignments: [],
+    globalPermissions: type === 'SYSTEM' ? permissions : [],
+    branchAssignments: type === 'BRANCH'
+      ? [{
+          branchId: branch.id,
+          userBranchId: 'assignment-a',
+          branch,
+          isPrimary: true,
+          isActive: true,
+          roles: [],
+          permissions,
+          maxRoleLevel: 0,
+        }]
+      : [],
     maxRoleLevel: 0,
     isSuperAdmin: type === 'SYSTEM',
-    branches: [],
-    primaryBranchId: null,
+    branches: type === 'BRANCH' ? [branch] : [],
+    primaryBranchId: type === 'BRANCH' ? branch.id : null,
   }
 }
 
@@ -64,17 +88,35 @@ async function setup() {
     history: createMemoryHistory(),
     routes: [
       { path: '/admin/login', name: 'admin-login', component: {} },
+      { path: '/admin-home', name: 'admin-home', component: {} },
       {
         path: '/super-admin/dashboard',
         name: 'super-admin-dashboard',
         component: {},
-        meta: { allowedUserTypes: ['SYSTEM'] },
+        meta: {
+          allowedUserTypes: ['SYSTEM'],
+          requiredPermissions: ['dashboard.read'],
+        },
       },
       {
         path: '/branch-admin/dashboard',
         name: 'branch-admin-dashboard',
         component: {},
-        meta: { allowedUserTypes: ['BRANCH'] },
+        meta: {
+          allowedUserTypes: ['BRANCH'],
+          requiresSelectedBranch: true,
+          requiredPermissions: ['dashboard.read'],
+        },
+      },
+      {
+        path: '/branch-admin/orders',
+        name: 'branch-admin-orders',
+        component: {},
+        meta: {
+          allowedUserTypes: ['BRANCH'],
+          requiresSelectedBranch: true,
+          requiredPermissions: ['orders.read'],
+        },
       },
       { path: '/access-denied', name: 'access-denied', component: {} },
     ],
@@ -153,6 +195,19 @@ describe('real admin login form', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe(expectedPath)
+  })
+
+  it('ignores a stale unauthorized redirect and uses the new principal safe landing', async () => {
+    const { wrapper, router, store } = await setup()
+    await router.replace('/admin/login?redirect=/branch-admin/dashboard')
+    vi.spyOn(store, 'login').mockResolvedValue(makeUser('BRANCH', ['orders.read']))
+    await fillValidForm(wrapper)
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/branch-admin/orders')
+    expect(router.currentRoute.value.name).not.toBe('access-denied')
   })
 
   it('shows a credential-safe message for 401', async () => {

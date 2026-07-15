@@ -1,87 +1,188 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import type {
+  AuthMeBranchAssignmentDto,
+  AuthMeBranchDto,
+  AuthMeResponseDto,
+  AuthMeResponseDtoType,
+} from '@/api/generated/models'
+import { changeBranchQueryScope } from '@/api/branch-query-cache'
 import { STORAGE_KEYS } from '@/constants/storage-key.constant'
-import type { AdminRole, BranchId, ManagementScope } from '@/types/auth.type'
+import { queryClient } from '@/lib/query-client'
 
-export interface Branch {
-  id: BranchId
-  name: string
+interface PersistedAdminBranchContext {
+  userId: string
+  branchId: string | null
 }
 
-const DEFAULT_BRANCH_ID: BranchId = 'can-tho'
-const DEFAULT_SCOPE: ManagementScope = 'all'
+function readPersistedContext(): PersistedAdminBranchContext | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.adminBranchContext)
+    if (!raw) return null
 
-function isBranchId(value: unknown): value is BranchId {
-  return value === 'can-tho' || value === 'hau-giang'
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+
+    const { userId, branchId } = parsed as Record<string, unknown>
+    if (
+      typeof userId !== 'string'
+      || (branchId !== null && typeof branchId !== 'string')
+    ) {
+      return null
+    }
+
+    return { userId, branchId }
+  } catch {
+    return null
+  }
 }
 
-function isManagementScope(value: unknown): value is ManagementScope {
-  return value === 'all' || isBranchId(value)
+function writePersistedContext(context: PersistedAdminBranchContext): void {
+  localStorage.setItem(STORAGE_KEYS.adminBranchContext, JSON.stringify(context))
 }
 
-export const useBranchStore = defineStore('branch', () => {
-  const branches: Branch[] = [
-    { id: 'can-tho', name: 'Chi nhánh Cần Thơ' },
-    { id: 'hau-giang', name: 'Chi nhánh Hậu Giang' },
-  ]
+export const useBranchStore = defineStore('admin-branch-context', () => {
+  const selectedBranchId = ref<string | null>(null)
+  const availableBranches = ref<AuthMeBranchDto[]>([])
+  const assignments = ref<AuthMeBranchAssignmentDto[]>([])
+  const globalPermissions = ref<string[]>([])
+  const principalId = ref<string | null>(null)
+  const principalType = ref<AuthMeResponseDtoType | null>(null)
+  const isInitialized = ref(false)
 
-  const storedBranchId = localStorage.getItem(STORAGE_KEYS.selectedBranchId)
-  const storedScope = localStorage.getItem(STORAGE_KEYS.managementScope)
-  const selectedBranchId = ref<BranchId>(isBranchId(storedBranchId) ? storedBranchId : DEFAULT_BRANCH_ID)
-  const managementScope = ref<ManagementScope>(isManagementScope(storedScope) ? storedScope : DEFAULT_SCOPE)
+  const selectedBranch = computed<AuthMeBranchDto | null>(() => {
+    return availableBranches.value.find(({ id }) => id === selectedBranchId.value) ?? null
+  })
 
-  const selectedBranch = computed(() => {
-    return branches.find((branch) => branch.id === selectedBranchId.value) ?? branches[0]
+  const selectedAssignment = computed<AuthMeBranchAssignmentDto | null>(() => {
+    return assignments.value.find(({ branchId }) => branchId === selectedBranchId.value) ?? null
+  })
+
+  const effectivePermissions = computed<string[]>(() => {
+    if (principalType.value === 'SYSTEM') return globalPermissions.value
+    return selectedAssignment.value?.permissions ?? []
+  })
+
+  const isSystemScope = computed(() => {
+    return principalType.value === 'SYSTEM' && selectedBranchId.value === null
   })
 
   const scopeLabel = computed(() => {
-    if (managementScope.value === 'all') {
-      return 'Toàn hệ thống'
-    }
-
-    return branches.find((branch) => branch.id === managementScope.value)?.name ?? selectedBranch.value.name
+    if (isSystemScope.value) return 'Toàn hệ thống'
+    return selectedBranch.value?.name ?? 'Chưa được phân công chi nhánh'
   })
 
-  function setManagementScope(scope: ManagementScope): void {
-    managementScope.value = scope
-    localStorage.setItem(STORAGE_KEYS.managementScope, scope)
+  function persist(): void {
+    if (!principalId.value) return
+    writePersistedContext({
+      userId: principalId.value,
+      branchId: selectedBranchId.value,
+    })
+  }
 
-    if (scope !== 'all') {
-      selectedBranchId.value = scope
-      localStorage.setItem(STORAGE_KEYS.selectedBranchId, scope)
+  function reset(options: { clearPersistence?: boolean } = {}): void {
+    selectedBranchId.value = null
+    availableBranches.value = []
+    assignments.value = []
+    globalPermissions.value = []
+    principalId.value = null
+    principalType.value = null
+    isInitialized.value = false
+
+    if (options.clearPersistence ?? true) {
+      localStorage.removeItem(STORAGE_KEYS.adminBranchContext)
     }
   }
 
-  function setSelectedBranch(branchId: BranchId): void {
-    selectedBranchId.value = branchId
-    managementScope.value = branchId
-    localStorage.setItem(STORAGE_KEYS.selectedBranchId, branchId)
-    localStorage.setItem(STORAGE_KEYS.managementScope, branchId)
+  function initialize(principal: AuthMeResponseDto): void {
+    const persisted = readPersistedContext()
+    const persistedBranchId = persisted?.userId === principal.id
+      ? persisted.branchId
+      : null
+
+    principalId.value = principal.id
+    principalType.value = principal.type
+    globalPermissions.value = [...principal.globalPermissions]
+
+    if (principal.type === 'SYSTEM') {
+      assignments.value = []
+      availableBranches.value = [...principal.branches]
+      selectedBranchId.value = persistedBranchId !== null
+        && availableBranches.value.some(({ id }) => id === persistedBranchId)
+        ? persistedBranchId
+        : null
+    } else if (principal.type === 'BRANCH') {
+      const activeBranchIds = new Set(principal.branches.map(({ id }) => id))
+      assignments.value = principal.branchAssignments.filter((assignment) => {
+        return assignment.isActive && activeBranchIds.has(assignment.branchId)
+      })
+      availableBranches.value = assignments.value.map(({ branch }) => branch)
+
+      const persistedIsValid = persisted?.userId === principal.id
+        && persisted.branchId !== null
+        && assignments.value.some(({ branchId }) => branchId === persisted.branchId)
+      const primaryIsValid = principal.primaryBranchId !== null
+        && assignments.value.some(({ branchId }) => branchId === principal.primaryBranchId)
+
+      selectedBranchId.value = persistedIsValid
+        ? persisted.branchId
+        : primaryIsValid
+          ? principal.primaryBranchId
+          : assignments.value[0]?.branchId ?? null
+    } else {
+      assignments.value = []
+      availableBranches.value = []
+      selectedBranchId.value = null
+    }
+
+    isInitialized.value = true
+
+    if (principal.type === 'SYSTEM' || principal.type === 'BRANCH') {
+      persist()
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.adminBranchContext)
+    }
   }
 
-  function applyAuthContext(role: AdminRole | null, assignedBranchId: BranchId | null): void {
-    if (role === 'BRANCH_ADMIN' && assignedBranchId) {
-      selectedBranchId.value = assignedBranchId
-      managementScope.value = assignedBranchId
-      localStorage.setItem(STORAGE_KEYS.selectedBranchId, assignedBranchId)
-      localStorage.setItem(STORAGE_KEYS.managementScope, assignedBranchId)
-      return
+  async function setSelectedBranch(branchId: string | null): Promise<boolean> {
+    if (!isInitialized.value || !principalId.value) return false
+    if (branchId === null && principalType.value !== 'SYSTEM') return false
+    if (
+      branchId !== null
+      && !availableBranches.value.some(({ id }) => id === branchId)
+    ) {
+      return false
     }
 
-    if (role === 'SUPER_ADMIN' && !isManagementScope(localStorage.getItem(STORAGE_KEYS.managementScope))) {
-      managementScope.value = DEFAULT_SCOPE
-      localStorage.setItem(STORAGE_KEYS.managementScope, DEFAULT_SCOPE)
+    const previousBranchId = selectedBranchId.value
+    if (previousBranchId === branchId) {
+      persist()
+      return true
     }
+
+    await changeBranchQueryScope(
+      queryClient,
+      previousBranchId,
+      branchId,
+      () => {
+        selectedBranchId.value = branchId
+        persist()
+      },
+    )
+    return true
   }
 
   return {
-    branches,
     selectedBranchId,
     selectedBranch,
-    managementScope,
+    selectedAssignment,
+    effectivePermissions,
+    isSystemScope,
+    isInitialized,
+    availableBranches,
     scopeLabel,
-    setManagementScope,
+    initialize,
+    reset,
     setSelectedBranch,
-    applyAuthContext,
   }
 })

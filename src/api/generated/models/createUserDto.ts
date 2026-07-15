@@ -9,5 +9,13 @@
 export interface CreateUserDto {
   fullName: string;
   email: string;
-  phone?: string;
+  /** @nullable */
+  phone?: string | null;
+  /**
+     * @maxLength 20
+     * @nullable
+     */
+  gender?: string | null;
+  /** @nullable */
+  birthday?: string | null;
 }

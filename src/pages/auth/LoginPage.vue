@@ -16,12 +16,14 @@ import {
   clearSessionHint,
   hasSessionHint,
 } from "@/features/auth/session-hint";
-import { dashboardRouteForUserType } from "@/router";
+import { resolveAdminPostAuthRoute } from "@/router";
 import { useAuthStore } from "@/stores/auth.store";
+import { useBranchStore } from "@/stores/branch.store";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const branchStore = useBranchStore();
 const isCheckingSession = ref(
   authStore.status === "authenticated" ||
     (authStore.status === "unknown" && hasSessionHint()),
@@ -42,7 +44,14 @@ async function checkExistingSession(): Promise<void> {
       authStore.status === "authenticated" &&
       authStore.user
     ) {
-      await router.replace(dashboardRouteForUserType(authStore.user.type));
+      await router.replace(
+        resolveAdminPostAuthRoute(
+          router,
+          route.query.redirect,
+          authStore.user,
+          branchStore,
+        ),
+      );
     }
   } catch (error: unknown) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {

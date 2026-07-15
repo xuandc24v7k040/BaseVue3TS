@@ -6,7 +6,13 @@ import {
   type RouteRecordRaw,
   type Router,
 } from 'vue-router'
-import type { AuthMeResponseDtoType } from '@/api/generated/models'
+import type { AuthMeResponseDto, AuthMeResponseDtoType } from '@/api/generated/models'
+import { resolveFirstAllowedAdminRoute } from '@/authorization/admin-menu'
+import { ADMIN_PERMISSIONS } from '@/authorization/admin-permissions'
+import {
+  createPermissionPolicy,
+  type AdminBranchAuthorizationContext,
+} from '@/authorization/permission-policy'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import LoginPage from '@/pages/auth/LoginPage.vue'
@@ -15,27 +21,36 @@ import AuthUnavailablePage from '@/pages/errors/AuthUnavailablePage.vue'
 import NotFoundPage from '@/pages/errors/NotFoundPage.vue'
 import { clientRoutes } from '@/router/client.routes'
 import { useAuthStore } from '@/stores/auth.store'
+import { useBranchStore } from '@/stores/branch.store'
 
 interface AuthGuardStore {
   status: 'unknown' | 'anonymous' | 'authenticated'
-  user: { type: AuthMeResponseDtoType } | null
+  user: AuthMeResponseDto | null
   bootstrapError: unknown | null
+  isLogoutNavigationPending?: boolean
   ensureBootstrapped: () => Promise<void>
 }
 
-export function dashboardRouteForUserType(
+interface BranchGuardStore extends AdminBranchAuthorizationContext {
+  isInitialized: boolean
+  selectedBranchId: string | null
+  effectivePermissions: readonly string[]
+  initialize: (principal: AuthMeResponseDto) => void
+}
+
+export function adminLandingRouteForUserType(
   userType: AuthMeResponseDtoType,
 ): RouteLocationRaw {
-  if (userType === 'SYSTEM') return { name: 'super-admin-dashboard' }
-  if (userType === 'BRANCH') return { name: 'branch-admin-dashboard' }
+  if (userType === 'SYSTEM' || userType === 'BRANCH') return { name: 'admin-home' }
   return { name: 'access-denied' }
 }
 
 export function customerLandingRouteForUserType(
   userType: AuthMeResponseDtoType,
 ): RouteLocationRaw {
-  if (userType === 'SYSTEM') return { name: 'super-admin-dashboard' }
-  if (userType === 'BRANCH') return { name: 'branch-admin-dashboard' }
+  if (userType === 'SYSTEM' || userType === 'BRANCH') {
+    return adminLandingRouteForUserType(userType)
+  }
   return { name: 'client-home' }
 }
 
@@ -81,9 +96,68 @@ export function safeRedirectForUser(
   }
 }
 
+const ADMIN_REDIRECT_BLOCKED_ROUTE_NAMES = new Set([
+  'admin-login',
+  'customer-login',
+  'customer-register',
+  'access-denied',
+  'branch-required',
+  'auth-unavailable',
+])
+
+export function resolveAdminPostAuthRoute(
+  routerInstance: Router,
+  candidate: unknown,
+  principal: AuthMeResponseDto,
+  branchStore: BranchGuardStore,
+): RouteLocationRaw {
+  if (
+    (principal.type === 'SYSTEM' || principal.type === 'BRANCH')
+    && !branchStore.isInitialized
+  ) {
+    branchStore.initialize(principal)
+  }
+
+  const policy = createPermissionPolicy(principal, branchStore)
+  const hasSelectedBranch = branchStore.selectedBranchId !== null
+  const safeLanding = resolveFirstAllowedAdminRoute(
+    principal.type,
+    policy,
+    hasSelectedBranch,
+  ) ?? { name: 'access-denied' }
+  const safeRedirect = safeRedirectForUser(
+    routerInstance,
+    candidate,
+    principal.type,
+  )
+
+  if (!safeRedirect || typeof candidate !== 'string') return safeLanding
+
+  const resolved = routerInstance.resolve(candidate)
+  if (
+    typeof resolved.name === 'string'
+    && ADMIN_REDIRECT_BLOCKED_ROUTE_NAMES.has(resolved.name)
+  ) {
+    return safeLanding
+  }
+  if (
+    resolved.matched.some((record) => record.meta.requiresSelectedBranch)
+    && !hasSelectedBranch
+  ) {
+    return safeLanding
+  }
+
+  const requiredPermissions = resolved.meta.requiredPermissions ?? []
+  const isAllowed = resolved.meta.permissionMode === 'any'
+    ? policy.canAny(requiredPermissions)
+    : policy.canAll(requiredPermissions)
+
+  return isAllowed ? safeRedirect : safeLanding
+}
+
 function hasMeta(
   to: RouteLocationNormalized,
-  key: 'requiresAuth' | 'guestOnly' | 'skipAuthBootstrap',
+  key: 'requiresAuth' | 'guestOnly' | 'skipAuthBootstrap' | 'requiresSelectedBranch',
 ): boolean {
   return to.matched.some((record) => record.meta[key])
 }
@@ -92,6 +166,7 @@ export async function resolveAuthNavigation(
   to: RouteLocationNormalized,
   authStore: AuthGuardStore,
   routerInstance: Router,
+  branchStore?: BranchGuardStore,
 ): Promise<true | RouteLocationRaw> {
   const isGuestRoute = hasMeta(to, 'guestOnly')
   const isCustomerProtectedRoute = to.matched.some(
@@ -115,6 +190,12 @@ export async function resolveAuthNavigation(
   }
 
   if (hasMeta(to, 'requiresAuth') && authStore.status === 'anonymous') {
+    if (authStore.isLogoutNavigationPending) {
+      return {
+        name: isCustomerProtectedRoute ? 'customer-login' : 'admin-login',
+      }
+    }
+
     return {
       name: isCustomerProtectedRoute ? 'customer-login' : 'admin-login',
       query: { redirect: to.fullPath },
@@ -149,11 +230,58 @@ export async function resolveAuthNavigation(
         ) ?? customerLandingRouteForUserType(authStore.user.type)
       }
 
-      return safeRedirectForUser(
-        routerInstance,
-        to.query.redirect,
+      return branchStore
+        ? resolveAdminPostAuthRoute(
+            routerInstance,
+            to.query.redirect,
+            authStore.user,
+            branchStore,
+          )
+        : adminLandingRouteForUserType(authStore.user.type)
+    }
+
+    if (
+      branchStore
+      && (authStore.user.type === 'SYSTEM' || authStore.user.type === 'BRANCH')
+      && !branchStore.isInitialized
+    ) {
+      branchStore.initialize(authStore.user)
+    }
+
+    if (
+      hasMeta(to, 'requiresSelectedBranch')
+      && (!branchStore?.isInitialized || branchStore.selectedBranchId === null)
+    ) {
+      return {
+        name: 'branch-required',
+        query: { redirect: to.fullPath },
+      }
+    }
+
+    const policy = createPermissionPolicy(authStore.user, branchStore ?? null)
+
+    if (to.meta.resolvesAdminHome) {
+      return resolveFirstAllowedAdminRoute(
         authStore.user.type,
-      ) ?? dashboardRouteForUserType(authStore.user.type)
+        policy,
+        branchStore?.selectedBranchId !== null && branchStore?.selectedBranchId !== undefined,
+      ) ?? {
+        name: 'access-denied',
+        query: { from: to.fullPath },
+      }
+    }
+
+    const requiredPermissions = to.meta.requiredPermissions ?? []
+    if (requiredPermissions.length > 0) {
+      const isAllowed = to.meta.permissionMode === 'any'
+        ? policy.canAny(requiredPermissions)
+        : policy.canAll(requiredPermissions)
+      if (!isAllowed) {
+        return {
+          name: 'access-denied',
+          query: { from: to.fullPath },
+        }
+      }
     }
   }
 
@@ -162,6 +290,31 @@ export async function resolveAuthNavigation(
 
 export const routes: RouteRecordRaw[] = [
   ...clientRoutes,
+  {
+    path: '/admin-home',
+    name: 'admin-home',
+    component: AccessDeniedPage,
+    meta: {
+      requiresAuth: true,
+      allowedUserTypes: ['SYSTEM', 'BRANCH'],
+      resolvesAdminHome: true,
+    },
+  },
+  {
+    path: '/branch-required',
+    component: DashboardLayout,
+    meta: {
+      requiresAuth: true,
+      allowedUserTypes: ['SYSTEM', 'BRANCH'],
+    },
+    children: [
+      {
+        path: '',
+        name: 'branch-required',
+        component: () => import('@/pages/errors/BranchRequiredPage.vue'),
+      },
+    ],
+  },
   {
     path: '/admin',
     component: AuthLayout,
@@ -178,105 +331,148 @@ export const routes: RouteRecordRaw[] = [
     path: '/super-admin',
     component: DashboardLayout,
     meta: { requiresAuth: true, allowedUserTypes: ['SYSTEM'] },
-    redirect: '/super-admin/dashboard',
+    redirect: { name: 'admin-home' },
     children: [
       {
         path: 'dashboard',
         name: 'super-admin-dashboard',
         component: () => import('@/pages/super-admin/DashboardPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.DASHBOARD_READ] },
       },
       {
         path: 'users',
         name: 'super-admin-users',
         component: () => import('@/pages/super-admin/UsersPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.USERS_READ] },
       },
       {
         path: 'branches',
         name: 'super-admin-branches',
         component: () => import('@/pages/super-admin/BranchesPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.BRANCHES_READ] },
       },
       {
-        path: 'categories',
-        name: 'super-admin-categories',
-        component: () => import('@/pages/super-admin/CategoriesPage.vue'),
+        path: 'branches/:id',
+        name: 'super-admin-branch-detail',
+        component: () => import('@/features/branches/pages/BranchDetailPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.BRANCHES_READ] },
+      },
+      {
+        path: 'roles',
+        name: 'super-admin-roles',
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.ROLES_READ],
+          pageTitle: 'Vai trò',
+          pageDescription: 'Module quản lý vai trò sẽ được triển khai trong Phase 8.',
+        },
+      },
+      {
+        path: 'permissions',
+        name: 'super-admin-permissions',
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PERMISSIONS_READ],
+          pageTitle: 'Quyền hạn',
+          pageDescription: 'Module quản lý quyền hạn sẽ được triển khai trong Phase 8.',
+        },
+      },
+      {
+        path: 'staff',
+        name: 'super-admin-staff',
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STAFF_READ],
+          requiresSelectedBranch: true,
+          pageTitle: 'Nhân viên',
+          pageDescription: 'Danh sách nhân viên theo chi nhánh sẽ được triển khai trong Phase 8.',
+        },
       },
       {
         path: 'products',
         name: 'super-admin-products',
-        component: () => import('@/pages/super-admin/ProductsPage.vue'),
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
+          pageTitle: 'Sản phẩm',
+          pageDescription: 'Module sản phẩm chưa có API backend trong contract hiện tại.',
+        },
       },
       {
         path: 'inventory',
         name: 'super-admin-inventory',
         component: () => import('@/pages/super-admin/InventoryPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_READ] },
       },
       {
         path: 'orders',
         name: 'super-admin-orders',
-        component: () => import('@/pages/super-admin/OrdersPage.vue'),
-      },
-      {
-        path: 'coupons',
-        name: 'super-admin-coupons',
-        component: () => import('@/pages/super-admin/CouponsPage.vue'),
-      },
-      {
-        path: 'reviews',
-        name: 'super-admin-reviews',
-        component: () => import('@/pages/super-admin/ReviewsPage.vue'),
-      },
-      {
-        path: 'reports',
-        name: 'super-admin-reports',
-        component: () => import('@/pages/super-admin/ReportsPage.vue'),
-      },
-      {
-        path: 'settings',
-        name: 'super-admin-settings',
-        component: () => import('@/pages/super-admin/SettingsPage.vue'),
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ],
+          pageTitle: 'Đơn hàng',
+          pageDescription: 'Module đơn hàng chưa có API backend trong contract hiện tại.',
+        },
       },
     ],
   },
   {
     path: '/branch-admin',
     component: DashboardLayout,
-    meta: { requiresAuth: true, allowedUserTypes: ['BRANCH'] },
-    redirect: '/branch-admin/dashboard',
+    meta: {
+      requiresAuth: true,
+      allowedUserTypes: ['BRANCH'],
+      requiresSelectedBranch: true,
+    },
+    redirect: { name: 'admin-home' },
     children: [
       {
         path: 'dashboard',
         name: 'branch-admin-dashboard',
         component: () => import('@/pages/branch-admin/DashboardPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.DASHBOARD_READ] },
+      },
+      {
+        path: 'staff',
+        name: 'branch-admin-staff',
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STAFF_READ],
+          pageTitle: 'Nhân viên',
+          pageDescription: 'Danh sách nhân viên theo chi nhánh sẽ được triển khai trong Phase 8.',
+        },
+      },
+      {
+        path: 'products',
+        name: 'branch-admin-products',
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
+          pageTitle: 'Sản phẩm',
+          pageDescription: 'Module sản phẩm chưa có API backend trong contract hiện tại.',
+        },
       },
       {
         path: 'orders',
         name: 'branch-admin-orders',
         component: () => import('@/pages/branch-admin/OrdersPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ] },
       },
       {
         path: 'inventory',
         name: 'branch-admin-inventory',
         component: () => import('@/pages/branch-admin/InventoryPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_READ] },
       },
       {
-        path: 'prices',
-        name: 'branch-admin-prices',
-        component: () => import('@/pages/branch-admin/PricesPage.vue'),
-      },
-      {
-        path: 'low-stock',
-        name: 'branch-admin-low-stock',
-        component: () => import('@/pages/branch-admin/LowStockPage.vue'),
-      },
-      {
-        path: 'reviews',
-        name: 'branch-admin-reviews',
-        component: () => import('@/pages/branch-admin/ReviewsPage.vue'),
-      },
-      {
-        path: 'reports',
-        name: 'branch-admin-reports',
-        component: () => import('@/pages/branch-admin/ReportsPage.vue'),
+        path: 'stock-movements',
+        name: 'branch-admin-stock-movements',
+        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_MOVEMENTS_READ],
+          pageTitle: 'Lịch sử nhập/xuất kho',
+          pageDescription: 'Module biến động kho chưa có API backend trong contract hiện tại.',
+        },
       },
     ],
   },
@@ -311,4 +507,6 @@ export const router = createRouter({
   },
 })
 
-router.beforeEach((to) => resolveAuthNavigation(to, useAuthStore(), router))
+router.beforeEach((to) => {
+  return resolveAuthNavigation(to, useAuthStore(), router, useBranchStore())
+})
