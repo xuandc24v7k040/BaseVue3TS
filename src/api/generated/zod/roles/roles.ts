@@ -17,12 +17,27 @@ export const rolesListQueryPageDefault = 1;
 export const rolesListQueryLimitDefault = 10;
 export const rolesListQueryLimitMax = 100;
 
+export const rolesListQueryLevelFromMax = 99;
 
+export const rolesListQueryLevelToMax = 99;
+
+export const rolesListQuerySortByDefault = `createdAt`;
+export const rolesListQuerySortOrderDefault = `desc`;
 
 export const RolesListQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(rolesListQueryPageDefault),
   "limit": zod.number().min(1).max(rolesListQueryLimitMax).default(rolesListQueryLimitDefault),
-  "search": zod.string().optional()
+  "search": zod.string().optional(),
+  "type": zod.enum(['SYSTEM', 'BRANCH', 'CUSTOMER']).optional(),
+  "isActive": zod.boolean().optional(),
+  "isSystem": zod.boolean().optional(),
+  "guardName": zod.string().optional(),
+  "levelFrom": zod.number().min(1).max(rolesListQueryLevelFromMax).optional(),
+  "levelTo": zod.number().min(1).max(rolesListQueryLevelToMax).optional(),
+  "createdFrom": zod.iso.date().optional(),
+  "createdTo": zod.iso.date().optional(),
+  "sortBy": zod.enum(['code', 'name', 'description', 'type', 'guardName', 'level', 'isSystem', 'isActive', 'createdAt', 'updatedAt']).default(rolesListQuerySortByDefault),
+  "sortOrder": zod.enum(['asc', 'desc']).default(rolesListQuerySortOrderDefault)
 })
 
 /**
@@ -63,7 +78,7 @@ export const rolesUpdateBodyLevelMax = 99;
 
 
 export const RolesUpdateBody = zod.strictObject({
-  "code": zod.string().optional(),
+  "code": zod.string().nullish(),
   "name": zod.string().optional(),
   "description": zod.string().optional(),
   "type": zod.enum(['SYSTEM', 'BRANCH', 'CUSTOMER']).optional(),

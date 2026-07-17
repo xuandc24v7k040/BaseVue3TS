@@ -8,7 +8,8 @@
 import type { UpdateRoleDtoType } from './updateRoleDtoType';
 
 export interface UpdateRoleDto {
-  code?: string;
+  /** @nullable */
+  code?: string | null;
   name?: string;
   description?: string;
   type?: UpdateRoleDtoType;

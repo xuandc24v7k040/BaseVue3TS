@@ -12,5 +12,6 @@ export interface CreatePermissionDto {
   resource: string;
   action: string;
   guardName?: string;
-  description?: string;
+  /** @nullable */
+  description?: string | null;
 }

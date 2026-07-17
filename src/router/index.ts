@@ -360,22 +360,26 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'roles',
         name: 'super-admin-roles',
-        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
-        meta: {
-          requiredPermissions: [ADMIN_PERMISSIONS.ROLES_READ],
-          pageTitle: 'Vai trò',
-          pageDescription: 'Module quản lý vai trò sẽ được triển khai trong Phase 8.',
-        },
+        component: () => import('@/features/roles/pages/RoleListPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.ROLES_READ] },
+      },
+      {
+        path: 'roles/:id',
+        name: 'super-admin-role-detail',
+        component: () => import('@/features/roles/pages/RoleDetailPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.ROLES_READ] },
       },
       {
         path: 'permissions',
         name: 'super-admin-permissions',
-        component: () => import('@/pages/admin/AdminModulePlaceholderPage.vue'),
-        meta: {
-          requiredPermissions: [ADMIN_PERMISSIONS.PERMISSIONS_READ],
-          pageTitle: 'Quyền hạn',
-          pageDescription: 'Module quản lý quyền hạn sẽ được triển khai trong Phase 8.',
-        },
+        component: () => import('@/features/permissions/pages/PermissionListPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.PERMISSIONS_READ] },
+      },
+      {
+        path: 'permissions/:id',
+        name: 'super-admin-permission-detail',
+        component: () => import('@/features/permissions/pages/PermissionDetailPage.vue'),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.PERMISSIONS_READ] },
       },
       {
         path: 'staff',

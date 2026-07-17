@@ -17,12 +17,20 @@ export const permissionsListQueryPageDefault = 1;
 export const permissionsListQueryLimitDefault = 10;
 export const permissionsListQueryLimitMax = 100;
 
-
+export const permissionsListQuerySortByDefault = `createdAt`;
+export const permissionsListQuerySortOrderDefault = `desc`;
 
 export const PermissionsListQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(permissionsListQueryPageDefault),
   "limit": zod.number().min(1).max(permissionsListQueryLimitMax).default(permissionsListQueryLimitDefault),
-  "search": zod.string().optional()
+  "search": zod.string().optional(),
+  "resource": zod.string().optional(),
+  "action": zod.string().optional(),
+  "guardName": zod.string().optional(),
+  "createdFrom": zod.iso.date().optional(),
+  "createdTo": zod.iso.date().optional(),
+  "sortBy": zod.enum(['code', 'name', 'resource', 'action', 'guardName', 'description', 'createdAt', 'updatedAt']).default(permissionsListQuerySortByDefault),
+  "sortOrder": zod.enum(['asc', 'desc']).default(permissionsListQuerySortOrderDefault)
 })
 
 /**
@@ -37,7 +45,7 @@ export const PermissionsCreateBody = zod.strictObject({
   "resource": zod.string(),
   "action": zod.string(),
   "guardName": zod.string().default(permissionsCreateBodyGuardNameDefault),
-  "description": zod.string().optional()
+  "description": zod.string().nullish()
 })
 
 /**
@@ -62,7 +70,7 @@ export const PermissionsUpdateBody = zod.strictObject({
   "resource": zod.string().optional(),
   "action": zod.string().optional(),
   "guardName": zod.string().optional(),
-  "description": zod.string().optional()
+  "description": zod.string().nullish()
 })
 
 /**
