@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { computed, ref } from 'vue'
-import { ArrowLeft, Pencil, RefreshCcw, ShieldAlert, Trash2 } from '@lucide/vue'
+import { Pencil, RefreshCcw, ShieldAlert, Trash2 } from '@lucide/vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useRoute, useRouter } from 'vue-router'
 import { ADMIN_PERMISSIONS } from '@/authorization/admin-permissions'
 import PermissionGate from '@/components/authorization/PermissionGate.vue'
+import AdminBreadcrumb from '@/components/admin/AdminBreadcrumb.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,7 +29,7 @@ const editOpen = ref(false); const deleteOpen = ref(false)
 </script>
 
 <template>
-  <section class="space-y-6"><Button type="button" variant="ghost" class="-ml-3" @click="router.push({ name: 'super-admin-permissions' })"><ArrowLeft class="mr-2 h-4 w-4" />Quay lại danh sách</Button>
+  <section class="space-y-6"><AdminBreadcrumb group-label="Tổ chức & phân quyền" :group-to="{ name: 'super-admin-branches' }" section-label="Quyền" :section-to="{ name: 'super-admin-permissions' }" :current-label="permission ? formatPermissionLabel(permission) : undefined" :loading="query.isPending.value" />
     <div v-if="query.isPending.value" class="space-y-4"><Skeleton class="h-10 w-64" /><Skeleton class="h-48 w-full" /><Skeleton class="h-40 w-full" /></div>
     <div v-else-if="query.isError.value" class="rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center"><h1 class="text-xl font-semibold">{{ status === 404 ? 'Không tìm thấy quyền' : status === 403 ? 'Bạn không có quyền xem quyền này' : 'Không thể tải thông tin quyền' }}</h1><p class="mt-2 text-sm text-muted-foreground">Vui lòng thử lại hoặc quay về danh sách.</p><div class="mt-4 flex justify-center gap-2"><Button v-if="status !== 404 && status !== 403" type="button" variant="outline" @click="query.refetch()"><RefreshCcw class="mr-2 h-4 w-4" />Thử lại</Button><Button type="button" @click="router.push({ name: 'super-admin-permissions' })">Về danh sách</Button></div></div>
     <template v-else-if="permission"><div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><h1 class="break-words text-2xl font-semibold sm:text-3xl">{{ formatPermissionLabel(permission) }}</h1><Badge v-if="dangerous" variant="destructive">Quyền nhạy cảm</Badge></div><p class="mt-1 break-all font-mono text-sm text-muted-foreground">{{ permission.code }}</p></div><div class="flex flex-wrap gap-2"><PermissionGate :all-of="[ADMIN_PERMISSIONS.PERMISSIONS_UPDATE]"><Button type="button" variant="outline" :disabled="dangerous" @click="editOpen = true"><Pencil class="mr-2 h-4 w-4" />Chỉnh sửa</Button></PermissionGate><PermissionGate :all-of="[ADMIN_PERMISSIONS.PERMISSIONS_DELETE]"><Button type="button" variant="destructive" :disabled="dangerous || totalUsage > 0" @click="deleteOpen = true"><Trash2 class="mr-2 h-4 w-4" />Xóa</Button></PermissionGate></div></div>

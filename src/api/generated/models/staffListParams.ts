@@ -5,6 +5,8 @@
  * Contract OpenAPI chính thức cho backend Bookora. Frontend dùng cookie credentials, cookie accessToken/refreshToken và header X-CSRF-Token cho mutation cần CSRF.
  * OpenAPI spec version: 1.0
  */
+import type { StaffListSortBy } from './staffListSortBy';
+import type { StaffListSortOrder } from './staffListSortOrder';
 
 export type StaffListParams = {
 /**
@@ -17,4 +19,10 @@ page?: number;
  */
 limit?: number;
 search?: string;
+sortBy?: StaffListSortBy;
+sortOrder?: StaffListSortOrder;
+userIsActive?: boolean;
+assignmentIsActive?: boolean;
+isPrimary?: boolean;
+roleId?: string;
 };

@@ -9,6 +9,49 @@ import * as zod from 'zod';
 
 
 /**
+ * Actor-aware business permission subset governed by staff.assign_permission; permissions.read is not required.
+ * @summary List permissions assignable to Staff in selected branch
+ */
+export const staffAssignablePermissionsQueryPageDefault = 1;
+
+export const staffAssignablePermissionsQueryLimitDefault = 10;
+export const staffAssignablePermissionsQueryLimitMax = 100;
+
+
+
+export const StaffAssignablePermissionsQueryParams = zod.strictObject({
+  "page": zod.number().min(1).default(staffAssignablePermissionsQueryPageDefault),
+  "limit": zod.number().min(1).max(staffAssignablePermissionsQueryLimitMax).default(staffAssignablePermissionsQueryLimitDefault),
+  "search": zod.string().optional()
+})
+
+export const StaffAssignablePermissionsHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().describe('ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch.')
+})
+
+/**
+ * Actor-aware subset governed by staff.create or staff.assign_role; roles.read is not required.
+ * @summary List roles assignable to Staff in selected branch
+ */
+export const staffAssignableRolesQueryPageDefault = 1;
+
+export const staffAssignableRolesQueryLimitDefault = 10;
+export const staffAssignableRolesQueryLimitMax = 100;
+
+
+
+export const StaffAssignableRolesQueryParams = zod.strictObject({
+  "page": zod.number().min(1).default(staffAssignableRolesQueryPageDefault),
+  "limit": zod.number().min(1).max(staffAssignableRolesQueryLimitMax).default(staffAssignableRolesQueryLimitDefault),
+  "search": zod.string().optional(),
+  "action": zod.enum(['CREATE', 'ASSIGN'])
+})
+
+export const StaffAssignableRolesHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().describe('ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch.')
+})
+
+/**
  * List staff in branch scope
  * @summary List staff in branch scope
  */
@@ -22,7 +65,13 @@ export const staffListQueryLimitMax = 100;
 export const StaffListQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(staffListQueryPageDefault),
   "limit": zod.number().min(1).max(staffListQueryLimitMax).default(staffListQueryLimitDefault),
-  "search": zod.string().optional()
+  "search": zod.string().optional(),
+  "sortBy": zod.enum(['fullName', 'email', 'phone', 'userIsActive', 'assignmentIsActive', 'isPrimary', 'assignedAt', 'createdAt']).optional(),
+  "sortOrder": zod.enum(['asc', 'desc']).optional(),
+  "userIsActive": zod.boolean().optional(),
+  "assignmentIsActive": zod.boolean().optional(),
+  "isPrimary": zod.boolean().optional(),
+  "roleId": zod.ulid().optional()
 })
 
 export const StaffListHeader = zod.strictObject({
@@ -49,6 +98,27 @@ export const StaffCreateBody = zod.strictObject({
   "phone": zod.string().optional(),
   "roleIds": zod.array(zod.ulid()).min(1),
   "permissionIds": zod.array(zod.ulid()).optional()
+})
+
+/**
+ * Chỉ Super Admin được truy cập workflow add-existing.
+ * @summary List existing BRANCH users eligible for Staff
+ */
+export const staffCandidatesQueryPageDefault = 1;
+
+export const staffCandidatesQueryLimitDefault = 10;
+export const staffCandidatesQueryLimitMax = 100;
+
+
+
+export const StaffCandidatesQueryParams = zod.strictObject({
+  "page": zod.number().min(1).default(staffCandidatesQueryPageDefault),
+  "limit": zod.number().min(1).max(staffCandidatesQueryLimitMax).default(staffCandidatesQueryLimitDefault),
+  "search": zod.string().optional()
+})
+
+export const StaffCandidatesHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().describe('ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch.')
 })
 
 /**
@@ -98,6 +168,26 @@ export const StaffDisableParams = zod.strictObject({
 
 export const StaffDisableHeader = zod.strictObject({
   "X-Branch-Id": zod.ulid().describe('ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch.')
+})
+
+/**
+ * Chỉ Super Admin được truy cập workflow add-existing.
+ * @summary Assign an existing BRANCH user as Staff atomically
+ */
+export const StaffAssignExistingParams = zod.strictObject({
+  "id": zod.ulid()
+})
+
+export const StaffAssignExistingHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().describe('ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch.')
+})
+
+
+
+
+export const StaffAssignExistingBody = zod.strictObject({
+  "roleIds": zod.array(zod.ulid()).min(1),
+  "permissionIds": zod.array(zod.ulid()).optional()
 })
 
 /**

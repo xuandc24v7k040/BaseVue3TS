@@ -14,4 +14,9 @@ export const UsersFindAllSortBy = {
   updatedAt: 'updatedAt',
   email: 'email',
   fullName: 'fullName',
+  phone: 'phone',
+  type: 'type',
+  provider: 'provider',
+  isActive: 'isActive',
+  lastLoginAt: 'lastLoginAt',
 } as const;

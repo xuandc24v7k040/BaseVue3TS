@@ -30,6 +30,10 @@ const REFRESH_TOKEN_REUSE_CODES = new Set([
   'REFRESH_TOKEN_ALREADY_ROTATED',
   'REFRESH_TOKEN_REUSE_DETECTED',
 ])
+const INVALID_BRANCH_CONTEXT_CODES = new Set([
+  'BRANCH_ACCESS_DENIED',
+  'BRANCH_NOT_FOUND',
+])
 
 interface SetupHttpClientOptions {
   onSessionExpired?: (error: unknown) => void
@@ -198,7 +202,12 @@ function handleRefreshFailure(error: unknown): void {
 }
 
 function handleResponseError(error: AxiosError): Promise<AxiosResponse> {
-  if (error.response?.status === 403 && error.config?.branchScoped) {
+  const errorCode = getBackendErrorCode(error.response?.data)
+  if (
+    error.config?.branchScoped
+    && INVALID_BRANCH_CONTEXT_CODES.has(errorCode ?? '')
+    && (error.response?.status === 403 || error.response?.status === 404)
+  ) {
     onBranchScopeForbidden?.(error)
   }
 

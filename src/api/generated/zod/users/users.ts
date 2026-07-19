@@ -39,9 +39,10 @@ export const UsersFindAllQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(usersFindAllQueryPageDefault),
   "limit": zod.number().min(1).max(usersFindAllQueryLimitMax).default(usersFindAllQueryLimitDefault),
   "search": zod.string().optional(),
-  "sortBy": zod.enum(['createdAt', 'updatedAt', 'email', 'fullName']).optional(),
+  "sortBy": zod.enum(['createdAt', 'updatedAt', 'email', 'fullName', 'phone', 'type', 'provider', 'isActive', 'lastLoginAt']).optional(),
   "sortOrder": zod.enum(['asc', 'desc']).optional(),
   "type": zod.enum(['SYSTEM', 'BRANCH', 'CUSTOMER']).optional(),
+  "provider": zod.enum(['LOCAL', 'GOOGLE']).optional(),
   "isActive": zod.boolean().optional()
 })
 
@@ -74,8 +75,8 @@ export const UsersUpdateBody = zod.strictObject({
 })
 
 /**
- * Xóa người dùng theo id
- * @summary Xóa người dùng theo id
+ * Khóa tài khoản người dùng theo id
+ * @summary Khóa tài khoản người dùng theo id
  */
 export const UsersRemoveParams = zod.strictObject({
   "id": zod.ulid()

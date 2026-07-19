@@ -7,6 +7,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setupHttpClient } from '@/api/http/client'
 import { setupApiInterceptors } from '@/services/api.service'
 import { useAuthStore } from '@/stores/auth.store'
+import { useBranchStore } from '@/stores/branch.store'
+import { toast } from 'vue-sonner'
+
+vi.mock('vue-sonner', () => ({ toast: { error: vi.fn() } }))
 
 vi.mock('@/api/http/client', () => ({
   apiClient: {},
@@ -118,5 +122,71 @@ describe('application auth lifecycle bridge', () => {
     )
 
     expect(markSessionExpired).not.toHaveBeenCalled()
+  })
+
+  it('deduplicates invalid-branch recovery, clears selection and redirects', async () => {
+    const pinia = createPinia()
+    const branchStore = useBranchStore(pinia)
+    branchStore.initialize({
+      id: '01K0000000000000000000000A',
+      email: 'branch@example.com',
+      fullName: 'Branch actor',
+      phone: null,
+      gender: null,
+      birthday: null,
+      type: 'BRANCH',
+      roles: [],
+      permissions: [],
+      globalRoles: [],
+      globalPermissions: [],
+      branchAssignments: [{
+        branchId: '01K00000000000000000000001',
+        userBranchId: '01K00000000000000000000002',
+        branch: {
+          id: '01K00000000000000000000001',
+          code: 'ptx',
+          name: 'PTX',
+          isPrimary: true,
+        },
+        isPrimary: true,
+        isActive: true,
+        roles: [],
+        permissions: ['staff.read'],
+        maxRoleLevel: 30,
+      }],
+      maxRoleLevel: 0,
+      isSuperAdmin: false,
+      branches: [{
+        id: '01K00000000000000000000001',
+        code: 'ptx',
+        name: 'PTX',
+        isPrimary: true,
+      }],
+      primaryBranchId: '01K00000000000000000000001',
+    })
+    const clearSelectedBranch = vi.spyOn(branchStore, 'clearSelectedBranch')
+    const replace = vi.fn().mockResolvedValue(undefined)
+    const router = {
+      currentRoute: {
+        value: {
+          path: '/branch-admin/staff',
+          fullPath: '/branch-admin/staff?page=2',
+        },
+      },
+      replace,
+    }
+
+    setupApiInterceptors(pinia, { router: router as never })
+    const recover = setupClient.mock.calls[0]?.[0]?.onBranchScopeForbidden
+    recover?.(new AxiosError('Forbidden'))
+    recover?.(new AxiosError('Forbidden'))
+
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledOnce())
+    expect(clearSelectedBranch).toHaveBeenCalledOnce()
+    expect(toast.error).toHaveBeenCalledOnce()
+    expect(replace).toHaveBeenCalledWith({
+      name: 'branch-required',
+      query: { redirect: '/branch-admin/staff?page=2' },
+    })
   })
 })

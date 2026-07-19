@@ -172,6 +172,25 @@ export const useBranchStore = defineStore('admin-branch-context', () => {
     return true
   }
 
+  async function clearSelectedBranch(): Promise<void> {
+    if (!isInitialized.value || !principalId.value) return
+    const previousBranchId = selectedBranchId.value
+    if (previousBranchId === null) {
+      persist()
+      return
+    }
+
+    await changeBranchQueryScope(
+      queryClient,
+      previousBranchId,
+      null,
+      () => {
+        selectedBranchId.value = null
+        persist()
+      },
+    )
+  }
+
   return {
     selectedBranchId,
     selectedBranch,
@@ -184,5 +203,6 @@ export const useBranchStore = defineStore('admin-branch-context', () => {
     initialize,
     reset,
     setSelectedBranch,
+    clearSelectedBranch,
   }
 })

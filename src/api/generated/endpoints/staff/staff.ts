@@ -30,14 +30,22 @@ import type {
 } from 'vue';
 
 import type {
+  AssignExistingStaffDto,
   ChangePrimaryBranchDto,
   ConvertStaffDto,
   CreateStaffDto,
   ErrorResponseDto,
   StaffActivateBranch200,
   StaffAssignBranch201,
+  StaffAssignExisting201,
   StaffAssignRole201,
+  StaffAssignablePermissions200,
+  StaffAssignablePermissionsParams,
+  StaffAssignableRoles200,
+  StaffAssignableRolesParams,
   StaffAssignments200,
+  StaffCandidates200,
+  StaffCandidatesParams,
   StaffConvert201,
   StaffCreate201,
   StaffDeactivateBranch200,
@@ -62,6 +70,150 @@ import type { ErrorType , BodyType } from '../../../mutator';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
+
+/**
+ * Actor-aware business permission subset governed by staff.assign_permission; permissions.read is not required.
+ * @summary List permissions assignable to Staff in selected branch
+ */
+export const staffAssignablePermissions = (
+    params?: MaybeRef<StaffAssignablePermissionsParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      params = unref(params);
+
+      return customInstance<StaffAssignablePermissions200>(
+      {url: `/staff/assignable-permissions`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getStaffAssignablePermissionsQueryKey = (params?: MaybeRef<StaffAssignablePermissionsParams>,) => {
+    return [
+    'staff','assignable-permissions', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getStaffAssignablePermissionsQueryOptions = <TData = Awaited<ReturnType<typeof staffAssignablePermissions>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<StaffAssignablePermissionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAssignablePermissions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getStaffAssignablePermissionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffAssignablePermissions>>> = ({ signal }) => staffAssignablePermissions(params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffAssignablePermissions>>, TError, TData>
+}
+
+export type StaffAssignablePermissionsQueryResult = NonNullable<Awaited<ReturnType<typeof staffAssignablePermissions>>>
+export type StaffAssignablePermissionsQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary List permissions assignable to Staff in selected branch
+ */
+
+export function useStaffAssignablePermissions<TData = Awaited<ReturnType<typeof staffAssignablePermissions>>, TError = ErrorType<ErrorResponseDto>>(
+ params?: MaybeRef<StaffAssignablePermissionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAssignablePermissions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffAssignablePermissionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
+ * Actor-aware subset governed by staff.create or staff.assign_role; roles.read is not required.
+ * @summary List roles assignable to Staff in selected branch
+ */
+export const staffAssignableRoles = (
+    params: MaybeRef<StaffAssignableRolesParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      params = unref(params);
+
+      return customInstance<StaffAssignableRoles200>(
+      {url: `/staff/assignable-roles`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getStaffAssignableRolesQueryKey = (params?: MaybeRef<StaffAssignableRolesParams>,) => {
+    return [
+    'staff','assignable-roles', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getStaffAssignableRolesQueryOptions = <TData = Awaited<ReturnType<typeof staffAssignableRoles>>, TError = ErrorType<ErrorResponseDto>>(params: MaybeRef<StaffAssignableRolesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAssignableRoles>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getStaffAssignableRolesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffAssignableRoles>>> = ({ signal }) => staffAssignableRoles(params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffAssignableRoles>>, TError, TData>
+}
+
+export type StaffAssignableRolesQueryResult = NonNullable<Awaited<ReturnType<typeof staffAssignableRoles>>>
+export type StaffAssignableRolesQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary List roles assignable to Staff in selected branch
+ */
+
+export function useStaffAssignableRoles<TData = Awaited<ReturnType<typeof staffAssignableRoles>>, TError = ErrorType<ErrorResponseDto>>(
+ params: MaybeRef<StaffAssignableRolesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAssignableRoles>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffAssignableRolesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
 
 
 
@@ -202,6 +354,78 @@ export const useStaffCreate = <TError = ErrorType<ErrorResponseDto>,
       return useMutation(getStaffCreateMutationOptions(options), queryClient);
     }
     /**
+ * Chỉ Super Admin được truy cập workflow add-existing.
+ * @summary List existing BRANCH users eligible for Staff
+ */
+export const staffCandidates = (
+    params?: MaybeRef<StaffCandidatesParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      params = unref(params);
+
+      return customInstance<StaffCandidates200>(
+      {url: `/staff/candidates`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getStaffCandidatesQueryKey = (params?: MaybeRef<StaffCandidatesParams>,) => {
+    return [
+    'staff','candidates', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getStaffCandidatesQueryOptions = <TData = Awaited<ReturnType<typeof staffCandidates>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<StaffCandidatesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffCandidates>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getStaffCandidatesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffCandidates>>> = ({ signal }) => staffCandidates(params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffCandidates>>, TError, TData>
+}
+
+export type StaffCandidatesQueryResult = NonNullable<Awaited<ReturnType<typeof staffCandidates>>>
+export type StaffCandidatesQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary List existing BRANCH users eligible for Staff
+ */
+
+export function useStaffCandidates<TData = Awaited<ReturnType<typeof staffCandidates>>, TError = ErrorType<ErrorResponseDto>>(
+ params?: MaybeRef<StaffCandidatesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffCandidates>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffCandidatesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
  * Get all branch assignments for a Staff user
  * @summary Get all branch assignments for a Staff user
  */
@@ -470,6 +694,72 @@ export const useStaffDisable = <TError = ErrorType<ErrorResponseDto>,
         TContext
       > => {
       return useMutation(getStaffDisableMutationOptions(options), queryClient);
+    }
+    /**
+ * Chỉ Super Admin được truy cập workflow add-existing.
+ * @summary Assign an existing BRANCH user as Staff atomically
+ */
+export const staffAssignExisting = (
+    id: MaybeRef<string>,
+    assignExistingStaffDto: MaybeRef<AssignExistingStaffDto>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      id = unref(id);
+assignExistingStaffDto = unref(assignExistingStaffDto);
+
+      return customInstance<StaffAssignExisting201>(
+      {url: `/staff/${id}/assign-existing`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: assignExistingStaffDto, signal
+    },
+      options);
+    }
+
+
+
+export const getStaffAssignExistingMutationOptions = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAssignExisting>>, TError,{id: string;data: BodyType<AssignExistingStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof staffAssignExisting>>, TError,{id: string;data: BodyType<AssignExistingStaffDto>}, TContext> => {
+
+const mutationKey = ['staffAssignExisting'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffAssignExisting>>, {id: string;data: BodyType<AssignExistingStaffDto>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  staffAssignExisting(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StaffAssignExistingMutationResult = NonNullable<Awaited<ReturnType<typeof staffAssignExisting>>>
+    export type StaffAssignExistingMutationBody = BodyType<AssignExistingStaffDto>
+    export type StaffAssignExistingMutationError = ErrorType<ErrorResponseDto>
+
+    /**
+ * @summary Assign an existing BRANCH user as Staff atomically
+ */
+export const useStaffAssignExisting = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAssignExisting>>, TError,{id: string;data: BodyType<AssignExistingStaffDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof staffAssignExisting>>,
+        TError,
+        {id: string;data: BodyType<AssignExistingStaffDto>},
+        TContext
+      > => {
+      return useMutation(getStaffAssignExistingMutationOptions(options), queryClient);
     }
     /**
  * Convert Customer to Staff

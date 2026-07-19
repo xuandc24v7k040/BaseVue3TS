@@ -692,12 +692,12 @@ describe('branch-scoped HTTP boundary', () => {
     expect(getHeader(seenRequests[0]!, 'X-Branch-Id')).toBe('01K00000000000000000000002')
   })
 
-  it('reports branch-scoped 403 without expiring the session', async () => {
+  it('reports only invalid branch context without expiring the session', async () => {
     const forbidden = vi.fn()
     const expired = vi.fn()
     const adapter: AxiosAdapter = (config) => rejectResponse(config, 403, {
       statusCode: 403,
-      code: 'BRANCH_SCOPE_DENIED',
+      code: 'BRANCH_ACCESS_DENIED',
     })
     resetHttpClientForTest(adapter)
     setupHttpClient({
@@ -709,5 +709,23 @@ describe('branch-scoped HTTP boundary', () => {
     await expect(apiClient.get('/staff', { branchScoped: true })).rejects.toBeInstanceOf(AxiosError)
     expect(forbidden).toHaveBeenCalledOnce()
     expect(expired).not.toHaveBeenCalled()
+  })
+
+  it('does not report a section-level permission denial as lost branch access', async () => {
+    const forbidden = vi.fn()
+    const adapter: AxiosAdapter = (config) => rejectResponse(config, 403, {
+      statusCode: 403,
+      code: 'PERMISSION_DENIED',
+    })
+    resetHttpClientForTest(adapter)
+    setupHttpClient({
+      getSelectedBranchId: () => '01K00000000000000000000001',
+      onBranchScopeForbidden: forbidden,
+    })
+
+    await expect(
+      apiClient.get('/roles', { branchScoped: true }),
+    ).rejects.toBeInstanceOf(AxiosError)
+    expect(forbidden).not.toHaveBeenCalled()
   })
 })

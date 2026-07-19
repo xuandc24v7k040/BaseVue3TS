@@ -11,6 +11,7 @@ import type { BranchesListParams, BranchesListSortBy, BranchesListSortOrder } fr
 import { Button } from '@/components/ui/button'
 import { ADMIN_PERMISSIONS } from '@/authorization/admin-permissions'
 import PermissionGate from '@/components/authorization/PermissionGate.vue'
+import AdminBreadcrumb from '@/components/admin/AdminBreadcrumb.vue'
 import { useAdminPermissions } from '@/composables/use-admin-permissions'
 import { listBranches } from '../api/branch-api'
 import { branchKeys } from '../api/branch-query-keys'
@@ -48,25 +49,29 @@ const params = computed<BranchesListParams>(() => ({
   sortOrder: sortOrder.value,
 }))
 
-const statusFilters: DataTableFilterableColumn[] = [{
-  id: 'isActive',
-  title: 'Trạng thái',
-  operator: 'in',
-  options: [
-    { label: 'Đang hoạt động', value: 'true', variant: 'success' },
-    { label: 'Ngừng hoạt động', value: 'false', variant: 'destructive' },
-  ],
-}]
+const statusFilters: DataTableFilterableColumn[] = [
+  {
+    id: 'isActive',
+    title: 'Trạng thái',
+    operator: 'in',
+    options: [
+      { label: 'Đang hoạt động', value: 'true', variant: 'success' },
+      { label: 'Ngừng hoạt động', value: 'false', variant: 'destructive' },
+    ],
+  },
+]
 
-const dateColumns: DataTableDateColumn[] = [{
-  id: 'createdAt',
-  title: 'Ngày tạo',
-  placeholder: 'Khoảng ngày tạo',
-  mode: 'range',
-  enablePresets: true,
-  disableFutureDates: true,
-  dateFormatPattern: 'DD/MM/YYYY',
-}]
+const dateColumns: DataTableDateColumn[] = [
+  {
+    id: 'createdAt',
+    title: 'Ngày tạo',
+    placeholder: 'Khoảng ngày tạo',
+    mode: 'range',
+    enablePresets: true,
+    disableFutureDates: true,
+    dateFormatPattern: 'DD/MM/YYYY',
+  },
+]
 
 const branchQuery = useQuery({
   queryKey: computed(() => branchKeys.list(null, params.value)),
@@ -108,16 +113,26 @@ function openDeactivate(branch: Branch): void {
 }
 
 function rowActions(branch: Branch): DataTableAction[] {
-  const actions: DataTableAction[] = [{
-    key: 'view',
-    label: 'Xem chi tiết',
-    icon: Eye,
-    onClick: async () => {
-      await router.push({ name: 'super-admin-branch-detail', params: { id: branch.id } })
+  const actions: DataTableAction[] = [
+    {
+      key: 'view',
+      label: 'Xem chi tiết',
+      icon: Eye,
+      onClick: async () => {
+        await router.push({
+          name: 'super-admin-branch-detail',
+          params: { id: branch.id },
+        })
+      },
     },
-  }]
+  ]
   if (can(ADMIN_PERMISSIONS.BRANCHES_UPDATE)) {
-    actions.push({ key: 'edit', label: 'Chỉnh sửa', icon: Pencil, onClick: () => openEdit(branch) })
+    actions.push({
+      key: 'edit',
+      label: 'Chỉnh sửa',
+      icon: Pencil,
+      onClick: () => openEdit(branch),
+    })
   }
   if (branch.isActive && can(ADMIN_PERMISSIONS.BRANCHES_DELETE)) {
     actions.push({
@@ -135,6 +150,7 @@ function rowActions(branch: Branch): DataTableAction[] {
 
 <template>
   <section class="space-y-6">
+    <AdminBreadcrumb group-label="Tổ chức & phân quyền" :group-to="{ name: 'super-admin-branches' }" section-label="Chi nhánh" />
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Chi nhánh</h1>
@@ -153,7 +169,11 @@ function rowActions(branch: Branch): DataTableAction[] {
       :is-loading="branchQuery.isFetching.value"
       :error="branchQuery.error.value"
       :page-size-options="[10, 20, 50, 100]"
-      :global-search="{ columnIds: ['code', 'name'], placeholder: 'Tìm theo mã hoặc tên chi nhánh...', title: 'Tìm kiếm' }"
+      :global-search="{
+        columnIds: ['code', 'name'],
+        placeholder: 'Tìm theo mã hoặc tên chi nhánh...',
+        title: 'Tìm kiếm',
+      }"
       :filterable-columns="statusFilters"
       :date-columns="dateColumns"
       :config="{
@@ -165,6 +185,9 @@ function rowActions(branch: Branch): DataTableAction[] {
         queryDebounce: 0,
         emitInitialQuery: true,
         initialSorting: [{ id: 'code', desc: true }],
+        initialColumnVisibility: {
+          code: false,
+        },
         enableColumnVisibility: true,
         stickyActionColumn: true,
         routeSync: {
@@ -184,9 +207,7 @@ function rowActions(branch: Branch): DataTableAction[] {
       @retry="branchQuery.refetch()"
     >
       <template #toolbar-right>
-        <Button type="button" size="sm" variant="outline" @click="branchQuery.refetch()">
-          <RefreshCcw class="mr-2 h-4 w-4" />Tải lại
-        </Button>
+        <Button type="button" size="sm" variant="outline" @click="branchQuery.refetch()"> <RefreshCcw class="mr-2 h-4 w-4" />Tải lại </Button>
       </template>
       <template #row-actions="{ rowData }">
         <DataTableActions :label="rowData.name" :actions="rowActions(rowData)" />
@@ -194,8 +215,12 @@ function rowActions(branch: Branch): DataTableAction[] {
       <template #empty>
         <div class="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
           <Store class="h-9 w-9" />
-          <p class="font-medium text-foreground">{{ search || isActive !== undefined || createdFrom || createdTo ? 'Không tìm thấy chi nhánh phù hợp' : 'Chưa có chi nhánh' }}</p>
-          <p class="text-sm">{{ search || isActive !== undefined || createdFrom || createdTo ? 'Thử thay đổi từ khóa hoặc bộ lọc.' : 'Tạo chi nhánh đầu tiên để bắt đầu.' }}</p>
+          <p class="font-medium text-foreground">
+            {{ search || isActive !== undefined || createdFrom || createdTo ? 'Không tìm thấy chi nhánh phù hợp' : 'Chưa có chi nhánh' }}
+          </p>
+          <p class="text-sm">
+            {{ search || isActive !== undefined || createdFrom || createdTo ? 'Thử thay đổi từ khóa hoặc bộ lọc.' : 'Tạo chi nhánh đầu tiên để bắt đầu.' }}
+          </p>
         </div>
       </template>
     </DataTable>

@@ -40,6 +40,10 @@ export const RolesListQueryParams = zod.strictObject({
   "sortOrder": zod.enum(['asc', 'desc']).default(rolesListQuerySortOrderDefault)
 })
 
+export const RolesListHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Create custom role
  * @summary Create custom role
@@ -63,6 +67,10 @@ export const RolesCreateBody = zod.strictObject({
  */
 export const RolesGetParams = zod.strictObject({
   "id": zod.ulid()
+})
+
+export const RolesGetHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 /**

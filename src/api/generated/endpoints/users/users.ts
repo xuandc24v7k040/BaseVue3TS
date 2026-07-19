@@ -324,8 +324,8 @@ export const useUsersUpdate = <TError = ErrorType<ErrorResponseDto>,
       return useMutation(getUsersUpdateMutationOptions(options), queryClient);
     }
     /**
- * Xóa người dùng theo id
- * @summary Xóa người dùng theo id
+ * Khóa tài khoản người dùng theo id
+ * @summary Khóa tài khoản người dùng theo id
  */
 export const usersRemove = (
     id: MaybeRef<string>,
@@ -373,7 +373,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UsersRemoveMutationError = ErrorType<ErrorResponseDto>
 
     /**
- * @summary Xóa người dùng theo id
+ * @summary Khóa tài khoản người dùng theo id
  */
 export const useUsersRemove = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof usersRemove>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customInstance>}

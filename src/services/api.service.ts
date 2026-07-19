@@ -29,11 +29,24 @@ export function setupApiInterceptors(
 ): void {
   const authStore = useAuthStore(pinia)
   const branchStore = useBranchStore(pinia)
+  let recoveredBranchId: string | null = null
 
   setupHttpClient({
     getSelectedBranchId: () => branchStore.selectedBranchId,
     onBranchScopeForbidden: () => {
+      const invalidBranchId = branchStore.selectedBranchId
+      if (!invalidBranchId || recoveredBranchId === invalidBranchId) return
+      recoveredBranchId = invalidBranchId
       toast.error('Bạn không còn quyền truy cập chi nhánh đang chọn.')
+      const redirect = options.router?.currentRoute.value.fullPath
+      void branchStore.clearSelectedBranch().then(async () => {
+        if (options.router) {
+          await options.router.replace({
+            name: 'branch-required',
+            query: redirect ? { redirect } : undefined,
+          })
+        }
+      }).catch(() => undefined)
     },
     onSessionExpired: (error) => {
       if (!axios.isAxiosError(error) || error.response?.status !== 401) {

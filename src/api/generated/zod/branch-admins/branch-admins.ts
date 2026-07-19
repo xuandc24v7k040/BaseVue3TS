@@ -17,12 +17,20 @@ export const branchAdminsListQueryPageDefault = 1;
 export const branchAdminsListQueryLimitDefault = 10;
 export const branchAdminsListQueryLimitMax = 100;
 
-
+export const branchAdminsListQuerySortByDefault = `createdAt`;
+export const branchAdminsListQuerySortOrderDefault = `desc`;
 
 export const BranchAdminsListQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(branchAdminsListQueryPageDefault),
   "limit": zod.number().min(1).max(branchAdminsListQueryLimitMax).default(branchAdminsListQueryLimitDefault),
-  "search": zod.string().optional()
+  "search": zod.string().optional(),
+  "assignedBranchId": zod.ulid().optional(),
+  "excludeAssignedBranchId": zod.ulid().optional(),
+  "isActive": zod.boolean().optional(),
+  "assignmentIsActive": zod.boolean().optional(),
+  "assignmentState": zod.enum(['UNASSIGNED', 'ACTIVE', 'INACTIVE_ONLY']).optional(),
+  "sortBy": zod.enum(['fullName', 'email', 'phone', 'isActive', 'primaryBranch', 'assignments', 'createdAt']).default(branchAdminsListQuerySortByDefault),
+  "sortOrder": zod.enum(['asc', 'desc']).default(branchAdminsListQuerySortOrderDefault)
 })
 
 /**

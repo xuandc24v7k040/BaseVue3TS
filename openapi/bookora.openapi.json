@@ -43,26 +43,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
           }
         },
         "summary": "Kiểm tra trạng thái ứng dụng",
@@ -70,11 +50,7 @@
           "health"
         ],
         "description": "Kiểm tra trạng thái ứng dụng",
-        "security": [
-          {
-            "accessToken": []
-          }
-        ]
+        "security": []
       }
     },
     "/integrations/vietmap/reverse": {
@@ -524,7 +500,12 @@
                 "createdAt",
                 "updatedAt",
                 "email",
-                "fullName"
+                "fullName",
+                "phone",
+                "type",
+                "provider",
+                "isActive",
+                "lastLoginAt"
               ]
             }
           },
@@ -550,6 +531,18 @@
                 "SYSTEM",
                 "BRANCH",
                 "CUSTOMER"
+              ]
+            }
+          },
+          {
+            "name": "provider",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LOCAL",
+                "GOOGLE"
               ]
             }
           },
@@ -884,7 +877,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Xóa người dùng thành công",
+            "description": "Khóa tài khoản người dùng thành công",
             "content": {
               "application/json": {
                 "schema": {
@@ -901,7 +894,7 @@
                     },
                     "message": {
                       "type": "string",
-                      "example": "Xóa người dùng thành công"
+                      "example": "Khóa tài khoản người dùng thành công"
                     },
                     "data": {
                       "$ref": "#/components/schemas/UserResponseDto"
@@ -949,11 +942,11 @@
             "csrfHeader": []
           }
         ],
-        "summary": "Xóa người dùng theo id",
+        "summary": "Khóa tài khoản người dùng theo id",
         "tags": [
           "users"
         ],
-        "description": "Xóa người dùng theo id"
+        "description": "Khóa tài khoản người dùng theo id"
       }
     },
     "/users/{id}/activate": {
@@ -1190,6 +1183,20 @@
                 "desc"
               ]
             }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng."
           }
         ],
         "responses": {
@@ -1447,6 +1454,20 @@
               "maxLength": 26,
               "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
             }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng."
           }
         ],
         "responses": {
@@ -2241,6 +2262,20 @@
                 "desc"
               ]
             }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng."
           }
         ],
         "responses": {
@@ -2498,6 +2533,20 @@
               "maxLength": 26,
               "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
             }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng."
           }
         ],
         "responses": {
@@ -3580,6 +3629,84 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "assignedBranchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "ulid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "excludeAssignedBranchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "ulid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "assignmentIsActive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "assignmentState",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "UNASSIGNED",
+                "ACTIVE",
+                "INACTIVE_ONLY"
+              ]
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "createdAt",
+              "type": "string",
+              "enum": [
+                "fullName",
+                "email",
+                "phone",
+                "isActive",
+                "primaryBranch",
+                "assignments",
+                "createdAt"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           }
         ],
@@ -4697,9 +4824,10 @@
         "description": "Set Branch Admin primary branch"
       }
     },
-    "/staff": {
+    "/staff/assignable-permissions": {
       "get": {
-        "operationId": "staffList",
+        "description": "Actor-aware business permission subset governed by staff.assign_permission; permissions.read is not required.",
+        "operationId": "staffAssignablePermissions",
         "parameters": [
           {
             "name": "page",
@@ -4747,6 +4875,442 @@
         ],
         "responses": {
           "200": {
+            "description": "Assignable Staff permissions retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Assignable Staff permissions retrieved"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PermissionResponseDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "total",
+                        "page",
+                        "lastPage",
+                        "limit",
+                        "hasNextPage",
+                        "hasPreviousPage"
+                      ],
+                      "properties": {
+                        "total": {
+                          "type": "number",
+                          "example": 42
+                        },
+                        "page": {
+                          "type": "number",
+                          "example": 1
+                        },
+                        "lastPage": {
+                          "type": "number",
+                          "example": 5
+                        },
+                        "limit": {
+                          "type": "number",
+                          "example": 10
+                        },
+                        "hasNextPage": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "hasPreviousPage": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or branch selection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting authorization data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List permissions assignable to Staff in selected branch",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/staff/assignable-roles": {
+      "get": {
+        "description": "Actor-aware subset governed by staff.create or staff.assign_role; roles.read is not required.",
+        "operationId": "staffAssignableRoles",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CREATE",
+                "ASSIGN"
+              ]
+            }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assignable Staff roles retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Assignable Staff roles retrieved"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RoleDetailResponseDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "total",
+                        "page",
+                        "lastPage",
+                        "limit",
+                        "hasNextPage",
+                        "hasPreviousPage"
+                      ],
+                      "properties": {
+                        "total": {
+                          "type": "number",
+                          "example": 42
+                        },
+                        "page": {
+                          "type": "number",
+                          "example": 1
+                        },
+                        "lastPage": {
+                          "type": "number",
+                          "example": 5
+                        },
+                        "limit": {
+                          "type": "number",
+                          "example": 10
+                        },
+                        "hasNextPage": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "hasPreviousPage": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or branch selection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting authorization data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List roles assignable to Staff in selected branch",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/staff": {
+      "get": {
+        "operationId": "staffList",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "fullName",
+                "email",
+                "phone",
+                "userIsActive",
+                "assignmentIsActive",
+                "isPrimary",
+                "assignedAt",
+                "createdAt"
+              ]
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "userIsActive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "assignmentIsActive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isPrimary",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "roleId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "ulid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch."
+          }
+        ],
+        "responses": {
+          "200": {
             "description": "Staff retrieved",
             "content": {
               "application/json": {
@@ -4770,7 +5334,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/ManagedUserResponseDto"
+                        "$ref": "#/components/schemas/StaffResponseDto"
                       }
                     },
                     "meta": {
@@ -4927,7 +5491,7 @@
                       "example": "Staff created"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/ManagedUserResponseDto"
+                      "$ref": "#/components/schemas/StaffResponseDto"
                     }
                   }
                 }
@@ -4997,6 +5561,187 @@
           "staff"
         ],
         "description": "Create staff in selected branch"
+      }
+    },
+    "/staff/candidates": {
+      "get": {
+        "description": "Chỉ Super Admin được truy cập workflow add-existing.",
+        "operationId": "staffCandidates",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidates retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Candidates retrieved"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StaffCandidateResponseDto"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "total",
+                        "page",
+                        "lastPage",
+                        "limit",
+                        "hasNextPage",
+                        "hasPreviousPage"
+                      ],
+                      "properties": {
+                        "total": {
+                          "type": "number",
+                          "example": 42
+                        },
+                        "page": {
+                          "type": "number",
+                          "example": 1
+                        },
+                        "lastPage": {
+                          "type": "number",
+                          "example": 5
+                        },
+                        "limit": {
+                          "type": "number",
+                          "example": 10
+                        },
+                        "hasNextPage": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "hasPreviousPage": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or branch selection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Branch Admin và actor không phải Super Admin bị từ chối",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting authorization data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "summary": "List existing BRANCH users eligible for Staff",
+        "tags": [
+          "staff"
+        ]
       }
     },
     "/staff/{id}/assignments": {
@@ -5163,7 +5908,7 @@
                       "example": "Staff retrieved"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/ManagedUserResponseDto"
+                      "$ref": "#/components/schemas/StaffResponseDto"
                     }
                   }
                 }
@@ -5489,6 +6234,142 @@
           "staff"
         ],
         "description": "Deactivate staff employment in selected branch"
+      }
+    },
+    "/staff/{id}/assign-existing": {
+      "post": {
+        "description": "Chỉ Super Admin được truy cập workflow add-existing.",
+        "operationId": "staffAssignExisting",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            }
+          },
+          {
+            "name": "X-Branch-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26,
+              "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+            },
+            "description": "ULID chi nhánh đang được chọn. Bắt buộc với route cần selected branch."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignExistingStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Existing internal user assigned as Staff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 201
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Existing internal user assigned as Staff"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/StaffResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or branch selection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Branch Admin và actor không phải Super Admin bị từ chối",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting authorization data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "accessToken": [],
+            "csrfCookie": [],
+            "csrfHeader": []
+          }
+        ],
+        "summary": "Assign an existing BRANCH user as Staff atomically",
+        "tags": [
+          "staff"
+        ]
       }
     },
     "/staff/{id}/convert": {
@@ -6985,7 +7866,37 @@
             }
           },
           "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
+            "description": "Dữ liệu validation không hợp lệ hoặc thiếu Turnstile token khi Turnstile bật. Turnstile missing token trả code TURNSTILE_REQUIRED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF failure trả code CSRF_INVALID. Turnstile verification/config/provider failure trả code TURNSTILE_FAILED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email đã được sử dụng.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Vượt quá giới hạn đăng ký trong cửa sổ throttle.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7052,7 +7963,37 @@
             }
           },
           "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
+            "description": "Dữ liệu validation không hợp lệ hoặc thiếu Turnstile token khi Turnstile bật. Turnstile missing token trả code TURNSTILE_REQUIRED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Đăng nhập không hợp lệ. Backend cố ý trả lỗi generic cho email không tồn tại, mật khẩu sai, tài khoản inactive, provider không phù hợp hoặc thiếu password hash. Không được dùng response này để trigger refresh.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF failure trả code CSRF_INVALID. Turnstile verification/config/provider failure trả code TURNSTILE_FAILED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quá giới hạn request hoặc tạm khóa đăng nhập theo email/IP. Runtime hiện không đảm bảo machine-readable code hoặc countdown có cấu trúc.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7076,7 +8017,7 @@
     },
     "/auth/logout": {
       "post": {
-        "description": "Thu hồi tất cả phiên đang hoạt động của user xác định từ cookie accessToken hoặc refreshToken, sau đó xóa cookie đăng nhập.",
+        "description": "Thu hồi tất cả phiên đang hoạt động của user xác định từ cookie accessToken hoặc refreshToken, sau đó xóa cookie đăng nhập. Backend sử dụng accessToken hoặc refreshToken nếu cookie tồn tại để xác định user và revoke active sessions; chúng không phải security precondition bắt buộc.",
         "operationId": "authLogout",
         "parameters": [],
         "responses": {
@@ -7108,28 +8049,8 @@
               }
             }
           },
-          "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
           "403": {
-            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
+            "description": "CSRF failure trả code CSRF_INVALID.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7141,8 +8062,6 @@
         },
         "security": [
           {
-            "accessToken": [],
-            "refreshToken": [],
             "csrfCookie": [],
             "csrfHeader": []
           }
@@ -7187,8 +8106,44 @@
               }
             }
           },
-          "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
+          "401": {
+            "description": "Refresh session không hợp lệ. Có thể là missing refresh cookie, invalid/expired token, missing payload, missing/revoked/expired session, inactive user, REFRESH_TOKEN_ALREADY_ROTATED hoặc REFRESH_TOKEN_INVALID_OR_REUSED. REFRESH_TOKEN_ALREADY_ROTATED là concurrent rotation race loser; backend không revoke session và không clear cookies ở branch này. REFRESH_TOKEN_INVALID_OR_REUSED là refresh-token hash mismatch / invalid-or-reused; backend revoke matching session và clear auth cookies, không khẳng định đây là malicious reuse được xác nhận.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                },
+                "examples": {
+                  "alreadyRotated": {
+                    "summary": "Concurrent rotation race loser",
+                    "value": {
+                      "statusCode": 401,
+                      "message": "Refresh token đã được xoay vòng bởi một yêu cầu khác",
+                      "error": "Unauthorized",
+                      "code": "REFRESH_TOKEN_ALREADY_ROTATED",
+                      "path": "/api/v1/auth/refresh",
+                      "method": "POST",
+                      "timestamp": "2026-07-02T00:00:00.000Z"
+                    }
+                  },
+                  "invalidOrReused": {
+                    "summary": "Refresh-token hash mismatch / invalid-or-reused",
+                    "value": {
+                      "statusCode": 401,
+                      "message": "Refresh token không hợp lệ hoặc đã được dùng lại",
+                      "error": "Unauthorized",
+                      "code": "REFRESH_TOKEN_INVALID_OR_REUSED",
+                      "path": "/api/v1/auth/refresh",
+                      "method": "POST",
+                      "timestamp": "2026-07-02T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF failure trả code CSRF_INVALID.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7197,8 +8152,8 @@
               }
             }
           },
-          "401": {
-            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
+          "429": {
+            "description": "Vượt quá giới hạn refresh trong cửa sổ throttle. Background refresh phải coi đây là transient/inconclusive, không tự động coi là session expired.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7254,28 +8209,8 @@
               }
             }
           },
-          "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
           "401": {
-            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
+            "description": "Access session không hợp lệ, hết hạn hoặc thiếu. Đây là eligible access-session 401 cho refresh flow nếu request chưa retry.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7330,28 +8265,8 @@
               }
             }
           },
-          "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
+          "429": {
+            "description": "Không lấy được CSRF token do vượt throttle. Frontend không được gửi mutation phụ thuộc CSRF nếu bootstrap token thất bại.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7366,11 +8281,7 @@
           "auth"
         ],
         "description": "Tạo CSRF token",
-        "security": [
-          {
-            "accessToken": []
-          }
-        ]
+        "security": []
       }
     },
     "/auth/google": {
@@ -7378,38 +8289,8 @@
         "operationId": "authGoogle",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": ""
-          },
-          "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
+          "302": {
+            "description": "Chuyển hướng sang Google OAuth và set cookie oauthState đã ký."
           }
         },
         "summary": "Đăng nhập bằng Google",
@@ -7417,11 +8298,7 @@
           "auth"
         ],
         "description": "Đăng nhập bằng Google",
-        "security": [
-          {
-            "accessToken": []
-          }
-        ]
+        "security": []
       }
     },
     "/auth/google/callback": {
@@ -7438,38 +8315,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": ""
-          },
-          "400": {
-            "description": "Yêu cầu không hợp lệ hoặc dữ liệu validation không hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Cookie phiên đăng nhập không hợp lệ, hết hạn hoặc thiếu.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "User không có quyền hoặc không thuộc phạm vi chi nhánh hợp lệ.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponseDto"
-                }
-              }
-            }
+          "302": {
+            "description": "Chuyển hướng về frontend. Thành công: /auth/callback?success=true. Thất bại: /login?error=google_access_denied, /login?error=google_state_invalid hoặc /login?error=google_auth_failed."
           }
         },
         "summary": "Xử lý callback Google",
@@ -7477,11 +8324,7 @@
           "auth"
         ],
         "description": "Xử lý callback Google",
-        "security": [
-          {
-            "accessToken": []
-          }
-        ]
+        "security": []
       }
     }
   },
@@ -8729,60 +9572,6 @@
           }
         }
       },
-      "StaffAssignmentsUserResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "ulid",
-            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
-            "minLength": 26,
-            "maxLength": 26,
-            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
-          },
-          "email": {
-            "type": "string"
-          },
-          "fullName": {
-            "type": "string",
-            "nullable": true
-          },
-          "phone": {
-            "type": "string",
-            "nullable": true
-          },
-          "gender": {
-            "type": "string",
-            "nullable": true
-          },
-          "birthday": {
-            "type": "string",
-            "nullable": true,
-            "format": "date"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "SYSTEM",
-              "BRANCH",
-              "CUSTOMER"
-            ]
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "fullName",
-          "phone",
-          "gender",
-          "birthday",
-          "type",
-          "isActive"
-        ]
-      },
       "StaffAssignmentBranchResponseDto": {
         "type": "object",
         "properties": {
@@ -8809,6 +9598,53 @@
           "code",
           "name",
           "isActive"
+        ]
+      },
+      "StaffAssignmentRolePermissionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+            "minLength": 26,
+            "maxLength": 26,
+            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "guardName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "resource",
+          "action",
+          "guardName"
+        ]
+      },
+      "StaffAssignmentRolePermissionMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "permission": {
+            "$ref": "#/components/schemas/StaffAssignmentRolePermissionResponseDto"
+          }
+        },
+        "required": [
+          "permission"
         ]
       },
       "StaffAssignmentRoleResponseDto": {
@@ -8847,6 +9683,12 @@
           },
           "guardName": {
             "type": "string"
+          },
+          "rolePermissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffAssignmentRolePermissionMappingResponseDto"
+            }
           }
         },
         "required": [
@@ -8857,27 +9699,8 @@
           "isActive",
           "isSystem",
           "type",
-          "guardName"
-        ]
-      },
-      "StaffAssignmentRoleMappingResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "ulid",
-            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
-            "minLength": 26,
-            "maxLength": 26,
-            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
-          },
-          "role": {
-            "$ref": "#/components/schemas/StaffAssignmentRoleResponseDto"
-          }
-        },
-        "required": [
-          "id",
-          "role"
+          "guardName",
+          "rolePermissions"
         ]
       },
       "StaffAssignmentPermissionResponseDto": {
@@ -8942,6 +9765,222 @@
           "id",
           "effect",
           "permission"
+        ]
+      },
+      "StaffSelectedAssignmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+            "minLength": 26,
+            "maxLength": 26,
+            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "ulid",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+            "minLength": 26,
+            "maxLength": 26,
+            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "assignedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "branch": {
+            "$ref": "#/components/schemas/StaffAssignmentBranchResponseDto"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffAssignmentRoleResponseDto"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffAssignmentPermissionMappingResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "branchId",
+          "isPrimary",
+          "isActive",
+          "assignedBy",
+          "assignedAt",
+          "branch",
+          "roles",
+          "permissions"
+        ]
+      },
+      "StaffResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+            "minLength": 26,
+            "maxLength": 26,
+            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "assignment": {
+            "$ref": "#/components/schemas/StaffSelectedAssignmentResponseDto"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "fullName",
+          "phone",
+          "isActive",
+          "createdAt",
+          "assignment"
+        ]
+      },
+      "StaffCandidateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+            "minLength": 26,
+            "maxLength": 26,
+            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "assignmentCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "fullName",
+          "phone",
+          "isActive",
+          "assignmentCount"
+        ]
+      },
+      "StaffAssignmentsUserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+            "minLength": 26,
+            "maxLength": 26,
+            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "gender": {
+            "type": "string",
+            "nullable": true
+          },
+          "birthday": {
+            "type": "string",
+            "nullable": true,
+            "format": "date"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SYSTEM",
+              "BRANCH",
+              "CUSTOMER"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "fullName",
+          "phone",
+          "gender",
+          "birthday",
+          "type",
+          "isActive"
+        ]
+      },
+      "StaffAssignmentRoleMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "ulid",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+            "minLength": 26,
+            "maxLength": 26,
+            "example": "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T"
+          },
+          "role": {
+            "$ref": "#/components/schemas/StaffAssignmentRoleResponseDto"
+          }
+        },
+        "required": [
+          "id",
+          "role"
         ]
       },
       "StaffBranchAssignmentResponseDto": {
@@ -9067,6 +10106,37 @@
           "email",
           "fullName",
           "password",
+          "roleIds"
+        ]
+      },
+      "AssignExistingStaffDto": {
+        "type": "object",
+        "properties": {
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "permissionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "ulid",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+              "minLength": 26,
+              "maxLength": 26
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
           "roleIds"
         ]
       },

@@ -10,6 +10,7 @@ import type {
 } from "@/api/generated/models";
 import { ADMIN_PERMISSIONS } from "@/authorization/admin-permissions";
 import PermissionGate from "@/components/authorization/PermissionGate.vue";
+import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb.vue";
 import DataTable from "@/components/admin/table/DataTable.vue";
 import type {
   DataTableDateColumn,
@@ -149,6 +150,11 @@ function openDeactivate(role: Role): void {
 
 <template>
   <section class="space-y-6">
+    <AdminBreadcrumb
+      group-label="Tổ chức & phân quyền"
+      :group-to="{ name: 'super-admin-branches' }"
+      section-label="Vai trò"
+    />
     <div
       class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
     >
@@ -191,6 +197,7 @@ function openDeactivate(role: Role): void {
         emitInitialQuery: true,
         initialSorting: [{ id: 'createdAt', desc: true }],
         initialColumnVisibility: {
+          code: false,
           description: false,
           guardName: false,
           updatedAt: false,

@@ -3,6 +3,7 @@ import {
   capitalizeFirstVietnameseLabel,
   formatPermissionLabel,
   formatPermissionResource,
+  formatPermissionState,
 } from "./permission-labels";
 
 describe("permission labels", () => {
@@ -23,7 +24,7 @@ describe("permission labels", () => {
         resource: "permissions",
         action: "create",
       },
-      "Tạo quyền",
+      "Tạo quyền hạn",
     ],
     [
       {
@@ -32,7 +33,7 @@ describe("permission labels", () => {
         resource: "staff",
         action: "assign_role",
       },
-      "Gán vai trò nhân viên",
+      "Gán vai trò nhân viên chi nhánh",
     ],
   ])("formats known catalog permission %o", (permission, expected) => {
     expect(formatPermissionLabel(permission)).toBe(expected);
@@ -63,5 +64,22 @@ describe("permission labels", () => {
     expect(capitalizeFirstVietnameseLabel("đơn hàng")).toBe("Đơn hàng");
     expect(capitalizeFirstVietnameseLabel("Đơn hàng")).toBe("Đơn hàng");
     expect(capitalizeFirstVietnameseLabel("")).toBe("");
+  });
+
+  it.each([
+    ["branch_admin", "Quản trị chi nhánh"],
+    ["branch_returns", "Yêu cầu hoàn trả"],
+    ["inventory", "Kho và tồn"],
+    ["stock_audit_events", "Stock audit events"],
+  ])("localizes or formats resource %s", (resource, expected) => {
+    expect(formatPermissionResource(resource)).toBe(expected);
+  });
+
+  it.each([
+    ["INHERIT", "Kế thừa"],
+    ["ALLOW", "Cho phép"],
+    ["DENY", "Từ chối"],
+  ] as const)("localizes permission state %s", (state, expected) => {
+    expect(formatPermissionState(state)).toBe(expected);
   });
 });

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { computed, ref } from 'vue'
-import { ArrowLeft, Copy, ExternalLink, MapPin, Pencil, Phone, Power, Store } from '@lucide/vue'
+import { Copy, ExternalLink, MapPin, Pencil, Phone, Power, Store, UserRoundCog } from '@lucide/vue'
 import { useQuery } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
 import type { ErrorResponseDto } from '@/api/generated/models'
 import { ADMIN_PERMISSIONS } from '@/authorization/admin-permissions'
 import PermissionGate from '@/components/authorization/PermissionGate.vue'
+import AdminBreadcrumb from '@/components/admin/AdminBreadcrumb.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getBranch } from '../api/branch-api'
@@ -17,6 +18,7 @@ import BranchDeactivateDialog from '../components/BranchDeactivateDialog.vue'
 import BranchDetailMap from '../components/BranchDetailMap.vue'
 import BranchFormDialog from '../components/BranchFormDialog.vue'
 import BranchStatusBadge from '../components/BranchStatusBadge.vue'
+import BranchManagerDialog from '@/features/branch-admins/components/BranchManagerDialog.vue'
 import { formatBranchAddress } from '../components/branch-columns'
 
 const route = useRoute()
@@ -24,6 +26,7 @@ const router = useRouter()
 const branchId = computed(() => String(route.params.id))
 const editOpen = ref(false)
 const deactivateOpen = ref(false)
+const managerOpen = ref(false)
 const branchDateFormatter = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
   month: '2-digit',
@@ -69,9 +72,14 @@ function afterDeactivate(): void {
 
 <template>
   <section class="space-y-6">
-    <button type="button" class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground" @click="router.push({ name: 'super-admin-branches' })">
-      <ArrowLeft class="h-4 w-4" />Danh sách chi nhánh
-    </button>
+    <AdminBreadcrumb
+      group-label="Tổ chức & phân quyền"
+      :group-to="{ name: 'super-admin-branches' }"
+      section-label="Chi nhánh"
+      :section-to="{ name: 'super-admin-branches' }"
+      :current-label="branch?.name"
+      :loading="branchQuery.isPending.value"
+    />
 
     <div v-if="branchQuery.isLoading.value" class="rounded-xl border p-8 text-sm text-muted-foreground">Đang tải thông tin chi nhánh...</div>
     <div v-else-if="isNotFound" class="rounded-xl border border-dashed p-8 text-center">
@@ -94,6 +102,9 @@ function afterDeactivate(): void {
           <p class="mt-1 font-mono text-sm text-muted-foreground">Mã: {{ branch.code }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
+          <PermissionGate :all-of="[ADMIN_PERMISSIONS.USERS_READ, ADMIN_PERMISSIONS.BRANCHES_READ]">
+            <Button variant="outline" @click="managerOpen = true"><UserRoundCog class="mr-2 h-4 w-4" />Quản lý</Button>
+          </PermissionGate>
           <PermissionGate :all-of="[ADMIN_PERMISSIONS.BRANCHES_UPDATE]">
             <Button variant="outline" @click="editOpen = true"><Pencil class="mr-2 h-4 w-4" />Chỉnh sửa</Button>
           </PermissionGate>
@@ -154,4 +165,5 @@ function afterDeactivate(): void {
 
   <BranchFormDialog v-if="branch" v-model:open="editOpen" mode="update" :branch="branch" />
   <BranchDeactivateDialog v-if="branch" v-model:open="deactivateOpen" :branch="branch" @deactivated="afterDeactivate" />
+  <BranchManagerDialog v-if="branch" v-model:open="managerOpen" :branch="branch" />
 </template>

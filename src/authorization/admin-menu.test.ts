@@ -32,6 +32,12 @@ describe('admin menu and safe landing', () => {
     ])
     expect(ids).toEqual(['dashboard', 'staff', 'product-list', 'inventory-list', 'orders'])
     expect(ids).not.toContain('stock-movements')
+    expect(ids).not.toContain('branch-admins')
+  })
+
+  it('shows Branch Admin management only to SYSTEM with both read permissions', () => {
+    expect(visibleIds('SYSTEM', [ADMIN_PERMISSIONS.USERS_READ])).not.toContain('branch-admins')
+    expect(visibleIds('SYSTEM', [ADMIN_PERMISSIONS.USERS_READ, ADMIN_PERMISSIONS.BRANCHES_READ])).toContain('branch-admins')
   })
 
   it('lands INVENTORY on the first allowed product route', () => {

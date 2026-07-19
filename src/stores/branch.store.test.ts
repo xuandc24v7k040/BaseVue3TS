@@ -224,6 +224,22 @@ describe('admin branch context for BRANCH users', () => {
     expect(store.effectivePermissions).toEqual(['inventory.read'])
     expect(store.effectivePermissions).not.toContain('staff.read')
   })
+
+  it('clears an invalid selected branch but keeps allowed options for recovery', async () => {
+    const store = useBranchStore()
+    store.initialize(principal({
+      type: 'BRANCH', branches: [branchA, branchB], assignments,
+    }))
+
+    await store.clearSelectedBranch()
+
+    expect(store.selectedBranchId).toBeNull()
+    expect(store.availableBranches.map(({ id }) => id)).toEqual([BRANCH_A, BRANCH_B])
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.adminBranchContext) ?? '')).toEqual({
+      userId: USER_A,
+      branchId: null,
+    })
+  })
 })
 
 describe('admin branch persistence and lifecycle', () => {

@@ -95,8 +95,17 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
     icon: Users,
     children: [
       {
+        id: 'branch-admins',
+        label: 'Quản trị viên chi nhánh',
+        routeNames: { SYSTEM: 'super-admin-branch-admins' },
+        requiredPermissions: [
+          ADMIN_PERMISSIONS.USERS_READ,
+          ADMIN_PERMISSIONS.BRANCHES_READ,
+        ],
+      },
+      {
         id: 'staff',
-        label: 'Nhân viên',
+        label: 'Nhân viên chi nhánh',
         routeNames: {
           SYSTEM: 'super-admin-staff',
           BRANCH: 'branch-admin-staff',

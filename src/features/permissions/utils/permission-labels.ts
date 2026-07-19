@@ -1,18 +1,19 @@
 import type { Permission } from "../types";
 
-const RESOURCE_LABELS: Readonly<Record<string, string>> = {
-  dashboard: "bảng điều khiển",
+export const permissionResourceLabels: Readonly<Record<string, string>> = {
+  dashboard: "tổng quan",
   users: "người dùng",
-  staff: "nhân viên",
+  staff: "nhân viên chi nhánh",
   branches: "chi nhánh",
   roles: "vai trò",
-  permissions: "quyền",
-  super_admin: "quản trị viên hệ thống",
-  branch_admin: "quản trị viên chi nhánh",
+  permissions: "quyền hạn",
+  super_admin: "quản trị hệ thống",
+  branch_admin: "quản trị chi nhánh",
+  branch_returns: "yêu cầu hoàn trả",
   orders: "đơn hàng",
   payments: "thanh toán",
   products: "sản phẩm",
-  inventory: "kho hàng",
+  inventory: "kho và tồn",
   stock_movements: "biến động kho",
   profile: "hồ sơ",
 };
@@ -32,9 +33,9 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   create_own: "Tạo cho chính mình",
 };
 
-export const PERMISSION_RESOURCE_OPTIONS = Object.entries(RESOURCE_LABELS).map(
-  ([value, label]) => ({ value, label }),
-);
+export const PERMISSION_RESOURCE_OPTIONS = Object.entries(
+  permissionResourceLabels,
+).map(([value, label]) => ({ value, label }));
 export const PERMISSION_ACTION_OPTIONS = Object.entries(ACTION_LABELS).map(
   ([value, label]) => ({ value, label }),
 );
@@ -45,7 +46,9 @@ export function capitalizeFirstVietnameseLabel(label: string): string {
 }
 
 export function formatPermissionResource(resource: string): string {
-  return capitalizeFirstVietnameseLabel(RESOURCE_LABELS[resource] ?? resource);
+  return capitalizeFirstVietnameseLabel(
+    permissionResourceLabels[resource] ?? formatSnakeCaseLabel(resource),
+  );
 }
 
 export function formatPermissionAction(action: string): string {
@@ -56,7 +59,27 @@ export function formatPermissionLabel(
   permission: Pick<Permission, "code" | "name" | "resource" | "action">,
 ): string {
   const action = ACTION_LABELS[permission.action];
-  const resource = RESOURCE_LABELS[permission.resource];
+  const resource = permissionResourceLabels[permission.resource];
   if (action && resource) return `${action} ${resource}`;
   return permission.name.trim() || permission.code;
+}
+
+export const permissionStateLabels = {
+  INHERIT: "Kế thừa",
+  ALLOW: "Cho phép",
+  DENY: "Từ chối",
+} as const;
+
+export function formatPermissionState(
+  state: keyof typeof permissionStateLabels,
+): string {
+  return permissionStateLabels[state];
+}
+
+function formatSnakeCaseLabel(value: string): string {
+  return value
+    .trim()
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .join(" ");
 }

@@ -33,6 +33,10 @@ export const PermissionsListQueryParams = zod.strictObject({
   "sortOrder": zod.enum(['asc', 'desc']).default(permissionsListQuerySortOrderDefault)
 })
 
+export const PermissionsListHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Create permission
  * @summary Create permission
@@ -54,6 +58,10 @@ export const PermissionsCreateBody = zod.strictObject({
  */
 export const PermissionsGetParams = zod.strictObject({
   "id": zod.ulid()
+})
+
+export const PermissionsGetHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 /**

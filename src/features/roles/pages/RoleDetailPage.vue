@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { computed, ref } from 'vue'
-import { ArrowLeft, LockKeyhole, Pencil, Power, RefreshCcw, ShieldCheck } from '@lucide/vue'
+import { LockKeyhole, Pencil, Power, RefreshCcw, ShieldCheck } from '@lucide/vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useRoute, useRouter } from 'vue-router'
 import { ADMIN_PERMISSIONS } from '@/authorization/admin-permissions'
 import PermissionGate from '@/components/authorization/PermissionGate.vue'
+import AdminBreadcrumb from '@/components/admin/AdminBreadcrumb.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,7 +47,7 @@ function openPermissionEditor(): void {
 
 <template>
   <section class="space-y-6">
-    <Button type="button" variant="ghost" class="-ml-3" @click="router.push({ name: 'super-admin-roles' })"><ArrowLeft class="mr-2 h-4 w-4" />Quay lại danh sách</Button>
+    <AdminBreadcrumb group-label="Tổ chức & phân quyền" :group-to="{ name: 'super-admin-branches' }" section-label="Vai trò" :section-to="{ name: 'super-admin-roles' }" :current-label="role?.name" :loading="query.isPending.value" />
     <div v-if="query.isPending.value" class="space-y-4"><Skeleton class="h-10 w-64" /><Skeleton class="h-48 w-full" /><Skeleton class="h-36 w-full" /></div>
     <div v-else-if="query.isError.value" class="rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center">
       <h1 class="text-xl font-semibold">{{ status === 404 ? 'Không tìm thấy vai trò' : status === 403 ? 'Bạn không có quyền xem vai trò này' : 'Không thể tải thông tin vai trò' }}</h1>
