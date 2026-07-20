@@ -461,6 +461,20 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: "categories",
+        name: "super-admin-categories",
+        component: () =>
+          import("@/features/categories/pages/CategoryListPage.vue"),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.CATEGORIES_READ] },
+      },
+      {
+        path: "categories/:id",
+        name: "super-admin-category-detail",
+        component: () =>
+          import("@/features/categories/pages/CategoryDetailPage.vue"),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.CATEGORIES_READ] },
+      },
+      {
         path: "inventory",
         name: "super-admin-inventory",
         component: () => import("@/pages/super-admin/InventoryPage.vue"),

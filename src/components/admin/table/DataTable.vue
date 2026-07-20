@@ -43,6 +43,8 @@ interface DataTableProps {
    */
   selectedRowIds?: string[]
   pageSizeOptions?: number[]
+  enablePagination?: boolean
+  showRowCount?: boolean
 }
 
 interface DataTableControlStickyOverrides {
@@ -57,6 +59,8 @@ const props = withDefaults(defineProps<DataTableProps>(), {
   enableSelection: false,
   selectedRowIds: undefined,
   pageSizeOptions: () => [10, 20, 30, 50, 100],
+  enablePagination: true,
+  showRowCount: false,
 })
 
 const emit = defineEmits<{
@@ -170,6 +174,7 @@ const isInteractionDisabled = computed(() => Boolean(props.error) || props.isLoa
 const skeletonRowCount = computed(() =>
   Math.max(1, Math.min(table.getState().pagination.pageSize, 10)),
 )
+const resolvedRowCount = computed(() => props.rowCount ?? props.data.length)
 
 const {
   getRowTabIndex,
@@ -481,7 +486,7 @@ defineExpose({
       </ScrollArea>
     </div>
 
-    <slot name="pagination" :table="table" :selected-ids="selectedIds">
+    <slot v-if="enablePagination" name="pagination" :table="table" :selected-ids="selectedIds">
       <DataTablePagination
         :table="table"
         :page-size-options="pageSizeOptions"
@@ -489,6 +494,15 @@ defineExpose({
         :max-page-size="tableConfig?.maxPageSize"
       />
     </slot>
+    <div
+      v-else-if="showRowCount"
+      class="px-1 text-sm text-muted-foreground"
+      data-test="data-table-row-count"
+    >
+      <slot name="row-count" :row-count="resolvedRowCount">
+        {{ resolvedRowCount }} dòng
+      </slot>
+    </div>
 
     <!-- Backward-compatible slot declaration. Initial loading now renders skeleton rows only. -->
     <slot v-if="false" name="loading" />

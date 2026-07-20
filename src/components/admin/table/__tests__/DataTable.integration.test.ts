@@ -104,14 +104,16 @@ async function mountRoutedTable(options: {
   config?: DataTableConfig<UserRow>
   filterableColumns?: DataTableFilterableColumn[]
   dateColumns?: DataTableDateColumn[]
+  pageCount?: number
+  rowCount?: number
 }) {
   const wrapper = mount(DataTable<UserRow>, {
     attachTo: document.body,
     props: {
       columns,
       data: rows,
-      pageCount: 5,
-      rowCount: 100,
+      pageCount: Object.hasOwn(options, 'pageCount') ? options.pageCount : 5,
+      rowCount: Object.hasOwn(options, 'rowCount') ? options.rowCount : 100,
       globalSearch,
       filterableColumns: options.filterableColumns ?? [roleFilter],
       dateColumns: options.dateColumns ?? [],
@@ -175,6 +177,16 @@ async function flushAsync() {
   }
 }
 
+async function navigateHistory(router: Router, navigate: () => void) {
+  await new Promise<void>((resolve) => {
+    const removeGuard = router.afterEach(() => {
+      removeGuard()
+      resolve()
+    })
+    navigate()
+  })
+}
+
 beforeEach(() => {
   vi.useFakeTimers()
 })
@@ -192,6 +204,54 @@ afterEach(() => {
 })
 
 describe('DataTable route-sync integration', () => {
+  it('does not clamp a routed page while pagination meta is temporarily unavailable', async () => {
+    const router = await createRouterAt('/users?page=2&limit=2')
+    const wrapper = await mountRoutedTable({
+      router,
+      config: compactConfig({ pageSize: 2 }),
+      pageCount: undefined,
+      rowCount: undefined,
+    })
+
+    await flushAsync()
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 2, pageSize: 2 })
+    expect(router.currentRoute.value.query).toMatchObject({ page: '2', limit: '2' })
+
+    await wrapper.setProps({ pageCount: 3, rowCount: 5 })
+    await flushAsync()
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 2, pageSize: 2 })
+    expect(router.currentRoute.value.query.page).toBe('2')
+
+    await wrapper.setProps({ pageCount: 1, rowCount: 2 })
+    await flushAsync()
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 1, pageSize: 2 })
+    expect(router.currentRoute.value.query.page).toBeUndefined()
+  })
+
+  it('restores pagination state through back and forward navigation', async () => {
+    const router = await createRouterAt('/users?page=2&limit=2')
+    await router.push('/users?page=3&limit=2')
+    const wrapper = await mountRoutedTable({
+      router,
+      config: compactConfig({ pageSize: 10 }),
+      pageCount: 3,
+      rowCount: 5,
+    })
+
+    await flushAsync()
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 3, pageSize: 2 })
+
+    await navigateHistory(router, () => router.back())
+    await flushAsync()
+    expect(router.currentRoute.value.query.page).toBe('2')
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 2, pageSize: 2 })
+
+    await navigateHistory(router, () => router.forward())
+    await flushAsync()
+    expect(router.currentRoute.value.query.page).toBe('3')
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 3, pageSize: 2 })
+  })
+
   it('hydrates compact route query on initial mount and emits DataTableQuery', async () => {
     const router = await createRouterAt(
       '/users?q=abc&page=2&limit=20&sort=name:asc&role=admin,manager',

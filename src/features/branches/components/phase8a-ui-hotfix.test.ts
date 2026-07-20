@@ -124,4 +124,14 @@ describe('Phase 8A UI hotfix invariants', () => {
     ]
     expectedDefaults.forEach((value) => expect(listPage).toContain(value))
   })
+
+  it('keeps authoritative pagination meta while the Branch list refetches', () => {
+    const listPage = source('../pages/BranchListPage.vue')
+
+    expect(listPage).toContain('placeholderData: keepPreviousData')
+    expect(listPage).toContain('meta.value?.lastPage)')
+    expect(listPage).toContain('meta.value?.total)')
+    expect(listPage).not.toContain('meta.value?.lastPage ?? 0')
+    expect(listPage).not.toContain('meta.value?.total ?? 0')
+  })
 })

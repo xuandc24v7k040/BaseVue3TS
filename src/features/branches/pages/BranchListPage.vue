@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Eye, Pencil, Plus, Power, RefreshCcw, Store } from '@lucide/vue'
-import { useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import DataTable from '@/components/admin/table/DataTable.vue'
 import DataTableActions from '@/components/admin/table/DataTableActions.vue'
@@ -76,12 +76,13 @@ const dateColumns: DataTableDateColumn[] = [
 const branchQuery = useQuery({
   queryKey: computed(() => branchKeys.list(null, params.value)),
   queryFn: ({ signal }) => listBranches(params.value, null, signal),
+  placeholderData: keepPreviousData,
 })
 
 const rows = computed(() => branchQuery.data.value?.data ?? [])
 const meta = computed(() => branchQuery.data.value?.meta)
-const pageCount = computed(() => meta.value?.lastPage ?? 0)
-const rowCount = computed(() => meta.value?.total ?? 0)
+const pageCount = computed(() => meta.value?.lastPage)
+const rowCount = computed(() => meta.value?.total)
 
 function handleQueryChange(query: DataTableQuery): void {
   const next = toBranchListParams(query)

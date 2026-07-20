@@ -92,6 +92,8 @@ function mountTable(
     data?: OrderRow[];
     pageCount?: number;
     rowCount?: number;
+    enablePagination?: boolean;
+    showRowCount?: boolean;
     enableSelection?: boolean;
     selectedRowIds?: string[];
     isLoading?: boolean;
@@ -106,6 +108,8 @@ function mountTable(
       data: options.data ?? rows,
       pageCount: options.pageCount ?? 3,
       rowCount: options.rowCount ?? 6,
+      enablePagination: options.enablePagination,
+      showRowCount: options.showRowCount,
       globalSearch,
       filterableColumns: [roleFilter],
       dateColumns: [dateColumn],
@@ -198,6 +202,23 @@ afterEach(() => {
 });
 
 describe("DataTable component interactions", () => {
+  it("keeps pagination enabled by default and can replace it with a row-count footer", () => {
+    const defaultWrapper = mountTable();
+    expect(defaultWrapper.text()).toContain("Dòng/trang");
+    expect(defaultWrapper.find('[aria-label="Trang sau"]').exists()).toBe(true);
+    defaultWrapper.unmount();
+
+    const rowCountWrapper = mountTable({
+      enablePagination: false,
+      showRowCount: true,
+      rowCount: 6,
+    });
+    expect(rowCountWrapper.text()).not.toContain("Dòng/trang");
+    expect(rowCountWrapper.text()).not.toContain("Trang 1 / 3");
+    expect(rowCountWrapper.find('[aria-label="Trang sau"]').exists()).toBe(false);
+    expect(rowCountWrapper.get('[data-test="data-table-row-count"]').text()).toBe("6 dòng");
+  });
+
   it("debounces global search and resets page to 1", async () => {
     const wrapper = mountTable({
       config: baseConfig({ initialPageIndex: 0 }),

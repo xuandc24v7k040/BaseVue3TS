@@ -131,6 +131,12 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
         requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
         status: 'placeholder',
       },
+      {
+        id: 'categories',
+        label: 'Danh mục',
+        routeNames: { SYSTEM: 'super-admin-categories' },
+        requiredPermissions: [ADMIN_PERMISSIONS.CATEGORIES_READ],
+      },
     ],
   },
   {
