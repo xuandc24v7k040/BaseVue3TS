@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface ProductOptionValueResponseDto {
+export interface OptionValueImageResponseDto {
   /**
      * @minLength 26
      * @maxLength 26
@@ -14,12 +14,6 @@ export interface ProductOptionValueResponseDto {
      */
   id: string;
   label: string;
-  value: string;
   /** @nullable */
-  colorCode?: string | null;
-  /** @nullable */
-  imageUrl?: string | null;
-  sortOrder: number;
-  /** @minimum 0 */
-  usageCount: number;
+  imageUrl: string | null;
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
-import { Plus, Save, Trash2 } from '@lucide/vue'
+import { ImagePlus, Plus, Save, Trash2 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import type { ProductOptionResponseDto, ProductOptionValueResponseDto } from '@/api/generated/models'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import { productOptionsCreate, productOptionsDelete, productOptionsList, product
 import { productKeys } from '../api/product-query-keys'
 import { productErrorMessage, productFieldErrors } from '../utils/product-errors'
 import { normalizeProductColor, productColorError } from '../utils/product-option-validation'
+import OptionValueImageDialog from '../media/components/OptionValueImageDialog.vue'
 
 const props = defineProps<{ productId: string }>()
 const client = useQueryClient()
@@ -30,6 +31,7 @@ const valueDrafts = reactive<Record<string, ValueDraft>>({})
 const valueErrors = reactive<Record<string, Partial<Record<keyof ValueDraft, string>>>>({})
 const deleteOpen = ref(false)
 const deleteTarget = ref<DeleteTarget | null>(null)
+const imageTarget = ref<{ option: ProductOptionResponseDto; value: ProductOptionValueResponseDto } | null>(null)
 
 const query = useQuery({
   queryKey: computed(() => productKeys.options(props.productId)),
@@ -194,7 +196,7 @@ async function confirmDelete() {
 
         <ScrollArea v-if="option.values.length" scrollbar-orientation="horizontal" class="hidden w-full md:block">
           <table class="w-full min-w-[760px] text-sm"><thead><tr class="border-b text-left text-muted-foreground"><th class="p-2">Tên hiển thị</th><th class="p-2">Giá trị kỹ thuật</th><th class="p-2">Mã màu</th><th class="p-2">Thứ tự</th><th class="p-2 text-right">Hành động</th></tr></thead><tbody>
-            <tr v-for="value in option.values" :key="value.id" class="border-b last:border-0"><template v-if="valueDrafts[value.id]"><td class="p-2"><Input v-model="valueDrafts[value.id]!.label" :aria-invalid="Boolean(valueErrors[value.id]?.label)" @update:model-value="clearValueError(value.id, 'label')" /></td><td class="p-2"><Input :model-value="valueDrafts[value.id]!.value" :disabled="valueUsageCount(value) > 0" @update:model-value="valueDrafts[value.id]!.value = normalizeCode(String($event)); clearValueError(value.id, 'value')" /></td><td class="p-2"><Input v-model="valueDrafts[value.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[value.id]?.colorCode)" @update:model-value="clearValueError(value.id, 'colorCode')" /></td><td class="p-2"><Input v-model.number="valueDrafts[value.id]!.sortOrder" type="number" min="0" /></td><td class="p-2"><div class="flex justify-end gap-1"><Button type="button" size="icon-sm" variant="ghost" aria-label="Lưu giá trị" :disabled="pending" @click="saveValue(option, value)"><Save class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Xóa giá trị" :title="valueUsageCount(value) > 0 ? 'Xem lý do không thể xóa' : 'Xóa giá trị'" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="h-4 w-4" /></Button></div></td></template></tr>
+            <tr v-for="value in option.values" :key="value.id" class="border-b last:border-0"><template v-if="valueDrafts[value.id]"><td class="p-2"><div class="flex items-center gap-2"><img v-if="value.imageUrl" :src="value.imageUrl" :alt="`Thumbnail ${value.label}`" class="h-9 w-9 rounded object-cover"><span v-else-if="value.colorCode" class="h-9 w-9 rounded border" :style="{ backgroundColor: value.colorCode }" aria-hidden="true" /><Input v-model="valueDrafts[value.id]!.label" :aria-invalid="Boolean(valueErrors[value.id]?.label)" @update:model-value="clearValueError(value.id, 'label')" /></div></td><td class="p-2"><Input :model-value="valueDrafts[value.id]!.value" :disabled="valueUsageCount(value) > 0" @update:model-value="valueDrafts[value.id]!.value = normalizeCode(String($event)); clearValueError(value.id, 'value')" /></td><td class="p-2"><Input v-model="valueDrafts[value.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[value.id]?.colorCode)" @update:model-value="clearValueError(value.id, 'colorCode')" /></td><td class="p-2"><Input v-model.number="valueDrafts[value.id]!.sortOrder" type="number" min="0" /></td><td class="p-2"><div class="flex justify-end gap-1"><Button type="button" size="icon-sm" variant="ghost" aria-label="Quản lý thumbnail" :disabled="pending" @click="imageTarget = { option, value }"><ImagePlus class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Lưu giá trị" :disabled="pending" @click="saveValue(option, value)"><Save class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Xóa giá trị" :title="valueUsageCount(value) > 0 ? 'Xem lý do không thể xóa' : 'Xóa giá trị'" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="h-4 w-4" /></Button></div></td></template></tr>
           </tbody></table>
         </ScrollArea>
 
@@ -203,7 +205,7 @@ async function confirmDelete() {
             <template v-if="valueDrafts[value.id]">
               <div class="grid gap-3"><label class="space-y-1 text-xs text-muted-foreground">Tên hiển thị<Input v-model="valueDrafts[value.id]!.label" @update:model-value="clearValueError(value.id, 'label')" /></label><label class="space-y-1 text-xs text-muted-foreground">Giá trị kỹ thuật<Input :model-value="valueDrafts[value.id]!.value" :disabled="valueUsageCount(value) > 0" @update:model-value="valueDrafts[value.id]!.value = normalizeCode(String($event)); clearValueError(value.id, 'value')" /></label><label class="space-y-1 text-xs text-muted-foreground">Mã màu<Input v-model="valueDrafts[value.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[value.id]?.colorCode)" @update:model-value="clearValueError(value.id, 'colorCode')" /></label><label class="space-y-1 text-xs text-muted-foreground">Thứ tự<Input v-model.number="valueDrafts[value.id]!.sortOrder" type="number" min="0" /></label></div>
               <p v-if="valueErrors[value.id]?.colorCode" class="text-xs text-destructive">{{ valueErrors[value.id]?.colorCode }}</p>
-              <div class="flex justify-end gap-2"><Button type="button" size="sm" variant="outline" :disabled="pending" @click="saveValue(option, value)"><Save class="mr-2 h-4 w-4" />Lưu</Button><Button type="button" size="sm" variant="ghost" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="mr-2 h-4 w-4" />Xóa</Button></div>
+              <div class="flex flex-wrap justify-end gap-2"><Button type="button" size="sm" variant="outline" :disabled="pending" @click="imageTarget = { option, value }"><ImagePlus class="mr-2 h-4 w-4" />Thumbnail</Button><Button type="button" size="sm" variant="outline" :disabled="pending" @click="saveValue(option, value)"><Save class="mr-2 h-4 w-4" />Lưu</Button><Button type="button" size="sm" variant="ghost" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="mr-2 h-4 w-4" />Xóa</Button></div>
             </template>
           </article>
         </div>
@@ -219,4 +221,5 @@ async function confirmDelete() {
     </Card>
   </section>
   <MasterDataDeleteDialog v-model:open="deleteOpen" :name="deleteTarget?.kind === 'option' ? deleteTarget.option.name : deleteTarget?.value.label ?? ''" :title="deleteBlockedReason ? 'Không thể xóa' : 'Xóa lựa chọn?'" description="Hành động này không thể hoàn tác." :blocked-reason="deleteBlockedReason" :pending="pending" @confirm="confirmDelete" />
+  <OptionValueImageDialog v-if="imageTarget" :open="Boolean(imageTarget)" :product-id="productId" :option="imageTarget.option" :value="imageTarget.value" @update:open="imageTarget = $event ? imageTarget : null" />
 </template>

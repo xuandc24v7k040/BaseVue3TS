@@ -16,6 +16,7 @@ import { productOptionsList, productsGet, productsUpdateStatus, productVariantsL
 import { productErrorMessage } from '../utils/product-errors'
 import { formatVnd } from '../utils/product-money'
 import { formatProductDate } from '../utils/product-date'
+import ProductMediaSection from '../media/components/ProductMediaSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -52,7 +53,7 @@ async function changeStatus(status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'DISCONTIN
     ])
     toast.success('Cập nhật trạng thái sản phẩm thành công.')
   } catch (error) {
-    toast.error(productErrorMessage(error, status === 'ACTIVE' ? 'Chưa thể kích hoạt. Hãy hoàn thiện biến thể mặc định và media ở Phase 10C.' : 'Không thể cập nhật trạng thái.'))
+    toast.error(productErrorMessage(error, status === 'ACTIVE' ? 'Chưa thể kích hoạt. Hãy hoàn thiện biến thể mặc định, danh mục và hình ảnh.' : 'Không thể cập nhật trạng thái.'))
   } finally { pendingStatus.value = false }
 }
 </script>
@@ -62,15 +63,15 @@ async function changeStatus(status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'DISCONTIN
     <AdminBreadcrumb group-label="Quản lý" :group-to="{ name: 'admin-home' }" section-label="Sản phẩm" :section-to="{ name: 'super-admin-products' }" :current-label="product?.name ?? 'Chi tiết'" :loading="detailQuery.isPending.value" />
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div><div class="flex flex-wrap items-center gap-2"><h1 class="text-2xl font-semibold tracking-tight">{{ product?.name ?? 'Chi tiết sản phẩm' }}</h1><Badge v-if="product" :variant="statusVariants[product.status]">{{ statusLabels[product.status] }}</Badge></div><p v-if="product" class="mt-1 text-sm text-muted-foreground">{{ product.slug }}</p></div>
-      <div class="flex gap-2"><Button variant="outline" @click="router.push({ name: 'super-admin-products' })"><ArrowLeft class="mr-2 h-4 w-4" />Danh sách</Button><PermissionGate :permission="ADMIN_PERMISSIONS.PRODUCTS_UPDATE"><Button @click="router.push({ name: 'super-admin-product-edit', params: { id } })"><Edit3 class="mr-2 h-4 w-4" />Chỉnh sửa</Button></PermissionGate></div>
+      <div class="flex gap-2"><Button variant="outline" @click="router.push({ name: 'super-admin-products' })"><ArrowLeft class="mr-2 h-4 w-4" />Danh sách</Button><PermissionGate :all-of="[ADMIN_PERMISSIONS.PRODUCTS_UPDATE]"><Button @click="router.push({ name: 'super-admin-product-edit', params: { id } })"><Edit3 class="mr-2 h-4 w-4" />Chỉnh sửa</Button></PermissionGate></div>
     </div>
 
     <p v-if="detailQuery.isPending.value" class="text-sm text-muted-foreground">Đang tải sản phẩm...</p>
     <p v-else-if="detailQuery.isError.value || !product" class="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">Không thể tải chi tiết sản phẩm.</p>
     <template v-else>
       <Card>
-        <CardHeader class="flex-row flex-wrap items-center justify-between gap-3"><CardTitle>Trạng thái kinh doanh</CardTitle><PermissionGate :permission="ADMIN_PERMISSIONS.PRODUCTS_PUBLISH"><div class="flex flex-wrap gap-2"><Button size="sm" variant="outline" :disabled="pendingStatus" @click="changeStatus('DRAFT')">Nháp</Button><Button size="sm" variant="outline" :disabled="pendingStatus" @click="changeStatus('INACTIVE')">Tạm ngưng</Button><Button size="sm" variant="outline" :disabled="pendingStatus" @click="changeStatus('DISCONTINUED')">Ngừng bán</Button><Button size="sm" :disabled="pendingStatus" @click="changeStatus('ACTIVE')"><RefreshCcw class="mr-2 h-4 w-4" />Kích hoạt</Button></div></PermissionGate></CardHeader>
-        <CardContent><p class="text-sm text-muted-foreground">Kích hoạt yêu cầu ít nhất một biến thể đang bán, đúng cấu hình lựa chọn, có biến thể mặc định, giá hợp lệ, danh mục và ảnh. Phần ảnh sẽ được quản lý ở Phase 10C.</p></CardContent>
+        <CardHeader class="flex-row flex-wrap items-center justify-between gap-3"><CardTitle>Trạng thái kinh doanh</CardTitle><PermissionGate :all-of="[ADMIN_PERMISSIONS.PRODUCTS_PUBLISH]"><div class="flex flex-wrap gap-2"><Button size="sm" variant="outline" :disabled="pendingStatus" @click="changeStatus('DRAFT')">Nháp</Button><Button size="sm" variant="outline" :disabled="pendingStatus" @click="changeStatus('INACTIVE')">Tạm ngưng</Button><Button size="sm" variant="outline" :disabled="pendingStatus" @click="changeStatus('DISCONTINUED')">Ngừng bán</Button><Button size="sm" :disabled="pendingStatus" @click="changeStatus('ACTIVE')"><RefreshCcw class="mr-2 h-4 w-4" />Kích hoạt</Button></div></PermissionGate></CardHeader>
+        <CardContent><p class="text-sm text-muted-foreground">Kích hoạt yêu cầu ít nhất một biến thể đang bán, đúng cấu hình lựa chọn, có biến thể mặc định, giá hợp lệ, danh mục và đúng một ảnh đại diện cho mỗi bộ sưu tập ảnh đang dùng.</p></CardContent>
       </Card>
 
       <div class="grid gap-6 xl:grid-cols-3">
@@ -79,6 +80,8 @@ async function changeStatus(status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'DISCONTIN
       </div>
 
       <Card v-if="product.shortDescription || product.description"><CardHeader><CardTitle>Mô tả</CardTitle></CardHeader><CardContent class="space-y-5"><p v-if="product.shortDescription" class="text-sm">{{ product.shortDescription }}</p><div v-if="product.description" class="prose prose-sm max-w-none dark:prose-invert" v-html="product.description" /></CardContent></Card>
+
+      <ProductMediaSection :product-id="id" readonly />
 
       <Card><CardHeader><CardTitle>Thuộc tính mô tả</CardTitle></CardHeader><CardContent><dl v-if="product.attributeValues.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><div v-for="item in product.attributeValues" :key="item.id" class="rounded-lg border p-3"><dt class="text-xs text-muted-foreground">{{ item.name }}</dt><dd class="font-medium">{{ displayValue(item.value, item.type) }}</dd></div></dl><p v-else class="text-sm text-muted-foreground">Chưa có thuộc tính mô tả.</p></CardContent></Card>
 

@@ -22,6 +22,18 @@ describe('Phase 10B UI anti-regression contract', () => {
     expect(detailSource).toContain('md:hidden')
   })
 
+  it('keeps checkbox focus on the control instead of outlining the whole row', () => {
+    expect(formSource).not.toContain('focus-within:ring')
+    expect(formSource).toContain('focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2')
+  })
+
+  it('gates the detail edit action with products.update and client-side routing', () => {
+    expect(detailSource).toContain(':all-of="[ADMIN_PERMISSIONS.PRODUCTS_UPDATE]"')
+    expect(detailSource).toContain(':all-of="[ADMIN_PERMISSIONS.PRODUCTS_PUBLISH]"')
+    expect(detailSource).toContain("name: 'super-admin-product-edit', params: { id }")
+    expect(detailSource).toContain('Chỉnh sửa')
+  })
+
   it('keeps destructive controls inside Buttons and avoids @select confirms', () => {
     expect(optionSource).toContain('aria-label="Xóa giá trị"')
     expect(optionSource).not.toMatch(/<Trash2[^>]+@click/)

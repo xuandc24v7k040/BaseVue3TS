@@ -6,20 +6,13 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface ProductOptionValueResponseDto {
+export interface ReorderProductMediaDto {
   /**
      * @minLength 26
      * @maxLength 26
+     * @nullable
      * @pattern ^[0-7][0-9A-HJKMNP-TV-Z]{25}$
      */
-  id: string;
-  label: string;
-  value: string;
-  /** @nullable */
-  colorCode?: string | null;
-  /** @nullable */
-  imageUrl?: string | null;
-  sortOrder: number;
-  /** @minimum 0 */
-  usageCount: number;
+  variantId?: string | null;
+  orderedMediaIds: string[];
 }

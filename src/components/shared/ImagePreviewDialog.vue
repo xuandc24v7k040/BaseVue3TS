@@ -6,14 +6,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-defineProps<{ open: boolean; src: string; alt: string }>();
+withDefaults(defineProps<{ open: boolean; src: string; alt: string; title?: string }>(), {
+  title: "Xem ảnh",
+});
 const emit = defineEmits<{ "update:open": [open: boolean] }>();
 </script>
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)"
     ><DialogContent class="max-w-3xl"
       ><DialogHeader
-        ><DialogTitle>Xem ảnh danh mục</DialogTitle
+        ><DialogTitle>{{ title }}</DialogTitle
         ><DialogDescription>{{ alt }}</DialogDescription></DialogHeader
       ><img
         :src="src"

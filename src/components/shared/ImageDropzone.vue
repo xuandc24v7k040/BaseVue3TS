@@ -8,8 +8,9 @@ const props = withDefaults(
     modelValue: File | null;
     currentUrl?: string | null;
     disabled?: boolean;
+    imageAlt?: string;
   }>(),
-  { currentUrl: null, disabled: false },
+  { currentUrl: null, disabled: false, imageAlt: "Ảnh đã chọn" },
 );
 const emit = defineEmits<{
   "update:modelValue": [file: File | null];
@@ -117,7 +118,7 @@ async function accept(files: FileList | null): Promise<void> {
     >
       <img
         :src="shownUrl"
-        alt="Ảnh danh mục"
+        :alt="imageAlt"
         class="h-44 w-full object-cover"
       /><Button
         type="button"

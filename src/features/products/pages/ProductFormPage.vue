@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { ArrowLeft, Save } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -22,6 +22,7 @@ import AsyncMasterDataCombobox from '../components/AsyncMasterDataCombobox.vue'
 import ProductDescriptionEditor from '../components/ProductDescriptionEditor.vue'
 import ProductOptionBuilder from '../components/ProductOptionBuilder.vue'
 import ProductVariantManager from '../components/ProductVariantManager.vue'
+import ProductMediaSection from '../media/components/ProductMediaSection.vue'
 import { toDateInputValue } from '../utils/product-date'
 import { productErrorMessage, productFieldErrors } from '../utils/product-errors'
 
@@ -35,6 +36,7 @@ const hydrated = ref(false)
 const hydrating = ref(false)
 const dirty = ref(false)
 const errors = reactive<Record<string, string>>({})
+const mediaSection = ref<{ uploadQueued: () => Promise<void> } | null>(null)
 
 type FormState = {
   name: string
@@ -153,6 +155,8 @@ async function submit() {
       dirty.value = false
       toast.success('Tạo sản phẩm nháp thành công. Tiếp tục cấu hình biến thể.')
       await router.replace({ name: 'super-admin-product-edit', params: { id: response.data.id } })
+      await nextTick()
+      await mediaSection.value?.uploadQueued()
     }
   } catch (error) {
     const fieldErrors = productFieldErrors(error)
@@ -204,8 +208,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
       </Card>
 
       <div class="grid gap-6 xl:grid-cols-2">
-        <Card><CardHeader><CardTitle>Danh mục</CardTitle></CardHeader><CardContent><ScrollArea class="h-72"><div class="space-y-2 pr-4"><label v-for="item in categories" :key="item.id" class="flex items-center gap-2 rounded-sm py-0.5 text-sm outline-none focus-within:ring-2 focus-within:ring-ring" :style="{ paddingLeft: `${item.depth * 16}px` }"><Checkbox :model-value="form.categoryIds.includes(item.id)" :disabled="!item.effectiveActive" @update:model-value="toggleId(form.categoryIds, item.id, $event)" />{{ item.name }}</label><p v-if="categories.length === 0" class="text-sm text-muted-foreground">Chưa có danh mục.</p></div></ScrollArea></CardContent></Card>
-        <Card><CardHeader><CardTitle>Tác giả</CardTitle></CardHeader><CardContent><ScrollArea class="h-72"><div class="grid gap-2 pr-4 sm:grid-cols-2"><label v-for="item in authors" :key="item.id" class="flex items-center gap-2 rounded-sm py-0.5 text-sm outline-none focus-within:ring-2 focus-within:ring-ring"><Checkbox :model-value="form.authorIds.includes(item.id)" @update:model-value="toggleId(form.authorIds, item.id, $event)" />{{ item.name }}</label><p v-if="authors.length === 0" class="text-sm text-muted-foreground">Chưa có tác giả.</p></div></ScrollArea></CardContent></Card>
+        <Card><CardHeader><CardTitle>Danh mục</CardTitle></CardHeader><CardContent><ScrollArea class="h-72"><div class="space-y-2 pr-4"><label v-for="item in categories" :key="item.id" class="flex items-center gap-2 rounded-sm py-0.5 text-sm hover:bg-muted/40" :style="{ paddingLeft: `${item.depth * 16}px` }"><Checkbox class="focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2" :model-value="form.categoryIds.includes(item.id)" :disabled="!item.effectiveActive" @update:model-value="toggleId(form.categoryIds, item.id, $event)" />{{ item.name }}</label><p v-if="categories.length === 0" class="text-sm text-muted-foreground">Chưa có danh mục.</p></div></ScrollArea></CardContent></Card>
+        <Card><CardHeader><CardTitle>Tác giả</CardTitle></CardHeader><CardContent><ScrollArea class="h-72"><div class="grid gap-2 pr-4 sm:grid-cols-2"><label v-for="item in authors" :key="item.id" class="flex items-center gap-2 rounded-sm py-0.5 text-sm hover:bg-muted/40"><Checkbox class="focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2" :model-value="form.authorIds.includes(item.id)" @update:model-value="toggleId(form.authorIds, item.id, $event)" />{{ item.name }}</label><p v-if="authors.length === 0" class="text-sm text-muted-foreground">Chưa có tác giả.</p></div></ScrollArea></CardContent></Card>
       </div>
 
       <Card>
@@ -219,6 +223,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
           <p v-if="attributes.length === 0" class="text-sm text-muted-foreground">Chưa định nghĩa thuộc tính sản phẩm.</p>
         </CardContent>
       </Card>
+
+      <ProductMediaSection ref="mediaSection" :product-id="productId" />
 
       <template v-if="productId">
         <Card><CardContent class="p-5"><ProductOptionBuilder :product-id="productId" /></CardContent></Card>
