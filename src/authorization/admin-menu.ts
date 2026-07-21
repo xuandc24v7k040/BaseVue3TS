@@ -118,7 +118,7 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
   },
   {
     id: 'products',
-    label: 'Sản phẩm & danh mục',
+    label: 'Quản lý sản phẩm',
     icon: Package,
     children: [
       {
@@ -126,16 +126,38 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
         label: 'Sản phẩm',
         routeNames: {
           SYSTEM: 'super-admin-products',
-          BRANCH: 'branch-admin-products',
         },
         requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
-        status: 'placeholder',
       },
       {
         id: 'categories',
         label: 'Danh mục',
         routeNames: { SYSTEM: 'super-admin-categories' },
         requiredPermissions: [ADMIN_PERMISSIONS.CATEGORIES_READ],
+      },
+      {
+        id: 'suppliers',
+        label: 'Nhà cung cấp',
+        routeNames: { SYSTEM: 'super-admin-suppliers' },
+        requiredPermissions: [ADMIN_PERMISSIONS.SUPPLIERS_READ],
+      },
+      {
+        id: 'publishers',
+        label: 'Nhà xuất bản',
+        routeNames: { SYSTEM: 'super-admin-publishers' },
+        requiredPermissions: [ADMIN_PERMISSIONS.PUBLISHERS_READ],
+      },
+      {
+        id: 'authors',
+        label: 'Tác giả',
+        routeNames: { SYSTEM: 'super-admin-authors' },
+        requiredPermissions: [ADMIN_PERMISSIONS.AUTHORS_READ],
+      },
+      {
+        id: 'product-attributes',
+        label: 'Thuộc tính sản phẩm',
+        routeNames: { SYSTEM: 'super-admin-product-attributes' },
+        requiredPermissions: [ADMIN_PERMISSIONS.PRODUCT_ATTRIBUTES_READ],
       },
     ],
   },

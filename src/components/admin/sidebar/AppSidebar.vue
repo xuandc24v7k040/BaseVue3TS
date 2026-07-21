@@ -12,6 +12,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBranchStore } from "@/stores/branch.store";
 import { resolveVisibleAdminMenu } from "@/authorization/admin-menu";
@@ -49,8 +50,10 @@ const user = computed(() => {
         }"
       />
     </SidebarHeader>
-    <SidebarContent>
-      <SidebarNav label="Quản trị" :items="navigationItems" />
+    <SidebarContent class="overflow-hidden">
+      <ScrollArea class="min-h-0 flex-1">
+        <SidebarNav label="Quản trị" :items="navigationItems" />
+      </ScrollArea>
     </SidebarContent>
     <SidebarFooter>
       <SidebarUserMenu :user="user" />

@@ -30,7 +30,7 @@ describe('admin menu and safe landing', () => {
       ADMIN_PERMISSIONS.INVENTORY_READ,
       ADMIN_PERMISSIONS.ORDERS_READ,
     ])
-    expect(ids).toEqual(['dashboard', 'staff', 'product-list', 'inventory-list', 'orders'])
+    expect(ids).toEqual(['dashboard', 'staff', 'inventory-list', 'orders'])
     expect(ids).not.toContain('stock-movements')
     expect(ids).not.toContain('branch-admins')
   })
@@ -40,14 +40,14 @@ describe('admin menu and safe landing', () => {
     expect(visibleIds('SYSTEM', [ADMIN_PERMISSIONS.USERS_READ, ADMIN_PERMISSIONS.BRANCHES_READ])).toContain('branch-admins')
   })
 
-  it('lands INVENTORY on the first allowed product route', () => {
+  it('lands INVENTORY on the inventory route because product catalog is SYSTEM-only', () => {
     const inventoryPolicy = policy('BRANCH', [
       ADMIN_PERMISSIONS.PRODUCTS_READ,
       ADMIN_PERMISSIONS.INVENTORY_READ,
       ADMIN_PERMISSIONS.STOCK_MOVEMENTS_READ,
     ])
     expect(resolveFirstAllowedAdminRoute('BRANCH', inventoryPolicy, true))
-      .toEqual({ name: 'branch-admin-products' })
+      .toEqual({ name: 'branch-admin-inventory' })
   })
 
   it('lands CASHIER on orders and gives empty STAFF no admin module', () => {

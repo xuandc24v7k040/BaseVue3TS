@@ -452,12 +452,33 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "products",
         name: "super-admin-products",
-        component: () => import("@/pages/admin/AdminModulePlaceholderPage.vue"),
+        component: () => import("@/features/products/pages/ProductListPage.vue"),
         meta: {
           requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
-          pageTitle: "Sản phẩm",
-          pageDescription:
-            "Module sản phẩm chưa có API backend trong contract hiện tại.",
+        },
+      },
+      {
+        path: "products/new",
+        name: "super-admin-product-new",
+        component: () => import("@/features/products/pages/ProductFormPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_CREATE],
+        },
+      },
+      {
+        path: "products/:id",
+        name: "super-admin-product-detail",
+        component: () => import("@/features/products/pages/ProductDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
+        },
+      },
+      {
+        path: "products/:id/edit",
+        name: "super-admin-product-edit",
+        component: () => import("@/features/products/pages/ProductFormPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_UPDATE],
         },
       },
       {
@@ -473,6 +494,85 @@ export const routes: RouteRecordRaw[] = [
         component: () =>
           import("@/features/categories/pages/CategoryDetailPage.vue"),
         meta: { requiredPermissions: [ADMIN_PERMISSIONS.CATEGORIES_READ] },
+      },
+      {
+        path: "suppliers",
+        name: "super-admin-suppliers",
+        component: () =>
+          import("@/features/suppliers/pages/SupplierListPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.SUPPLIERS_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
+        path: "suppliers/:id",
+        name: "super-admin-supplier-detail",
+        component: () =>
+          import("@/features/suppliers/pages/SupplierDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.SUPPLIERS_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
+        path: "publishers",
+        name: "super-admin-publishers",
+        component: () =>
+          import("@/features/publishers/pages/PublisherListPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PUBLISHERS_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
+        path: "publishers/:id",
+        name: "super-admin-publisher-detail",
+        component: () =>
+          import("@/features/publishers/pages/PublisherDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PUBLISHERS_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
+        path: "authors",
+        name: "super-admin-authors",
+        component: () => import("@/features/authors/pages/AuthorListPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.AUTHORS_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
+        path: "authors/:id",
+        name: "super-admin-author-detail",
+        component: () =>
+          import("@/features/authors/pages/AuthorDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.AUTHORS_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
+        path: "product-attributes",
+        name: "super-admin-product-attributes",
+        component: () =>
+          import("@/features/product-attributes/pages/ProductAttributeListPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCT_ATTRIBUTES_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
+        path: "product-attributes/:id",
+        name: "super-admin-product-attribute-detail",
+        component: () =>
+          import("@/features/product-attributes/pages/ProductAttributeDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCT_ATTRIBUTES_READ],
+          requiresSelectedBranch: false,
+        },
       },
       {
         path: "inventory",
@@ -523,17 +623,6 @@ export const routes: RouteRecordRaw[] = [
         component: () => import("@/features/staff/pages/StaffDetailPage.vue"),
         meta: {
           requiredPermissions: [ADMIN_PERMISSIONS.STAFF_READ],
-        },
-      },
-      {
-        path: "products",
-        name: "branch-admin-products",
-        component: () => import("@/pages/admin/AdminModulePlaceholderPage.vue"),
-        meta: {
-          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
-          pageTitle: "Sản phẩm",
-          pageDescription:
-            "Module sản phẩm chưa có API backend trong contract hiện tại.",
         },
       },
       {

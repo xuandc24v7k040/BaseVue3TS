@@ -228,6 +228,38 @@ describe('DataTable route-sync integration', () => {
     expect(router.currentRoute.value.query.page).toBeUndefined()
   })
 
+  it('keeps page 2 stable throughout a delayed refetch window', async () => {
+    const router = await createRouterAt('/users')
+    const wrapper = await mountRoutedTable({
+      router,
+      config: compactConfig({ pageSize: 2 }),
+      pageCount: 3,
+      rowCount: 5,
+    })
+    let resolveDelayedResponse!: () => void
+    const delayedResponse = new Promise<void>((resolve) => {
+      resolveDelayedResponse = resolve
+    })
+
+    await wrapper.get('button[aria-label="Trang sau"]').trigger('click')
+    await flushAsync()
+    expect(router.currentRoute.value.query.page).toBe('2')
+
+    await wrapper.setProps({ pageCount: undefined, rowCount: undefined })
+    await flushAsync()
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 2 })
+    expect(router.currentRoute.value.query.page).toBe('2')
+
+    delayedResponse.then(() =>
+      wrapper.setProps({ pageCount: 3, rowCount: 5 }),
+    )
+    resolveDelayedResponse()
+    await flushAsync()
+
+    expect(emittedQueries(wrapper).at(-1)).toMatchObject({ page: 2 })
+    expect(router.currentRoute.value.query.page).toBe('2')
+  })
+
   it('restores pagination state through back and forward navigation', async () => {
     const router = await createRouterAt('/users?page=2&limit=2')
     await router.push('/users?page=3&limit=2')
