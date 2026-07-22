@@ -90,7 +90,7 @@ describe('permission-aware admin sidebar', () => {
 
     expect(wrapper.findComponent(SidebarBrand).props('brand').subtitle).toBe('Nhân viên kho')
     expect(JSON.stringify(wrapper.findComponent(SidebarNav).props('items'))).toContain('inventory-list')
-    expect(JSON.stringify(wrapper.findComponent(SidebarNav).props('items'))).not.toContain('product-list')
+    expect(JSON.stringify(wrapper.findComponent(SidebarNav).props('items'))).toContain('product-list')
     expect(JSON.stringify(wrapper.findComponent(SidebarNav).props('items'))).not.toContain('orders')
 
     await branchStore.setSelectedBranch(BRANCH_B)

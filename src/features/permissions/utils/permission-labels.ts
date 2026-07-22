@@ -14,6 +14,7 @@ export const permissionResourceLabels: Readonly<Record<string, string>> = {
   payments: "thanh toán",
   products: "sản phẩm",
   inventory: "kho và tồn",
+  stock_receipts: "phiếu nhập kho",
   stock_movements: "biến động kho",
   profile: "hồ sơ",
 };
@@ -28,6 +29,9 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   assign_permission: "Gán quyền",
   assign_branch: "Gán chi nhánh",
   update_status: "Cập nhật trạng thái",
+  update_threshold: "Cập nhật ngưỡng cảnh báo",
+  cancel: "Hủy",
+  confirm: "Xác nhận",
   read_own: "Xem của chính mình",
   update_own: "Cập nhật của chính mình",
   create_own: "Tạo cho chính mình",

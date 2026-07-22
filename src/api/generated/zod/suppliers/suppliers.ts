@@ -32,10 +32,18 @@ export const SuppliersListQueryParams = zod.strictObject({
   "hasEmail": zod.boolean().optional()
 })
 
+export const SuppliersListHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Tạo nhà cung cấp
  * @summary Tạo nhà cung cấp
  */
+export const SuppliersCreateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 export const suppliersCreateBodyNameMin = 2;
 export const suppliersCreateBodyNameMax = 120;
 
@@ -56,12 +64,20 @@ export const SuppliersGetParams = zod.strictObject({
   "id": zod.ulid()
 })
 
+export const SuppliersGetHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Cập nhật nhà cung cấp
  * @summary Cập nhật nhà cung cấp
  */
 export const SuppliersUpdateParams = zod.strictObject({
   "id": zod.ulid()
+})
+
+export const SuppliersUpdateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const suppliersUpdateBodyNameMin = 2;
@@ -82,5 +98,9 @@ export const SuppliersUpdateBody = zod.strictObject({
  */
 export const SuppliersDeleteParams = zod.strictObject({
   "id": zod.ulid()
+})
+
+export const SuppliersDeleteHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 

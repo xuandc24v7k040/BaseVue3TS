@@ -20,6 +20,8 @@ const props = defineProps<{
   selectedLabel?: string
   nullable?: boolean
   disabled?: boolean
+  branchScoped?: boolean
+  authorizationScope?: string
 }>()
 
 const emit = defineEmits<{
@@ -33,7 +35,13 @@ const activeIndex = ref(0)
 const cachedSelected = ref<MasterDataOption | null>(null)
 
 const query = useQuery({
-  queryKey: computed(() => ['products', 'async-selector', props.kind, debouncedSearch.value.trim()]),
+  queryKey: computed(() => [
+    'products',
+    'async-selector',
+    props.kind,
+    props.authorizationScope ?? 'global',
+    debouncedSearch.value.trim(),
+  ]),
   queryFn: async ({ signal }) => {
     const params = {
       page: 1,
@@ -43,7 +51,11 @@ const query = useQuery({
       ...(debouncedSearch.value.trim() ? { search: debouncedSearch.value.trim() } : {}),
     }
     return props.kind === 'supplier'
-      ? listSuppliers(params, undefined, signal)
+      ? listSuppliers(
+          params,
+          props.branchScoped ? { branchScoped: true } : undefined,
+          signal,
+        )
       : listPublishers(params, undefined, signal)
   },
   staleTime: 60_000,

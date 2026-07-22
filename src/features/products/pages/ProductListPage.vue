@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { PackageOpen, Plus, RefreshCcw } from '@lucide/vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import type { ProductListItemResponseDto, ProductsListParams } from '@/api/generated/models'
 import { ADMIN_PERMISSIONS } from '@/authorization/admin-permissions'
@@ -22,11 +22,19 @@ import { toProductListParams } from '../adapters/product-list-query.adapter'
 import { productsDelete, productsList } from '../api/product-api'
 import { productKeys } from '../api/product-query-keys'
 import { createProductColumns } from '../components/product-columns'
-import { productErrorMessage } from '../utils/product-errors'
+import { productErrorMessage, productReadErrorMessage } from '../utils/product-errors'
+import { useBranchStore } from '@/stores/branch.store'
 
+const route = useRoute()
 const router = useRouter()
+const branchStore = useBranchStore()
 const client = useQueryClient()
 const { can } = useAdminPermissions()
+const isBranchRoute = computed(() => String(route.name).startsWith('branch-admin'))
+const readRequest = computed(() => isBranchRoute.value ? { branchScoped: true } as const : undefined)
+const authScope = computed(() => isBranchRoute.value ? branchStore.selectedBranchId ?? 'no-branch' : 'global')
+const listRouteName = computed(() => isBranchRoute.value ? 'branch-admin-products' : 'super-admin-products')
+const detailRouteName = computed(() => isBranchRoute.value ? 'branch-admin-product-detail' : 'super-admin-product-detail')
 const columns = createProductColumns()
 const params = ref<ProductsListParams>({ page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' })
 const deleting = ref<ProductListItemResponseDto | null>(null)
@@ -34,18 +42,19 @@ const deleteOpen = ref(false)
 const deletePending = ref(false)
 
 const query = useQuery({
-  queryKey: computed(() => productKeys.list(params.value)),
-  queryFn: ({ signal }) => productsList(params.value, undefined, signal),
+  queryKey: computed(() => [...productKeys.list(params.value), authScope.value]),
+  queryFn: ({ signal }) => productsList(params.value, readRequest.value, signal),
   placeholderData: keepPreviousData,
 })
 const rows = computed(() => query.data.value?.data ?? [])
 const meta = computed(() => query.data.value?.meta)
 const hasFilters = computed(() => Object.keys(params.value).some((key) => !['page', 'limit', 'sortBy', 'sortOrder'].includes(key)))
+const loadErrorMessage = computed(() => productReadErrorMessage(query.error.value, 'Không thể tải danh sách sản phẩm.'))
 
-const suppliers = useQuery({ queryKey: ['products', 'selectors', 'suppliers'], queryFn: ({ signal }) => listSuppliers({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal), staleTime: 60_000 })
-const publishers = useQuery({ queryKey: ['products', 'selectors', 'publishers'], queryFn: ({ signal }) => listPublishers({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal), staleTime: 60_000 })
-const authors = useQuery({ queryKey: ['products', 'selectors', 'authors'], queryFn: ({ signal }) => listAuthors({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal), staleTime: 60_000 })
-const categories = useQuery({ queryKey: ['products', 'selectors', 'categories'], queryFn: ({ signal }) => listCategoryTree({ isActive: true, sortBy: 'sortOrder', sortOrder: 'asc' }, signal), staleTime: 60_000 })
+const suppliers = useQuery({ queryKey: ['products', 'selectors', 'suppliers'], queryFn: ({ signal }) => listSuppliers({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal), enabled: computed(() => can(ADMIN_PERMISSIONS.SUPPLIERS_READ)), staleTime: 60_000 })
+const publishers = useQuery({ queryKey: ['products', 'selectors', 'publishers'], queryFn: ({ signal }) => listPublishers({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal), enabled: computed(() => can(ADMIN_PERMISSIONS.PUBLISHERS_READ)), staleTime: 60_000 })
+const authors = useQuery({ queryKey: ['products', 'selectors', 'authors'], queryFn: ({ signal }) => listAuthors({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal), enabled: computed(() => can(ADMIN_PERMISSIONS.AUTHORS_READ)), staleTime: 60_000 })
+const categories = useQuery({ queryKey: ['products', 'selectors', 'categories'], queryFn: ({ signal }) => listCategoryTree({ isActive: true, sortBy: 'sortOrder', sortOrder: 'asc' }, signal), enabled: computed(() => can(ADMIN_PERMISSIONS.CATEGORIES_READ)), staleTime: 60_000 })
 
 const flattenCategories = computed(() => {
   const result: Array<{ id: string; name: string }> = []
@@ -97,10 +106,10 @@ async function confirmDelete() {
 
 <template>
   <section class="min-w-0 space-y-6">
-    <AdminBreadcrumb group-label="Quản lý sản phẩm" :group-to="{ name: 'super-admin-products' }" section-label="Sản phẩm" />
+    <AdminBreadcrumb group-label="Quản lý sản phẩm" :group-to="{ name: listRouteName }" section-label="Sản phẩm" />
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div><h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Sản phẩm</h1><p class="mt-1 text-sm text-muted-foreground">Quản lý thông tin chung, lựa chọn, biến thể và giá VND trên toàn hệ thống.</p></div>
-      <PermissionGate :all-of="[ADMIN_PERMISSIONS.PRODUCTS_CREATE]"><Button @click="router.push({ name: 'super-admin-product-new' })"><Plus class="mr-2 h-4 w-4" />Thêm sản phẩm</Button></PermissionGate>
+      <PermissionGate v-if="!isBranchRoute" :all-of="[ADMIN_PERMISSIONS.PRODUCTS_CREATE]"><Button @click="router.push({ name: 'super-admin-product-new' })"><Plus class="mr-2 h-4 w-4" />Thêm sản phẩm</Button></PermissionGate>
     </div>
     <DataTable
       :columns="columns" :data="rows" :page-count="meta?.lastPage" :row-count="meta?.total"
@@ -120,11 +129,12 @@ async function confirmDelete() {
       }"
       @update:query="handleQuery" @retry="query.refetch()"
     >
+      <template #error><p class="text-center text-sm text-destructive">{{ loadErrorMessage }}</p></template>
       <template #toolbar-right><Button size="sm" variant="outline" :disabled="query.isFetching.value" @click="query.refetch()"><RefreshCcw class="mr-2 h-4 w-4" :class="query.isFetching.value ? 'animate-spin' : ''" />Tải lại</Button></template>
       <template #row-actions="{ rowData }"><MasterDataActionsMenu
-        :can-update="can(ADMIN_PERMISSIONS.PRODUCTS_UPDATE)" :can-delete="can(ADMIN_PERMISSIONS.PRODUCTS_DELETE)"
+        :can-update="!isBranchRoute && can(ADMIN_PERMISSIONS.PRODUCTS_UPDATE)" :can-delete="!isBranchRoute && can(ADMIN_PERMISSIONS.PRODUCTS_DELETE)"
         :delete-disabled="rowData.status !== 'DRAFT'"
-        @view="router.push({ name: 'super-admin-product-detail', params: { id: rowData.id } })"
+        @view="router.push({ name: detailRouteName, params: { id: rowData.id } })"
         @edit="router.push({ name: 'super-admin-product-edit', params: { id: rowData.id } })" @delete="openDelete(rowData)"
       /></template>
       <template #empty><div class="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground"><PackageOpen class="h-9 w-9" /><p class="font-medium text-foreground">{{ hasFilters ? 'Không tìm thấy sản phẩm phù hợp' : 'Chưa có sản phẩm' }}</p><p class="text-sm">{{ hasFilters ? 'Thử thay đổi từ khóa hoặc bộ lọc.' : 'Hãy tạo sản phẩm bản nháp đầu tiên.' }}</p></div></template>

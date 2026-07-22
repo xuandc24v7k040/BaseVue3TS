@@ -3,11 +3,16 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { ImagePlus, Plus, Save, Trash2 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
-import type { ProductOptionResponseDto, ProductOptionValueResponseDto } from '@/api/generated/models'
+import type {
+  ProductOptionResponseDto,
+  ProductOptionResponseDtoPresentationType,
+  ProductOptionValueResponseDto,
+} from '@/api/generated/models'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import MasterDataDeleteDialog from '@/features/product-master-data/components/MasterDataDeleteDialog.vue'
 import { productOptionsCreate, productOptionsDelete, productOptionsList, productOptionsUpdate, productOptionValuesCreate, productOptionValuesDelete, productOptionValuesUpdate } from '../api/product-api'
 import { productKeys } from '../api/product-query-keys'
@@ -18,8 +23,13 @@ import OptionValueImageDialog from '../media/components/OptionValueImageDialog.v
 const props = defineProps<{ productId: string }>()
 const client = useQueryClient()
 const pending = ref(false)
-const newOption = reactive({ name: '', code: '', sortOrder: 0 })
-type OptionDraft = { name: string; code: string; sortOrder: number }
+const presentationOptions: Array<{ value: ProductOptionResponseDtoPresentationType; label: string }> = [
+  { value: 'TEXT', label: 'Văn bản' },
+  { value: 'COLOR', label: 'Màu sắc' },
+  { value: 'IMAGE', label: 'Hình ảnh' },
+]
+const newOption = reactive({ name: '', code: '', presentationType: 'TEXT' as ProductOptionResponseDtoPresentationType, sortOrder: 0 })
+type OptionDraft = { name: string; code: string; presentationType: ProductOptionResponseDtoPresentationType; sortOrder: number }
 type ValueDraft = { label: string; value: string; colorCode: string; sortOrder: number }
 type DeleteTarget =
   | { kind: 'option'; option: ProductOptionResponseDto }
@@ -40,7 +50,7 @@ const query = useQuery({
 const options = computed(() => query.data.value?.data ?? [])
 
 watch(options, (items) => items.forEach((option) => {
-  optionDrafts[option.id] = { name: option.name, code: option.code, sortOrder: option.sortOrder }
+  optionDrafts[option.id] = { name: option.name, code: option.code, presentationType: option.presentationType, sortOrder: option.sortOrder }
   newValues[option.id] ??= { label: '', value: '', colorCode: '', sortOrder: option.values.length }
   option.values.forEach((value) => {
     valueDrafts[value.id] = { label: value.label, value: value.value, colorCode: value.colorCode ?? '', sortOrder: value.sortOrder }
@@ -48,6 +58,11 @@ watch(options, (items) => items.forEach((option) => {
 }), { immediate: true })
 
 const normalizeCode = (value: string) => value.trim().toUpperCase().replace(/[\s-]+/g, '_').replace(/[^A-Z0-9_]/g, '')
+const setPresentation = (draft: OptionDraft, value: unknown): void => {
+  if (value === 'TEXT' || value === 'COLOR' || value === 'IMAGE') draft.presentationType = value
+}
+const presentation = (option: ProductOptionResponseDto): ProductOptionResponseDtoPresentationType =>
+  optionDrafts[option.id]?.presentationType ?? option.presentationType
 const valueUsageCount = (value: ProductOptionValueResponseDto): number => {
   const usageCount = Reflect.get(value, 'usageCount')
   return typeof usageCount === 'number' ? usageCount : 0
@@ -72,12 +87,14 @@ async function refresh() {
   ])
 }
 
-function validateValueDraft(key: string, draft: ValueDraft): boolean {
+function validateValueDraft(key: string, draft: ValueDraft, presentationType: ProductOptionResponseDtoPresentationType): boolean {
   const nextErrors: Partial<Record<keyof ValueDraft, string>> = {}
   if (!draft.label.trim()) nextErrors.label = 'Vui lòng nhập tên hiển thị.'
   if (!draft.value.trim()) nextErrors.value = 'Vui lòng nhập giá trị kỹ thuật.'
-  const colorError = productColorError(draft.colorCode)
-  if (colorError) nextErrors.colorCode = colorError
+  if (presentationType === 'COLOR') {
+    const colorError = productColorError(draft.colorCode)
+    if (colorError) nextErrors.colorCode = colorError
+  }
   valueErrors[key] = nextErrors
   return Object.keys(nextErrors).length === 0
 }
@@ -94,8 +111,8 @@ async function addOption() {
   if (pending.value) return
   pending.value = true
   try {
-    await productOptionsCreate(props.productId, { name: newOption.name.trim(), code: normalizeCode(newOption.code), sortOrder: newOption.sortOrder })
-    Object.assign(newOption, { name: '', code: '', sortOrder: options.value.length })
+    await productOptionsCreate(props.productId, { name: newOption.name.trim(), code: normalizeCode(newOption.code), presentationType: newOption.presentationType, sortOrder: newOption.sortOrder })
+    Object.assign(newOption, { name: '', code: '', presentationType: 'TEXT', sortOrder: options.value.length })
     await refresh()
     toast.success('Thêm lựa chọn thành công.')
   } catch (error) { toast.error(productErrorMessage(error, 'Không thể thêm lựa chọn.')) } finally { pending.value = false }
@@ -106,21 +123,21 @@ async function saveOption(option: ProductOptionResponseDto) {
   if (!draft || pending.value) return
   pending.value = true
   try {
-    await productOptionsUpdate(props.productId, option.id, { name: draft.name.trim(), code: normalizeCode(draft.code), sortOrder: draft.sortOrder })
+    await productOptionsUpdate(props.productId, option.id, { name: draft.name.trim(), code: normalizeCode(draft.code), presentationType: draft.presentationType, sortOrder: draft.sortOrder })
     await refresh()
-    toast.success('Cập nhật lựa chọn thành công.')
+    toast.success('Đã cập nhật kiểu hiển thị lựa chọn.')
   } catch (error) { toast.error(productErrorMessage(error, 'Không thể cập nhật lựa chọn.')) } finally { pending.value = false }
 }
 
 async function addValue(option: ProductOptionResponseDto) {
   const draft = newValues[option.id]
-  if (!draft || !validateValueDraft(`new-${option.id}`, draft) || pending.value) return
+  if (!draft || !validateValueDraft(`new-${option.id}`, draft, presentation(option)) || pending.value) return
   pending.value = true
   try {
     await productOptionValuesCreate(props.productId, option.id, {
       label: draft.label.trim(),
       value: normalizeCode(draft.value),
-      colorCode: normalizeProductColor(draft.colorCode),
+      colorCode: presentation(option) === 'COLOR' ? normalizeProductColor(draft.colorCode) : undefined,
       sortOrder: draft.sortOrder,
     })
     newValues[option.id] = { label: '', value: '', colorCode: '', sortOrder: option.values.length + 1 }
@@ -135,13 +152,13 @@ async function addValue(option: ProductOptionResponseDto) {
 
 async function saveValue(option: ProductOptionResponseDto, value: ProductOptionValueResponseDto) {
   const draft = valueDrafts[value.id]
-  if (!draft || !validateValueDraft(value.id, draft) || pending.value) return
+  if (!draft || !validateValueDraft(value.id, draft, presentation(option)) || pending.value) return
   pending.value = true
   try {
     await productOptionValuesUpdate(props.productId, option.id, value.id, {
       label: draft.label.trim(),
       value: normalizeCode(draft.value),
-      colorCode: normalizeProductColor(draft.colorCode),
+      ...(presentation(option) === 'COLOR' ? { colorCode: normalizeProductColor(draft.colorCode) } : {}),
       sortOrder: draft.sortOrder,
     })
     delete valueErrors[value.id]
@@ -175,9 +192,10 @@ async function confirmDelete() {
 <template>
   <section class="min-w-0 space-y-4" aria-labelledby="options-heading">
     <div><h2 id="options-heading" class="text-lg font-semibold">Lựa chọn tạo biến thể</h2><p class="text-sm text-muted-foreground">Lựa chọn tạo SKU; khác với thuộc tính mô tả ở phần thông tin chung.</p></div>
-    <div class="grid min-w-0 gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_auto]">
+    <div class="grid min-w-0 gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem_7rem_auto]">
       <Input v-model="newOption.name" placeholder="Tên lựa chọn, ví dụ Hình thức bìa" aria-label="Tên lựa chọn mới" />
       <Input :model-value="newOption.code" placeholder="COVER" aria-label="Mã lựa chọn mới" @update:model-value="newOption.code = normalizeCode(String($event))" />
+      <Select :model-value="newOption.presentationType" @update:model-value="setPresentation(newOption, $event)"><SelectTrigger aria-label="Kiểu hiển thị lựa chọn mới"><SelectValue placeholder="Kiểu hiển thị" /></SelectTrigger><SelectContent><SelectItem v-for="item in presentationOptions" :key="item.value" :value="item.value">{{ item.label }}</SelectItem></SelectContent></Select>
       <Input v-model.number="newOption.sortOrder" type="number" min="0" aria-label="Thứ tự lựa chọn" />
       <Button type="button" :disabled="pending" @click="addOption"><Plus class="mr-2 h-4 w-4" />Thêm lựa chọn</Button>
     </div>
@@ -187,35 +205,43 @@ async function confirmDelete() {
     <Card v-for="option in options" :key="option.id" class="min-w-0">
       <CardHeader class="pb-3"><CardTitle class="flex flex-wrap items-center justify-between gap-2 text-base"><span class="min-w-0 break-words">{{ option.name }} · {{ option.code }}</span><Button type="button" size="icon-sm" variant="ghost" aria-label="Xóa lựa chọn" :title="option.variantUsageCount > 0 ? 'Xem lý do không thể xóa' : 'Xóa lựa chọn'" :disabled="pending" @click="askDelete({ kind: 'option', option })"><Trash2 class="h-4 w-4" /></Button></CardTitle></CardHeader>
       <CardContent class="min-w-0 space-y-4">
-        <div v-if="optionDrafts[option.id]" class="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6rem_auto]">
+        <div v-if="optionDrafts[option.id]" class="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem_6rem_auto]">
           <Input v-model="optionDrafts[option.id]!.name" aria-label="Tên lựa chọn" />
           <Input :model-value="optionDrafts[option.id]!.code" :disabled="option.variantUsageCount > 0" aria-label="Mã lựa chọn" @update:model-value="optionDrafts[option.id]!.code = normalizeCode(String($event))" />
+          <Select :model-value="optionDrafts[option.id]!.presentationType" @update:model-value="setPresentation(optionDrafts[option.id]!, $event)"><SelectTrigger aria-label="Kiểu hiển thị"><SelectValue /></SelectTrigger><SelectContent><SelectItem v-for="item in presentationOptions" :key="item.value" :value="item.value">{{ item.label }}</SelectItem></SelectContent></Select>
           <Input v-model.number="optionDrafts[option.id]!.sortOrder" type="number" min="0" aria-label="Thứ tự" />
           <Button type="button" size="sm" variant="outline" :disabled="pending" @click="saveOption(option)"><Save class="mr-2 h-4 w-4" />Lưu</Button>
         </div>
 
         <ScrollArea v-if="option.values.length" scrollbar-orientation="horizontal" class="hidden w-full md:block">
-          <table class="w-full min-w-[760px] text-sm"><thead><tr class="border-b text-left text-muted-foreground"><th class="p-2">Tên hiển thị</th><th class="p-2">Giá trị kỹ thuật</th><th class="p-2">Mã màu</th><th class="p-2">Thứ tự</th><th class="p-2 text-right">Hành động</th></tr></thead><tbody>
-            <tr v-for="value in option.values" :key="value.id" class="border-b last:border-0"><template v-if="valueDrafts[value.id]"><td class="p-2"><div class="flex items-center gap-2"><img v-if="value.imageUrl" :src="value.imageUrl" :alt="`Thumbnail ${value.label}`" class="h-9 w-9 rounded object-cover"><span v-else-if="value.colorCode" class="h-9 w-9 rounded border" :style="{ backgroundColor: value.colorCode }" aria-hidden="true" /><Input v-model="valueDrafts[value.id]!.label" :aria-invalid="Boolean(valueErrors[value.id]?.label)" @update:model-value="clearValueError(value.id, 'label')" /></div></td><td class="p-2"><Input :model-value="valueDrafts[value.id]!.value" :disabled="valueUsageCount(value) > 0" @update:model-value="valueDrafts[value.id]!.value = normalizeCode(String($event)); clearValueError(value.id, 'value')" /></td><td class="p-2"><Input v-model="valueDrafts[value.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[value.id]?.colorCode)" @update:model-value="clearValueError(value.id, 'colorCode')" /></td><td class="p-2"><Input v-model.number="valueDrafts[value.id]!.sortOrder" type="number" min="0" /></td><td class="p-2"><div class="flex justify-end gap-1"><Button type="button" size="icon-sm" variant="ghost" aria-label="Quản lý thumbnail" :disabled="pending" @click="imageTarget = { option, value }"><ImagePlus class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Lưu giá trị" :disabled="pending" @click="saveValue(option, value)"><Save class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Xóa giá trị" :title="valueUsageCount(value) > 0 ? 'Xem lý do không thể xóa' : 'Xóa giá trị'" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="h-4 w-4" /></Button></div></td></template></tr>
+          <table class="w-full min-w-[760px] text-sm"><thead><tr class="border-b text-left text-muted-foreground"><th class="p-2">Tên hiển thị</th><th class="p-2">Giá trị kỹ thuật</th><th v-if="presentation(option) === 'COLOR'" class="p-2">Màu / mã màu</th><th v-if="presentation(option) === 'IMAGE'" class="p-2">Ảnh đại diện giá trị</th><th class="p-2">Thứ tự</th><th class="p-2 text-right">Hành động</th></tr></thead><tbody>
+            <tr v-for="value in option.values" :key="value.id" class="border-b last:border-0"><template v-if="valueDrafts[value.id]"><td class="p-2"><div class="flex items-center gap-2"><span v-if="presentation(option) === 'COLOR' && value.colorCode" class="h-9 w-9 shrink-0 rounded border" :style="{ backgroundColor: value.colorCode }" aria-hidden="true" /><Input v-model="valueDrafts[value.id]!.label" :aria-invalid="Boolean(valueErrors[value.id]?.label)" @update:model-value="clearValueError(value.id, 'label')" /></div></td><td class="p-2"><Input :model-value="valueDrafts[value.id]!.value" :disabled="valueUsageCount(value) > 0" @update:model-value="valueDrafts[value.id]!.value = normalizeCode(String($event)); clearValueError(value.id, 'value')" /></td><td v-if="presentation(option) === 'COLOR'" class="p-2"><Input v-model="valueDrafts[value.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[value.id]?.colorCode)" @update:model-value="clearValueError(value.id, 'colorCode')" /></td><td v-if="presentation(option) === 'IMAGE'" class="p-2"><Button type="button" size="sm" variant="outline" :disabled="pending" @click="imageTarget = { option, value }"><img v-if="value.imageUrl" :src="value.imageUrl" :alt="`Thumbnail ${value.label}`" class="mr-2 h-7 w-7 rounded object-cover"><ImagePlus v-else class="mr-2 h-4 w-4" />{{ value.imageUrl ? 'Đổi ảnh' : 'Thêm ảnh' }}</Button></td><td class="p-2"><Input v-model.number="valueDrafts[value.id]!.sortOrder" type="number" min="0" /></td><td class="p-2"><div class="flex justify-end gap-1"><Button type="button" size="icon-sm" variant="ghost" aria-label="Lưu giá trị" :disabled="pending" @click="saveValue(option, value)"><Save class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Xóa giá trị" :title="valueUsageCount(value) > 0 ? 'Xem lý do không thể xóa' : 'Xóa giá trị'" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="h-4 w-4" /></Button></div></td></template></tr>
           </tbody></table>
         </ScrollArea>
 
         <div v-if="option.values.length" class="space-y-3 md:hidden">
           <article v-for="value in option.values" :key="value.id" class="min-w-0 space-y-3 rounded-lg border p-3">
             <template v-if="valueDrafts[value.id]">
-              <div class="grid gap-3"><label class="space-y-1 text-xs text-muted-foreground">Tên hiển thị<Input v-model="valueDrafts[value.id]!.label" @update:model-value="clearValueError(value.id, 'label')" /></label><label class="space-y-1 text-xs text-muted-foreground">Giá trị kỹ thuật<Input :model-value="valueDrafts[value.id]!.value" :disabled="valueUsageCount(value) > 0" @update:model-value="valueDrafts[value.id]!.value = normalizeCode(String($event)); clearValueError(value.id, 'value')" /></label><label class="space-y-1 text-xs text-muted-foreground">Mã màu<Input v-model="valueDrafts[value.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[value.id]?.colorCode)" @update:model-value="clearValueError(value.id, 'colorCode')" /></label><label class="space-y-1 text-xs text-muted-foreground">Thứ tự<Input v-model.number="valueDrafts[value.id]!.sortOrder" type="number" min="0" /></label></div>
+              <div class="grid gap-3"><label class="space-y-1 text-xs text-muted-foreground">Tên hiển thị<Input v-model="valueDrafts[value.id]!.label" @update:model-value="clearValueError(value.id, 'label')" /></label><label class="space-y-1 text-xs text-muted-foreground">Giá trị kỹ thuật<Input :model-value="valueDrafts[value.id]!.value" :disabled="valueUsageCount(value) > 0" @update:model-value="valueDrafts[value.id]!.value = normalizeCode(String($event)); clearValueError(value.id, 'value')" /></label><label v-if="presentation(option) === 'COLOR'" class="space-y-1 text-xs text-muted-foreground">Màu / mã màu<Input v-model="valueDrafts[value.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[value.id]?.colorCode)" @update:model-value="clearValueError(value.id, 'colorCode')" /></label><label class="space-y-1 text-xs text-muted-foreground">Thứ tự<Input v-model.number="valueDrafts[value.id]!.sortOrder" type="number" min="0" /></label></div>
               <p v-if="valueErrors[value.id]?.colorCode" class="text-xs text-destructive">{{ valueErrors[value.id]?.colorCode }}</p>
-              <div class="flex flex-wrap justify-end gap-2"><Button type="button" size="sm" variant="outline" :disabled="pending" @click="imageTarget = { option, value }"><ImagePlus class="mr-2 h-4 w-4" />Thumbnail</Button><Button type="button" size="sm" variant="outline" :disabled="pending" @click="saveValue(option, value)"><Save class="mr-2 h-4 w-4" />Lưu</Button><Button type="button" size="sm" variant="ghost" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="mr-2 h-4 w-4" />Xóa</Button></div>
+              <div class="flex flex-wrap justify-end gap-2"><Button v-if="presentation(option) === 'IMAGE'" type="button" size="sm" variant="outline" :disabled="pending" @click="imageTarget = { option, value }"><ImagePlus class="mr-2 h-4 w-4" />{{ value.imageUrl ? 'Đổi ảnh' : 'Thêm ảnh' }}</Button><Button type="button" size="sm" variant="outline" :disabled="pending" @click="saveValue(option, value)"><Save class="mr-2 h-4 w-4" />Lưu</Button><Button type="button" size="sm" variant="ghost" :disabled="pending" @click="askDelete({ kind: 'value', option, value })"><Trash2 class="mr-2 h-4 w-4" />Xóa</Button></div>
             </template>
           </article>
         </div>
 
-        <div v-if="newValues[option.id]" class="grid min-w-0 gap-3 rounded-lg border border-dashed bg-muted/20 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_6rem_auto]">
+        <div
+          v-if="newValues[option.id]"
+          class="grid min-w-0 gap-3 rounded-lg border border-dashed bg-muted/20 p-3 sm:grid-cols-2"
+          :class="presentation(option) === 'TEXT'
+            ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6rem_minmax(9rem,auto)]'
+            : 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_6rem_minmax(9rem,auto)]'"
+        >
           <label class="space-y-1 text-xs text-muted-foreground">Tên hiển thị<Input v-model="newValues[option.id]!.label" placeholder="Bìa cứng" :aria-invalid="Boolean(valueErrors[`new-${option.id}`]?.label)" @update:model-value="clearValueError(`new-${option.id}`, 'label')" /></label>
           <label class="space-y-1 text-xs text-muted-foreground">Giá trị kỹ thuật<Input :model-value="newValues[option.id]!.value" placeholder="HARDCOVER" :aria-invalid="Boolean(valueErrors[`new-${option.id}`]?.value)" @update:model-value="newValues[option.id]!.value = normalizeCode(String($event)); clearValueError(`new-${option.id}`, 'value')" /></label>
-          <label class="space-y-1 text-xs text-muted-foreground">Mã màu<Input v-model="newValues[option.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[`new-${option.id}`]?.colorCode)" @update:model-value="clearValueError(`new-${option.id}`, 'colorCode')" /><span v-if="valueErrors[`new-${option.id}`]?.colorCode" class="block text-destructive">{{ valueErrors[`new-${option.id}`]?.colorCode }}</span></label>
+          <label v-if="presentation(option) === 'COLOR'" class="space-y-1 text-xs text-muted-foreground">Màu / mã màu<Input v-model="newValues[option.id]!.colorCode" placeholder="#2563EB" :aria-invalid="Boolean(valueErrors[`new-${option.id}`]?.colorCode)" @update:model-value="clearValueError(`new-${option.id}`, 'colorCode')" /><span v-if="valueErrors[`new-${option.id}`]?.colorCode" class="block text-destructive">{{ valueErrors[`new-${option.id}`]?.colorCode }}</span></label>
+          <p v-else-if="presentation(option) === 'IMAGE'" class="self-center text-xs text-muted-foreground">Tạo giá trị trước, sau đó thêm ảnh đại diện.</p>
           <label class="space-y-1 text-xs text-muted-foreground">Thứ tự<Input v-model.number="newValues[option.id]!.sortOrder" type="number" min="0" /></label>
-          <Button type="button" class="self-end" :disabled="pending" @click="addValue(option)"><Plus class="mr-2 h-4 w-4" />Thêm giá trị</Button>
+          <Button type="button" class="self-end whitespace-nowrap" :disabled="pending" @click="addValue(option)"><Plus class="mr-2 h-4 w-4" />Thêm giá trị</Button>
         </div>
       </CardContent>
     </Card>

@@ -91,6 +91,27 @@ describe('Async master-data combobox', () => {
     expect(masterDataApi.listPublishers).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('NXB Trẻ')
   })
+
+  it('attaches branch authorization context to receipt Supplier reads', async () => {
+    mount(AsyncMasterDataCombobox, {
+      props: {
+        id: 'receipt-supplier',
+        modelValue: '',
+        kind: 'supplier',
+        label: 'Nhà cung cấp',
+        branchScoped: true,
+        authorizationScope: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+      },
+      global: { plugins: [[VueQueryPlugin, { queryClient: queryClient() }]], stubs: popoverStubs },
+    })
+    await flushPromises()
+
+    expect(masterDataApi.listSuppliers).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, limit: 20 }),
+      { branchScoped: true },
+      expect.any(AbortSignal),
+    )
+  })
 })
 
 describe('Product Option hotfix interactions', () => {
@@ -102,6 +123,7 @@ describe('Product Option hotfix interactions', () => {
         productId,
         name: 'Màu mực',
         code: 'INK_COLOR',
+        presentationType: 'COLOR',
         sortOrder: 0,
         variantUsageCount: 1,
         values: [
@@ -162,7 +184,7 @@ describe('Product Option hotfix interactions', () => {
 describe('Product Variant matrix state machine', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    api.productOptionsList.mockResolvedValue({ data: [{ id: optionId, productId, name: 'Màu', code: 'COLOR', sortOrder: 0, variantUsageCount: 0, values: [{ id: 'value-blue', label: 'Xanh', value: 'BLUE', colorCode: '#2563EB', sortOrder: 0, usageCount: 0 }] }] })
+    api.productOptionsList.mockResolvedValue({ data: [{ id: optionId, productId, name: 'Màu', code: 'COLOR', presentationType: 'COLOR', sortOrder: 0, variantUsageCount: 0, values: [{ id: 'value-blue', label: 'Xanh', value: 'BLUE', colorCode: '#2563EB', sortOrder: 0, usageCount: 0 }] }] })
     api.productVariantsList.mockResolvedValue({ data: [] })
     api.productVariantsGeneratePreview.mockResolvedValue({ data: { combinations: [{ combinationKey: 'COLOR=BLUE', label: 'Màu: Xanh', optionValueIds: ['value-blue'], exists: false }] } })
   })

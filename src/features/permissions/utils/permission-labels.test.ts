@@ -70,6 +70,7 @@ describe("permission labels", () => {
     ["branch_admin", "Quản trị chi nhánh"],
     ["branch_returns", "Yêu cầu hoàn trả"],
     ["inventory", "Kho và tồn"],
+    ["stock_receipts", "Phiếu nhập kho"],
     ["stock_audit_events", "Stock audit events"],
   ])("localizes or formats resource %s", (resource, expected) => {
     expect(formatPermissionResource(resource)).toBe(expected);

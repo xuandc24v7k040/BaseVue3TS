@@ -42,15 +42,32 @@ const redirect = computed(() =>
     : "/branch-admin/dashboard",
 );
 const isStaffContext = computed(() => redirect.value.includes("/staff"));
+const isInventoryContext = computed(() =>
+  redirect.value.includes("/inventory"),
+);
+const isReceiptContext = computed(() => redirect.value.includes("/receipts"));
+const contextTitle = computed(() => {
+  if (isStaffContext.value) return "Nhân viên chi nhánh";
+  if (isReceiptContext.value) return "Phiếu nhập kho";
+  if (isInventoryContext.value) return "Tồn kho";
+  return "Chọn chi nhánh làm việc";
+});
+const contextDescription = computed(() => {
+  if (isStaffContext.value)
+    return "Chọn chi nhánh để xem và quản lý nhân viên trong đúng phạm vi được cấp.";
+  if (isReceiptContext.value)
+    return "Chọn chi nhánh để quản lý phiếu nhập và cập nhật tồn đúng kho.";
+  if (isInventoryContext.value)
+    return "Chọn chi nhánh để xem số lượng tồn và ngưỡng cảnh báo của đúng kho.";
+  return "Chọn chi nhánh trước khi tiếp tục vào chức năng yêu cầu phạm vi cụ thể.";
+});
 const filteredBranches = computed(() => {
   const needle = search.value.trim().toLocaleLowerCase("vi");
   return branchStore.availableBranches.filter(
     (branch) => !needle || branch.name.toLocaleLowerCase("vi").includes(needle),
   );
 });
-const quickBranches = computed(() =>
-  branchStore.availableBranches.slice(0, 6),
-);
+const quickBranches = computed(() => branchStore.availableBranches.slice(0, 6));
 
 watch(filteredBranches, () => {
   activeIndex.value = 0;
@@ -85,8 +102,7 @@ function handleSearchKeydown(event: KeyboardEvent): void {
   if (!filteredBranches.value.length) return;
   if (event.key === "ArrowDown") {
     event.preventDefault();
-    activeIndex.value =
-      (activeIndex.value + 1) % filteredBranches.value.length;
+    activeIndex.value = (activeIndex.value + 1) % filteredBranches.value.length;
   } else if (event.key === "ArrowUp") {
     event.preventDefault();
     activeIndex.value =
@@ -111,14 +127,10 @@ function handleSearchKeydown(event: KeyboardEvent): void {
 
     <div class="mx-auto w-full max-w-4xl">
       <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">
-        {{ isStaffContext ? "Nhân viên chi nhánh" : "Chọn chi nhánh làm việc" }}
+        {{ contextTitle }}
       </h1>
       <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-        {{
-          isStaffContext
-            ? "Chọn chi nhánh để xem và quản lý nhân viên trong đúng phạm vi được cấp."
-            : "Chọn chi nhánh trước khi tiếp tục vào chức năng yêu cầu phạm vi cụ thể."
-        }}
+        {{ contextDescription }}
       </p>
     </div>
 
@@ -202,14 +214,18 @@ function handleSearchKeydown(event: KeyboardEvent): void {
                       :key="branch.id"
                       type="button"
                       role="option"
-                      :aria-selected="branch.id === branchStore.selectedBranchId"
+                      :aria-selected="
+                        branch.id === branchStore.selectedBranchId
+                      "
                       class="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                       :class="{ 'bg-muted': index === activeIndex }"
                       :disabled="selecting"
                       @mouseenter="activeIndex = index"
                       @click="selectBranch(branch.id)"
                     >
-                      <Building2 class="size-4 shrink-0 text-muted-foreground" />
+                      <Building2
+                        class="size-4 shrink-0 text-muted-foreground"
+                      />
                       <span class="min-w-0 flex-1 truncate font-medium">
                         {{ branch.name }}
                       </span>
@@ -264,7 +280,8 @@ function handleSearchKeydown(event: KeyboardEvent): void {
             Bạn chưa được phân công vào chi nhánh đang hoạt động.
           </p>
           <p class="mt-1 text-sm leading-6 text-muted-foreground">
-            Phiên đăng nhập vẫn được giữ nguyên; vui lòng liên hệ quản trị hệ thống.
+            Phiên đăng nhập vẫn được giữ nguyên; vui lòng liên hệ quản trị hệ
+            thống.
           </p>
         </div>
       </CardContent>

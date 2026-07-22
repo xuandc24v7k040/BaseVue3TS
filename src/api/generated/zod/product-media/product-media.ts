@@ -20,12 +20,20 @@ export const ProductMediaListQueryParams = zod.strictObject({
   "variantId": zod.ulid().optional()
 })
 
+export const ProductMediaListHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Tải một ảnh vào bộ sưu tập sản phẩm
  * @summary Tải một ảnh vào bộ sưu tập sản phẩm
  */
 export const ProductMediaUploadParams = zod.strictObject({
   "productId": zod.ulid()
+})
+
+export const ProductMediaUploadHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const productMediaUploadBodyAltTextMax = 200;
@@ -48,6 +56,10 @@ export const ProductMediaUpdateParams = zod.strictObject({
   "mediaId": zod.string()
 })
 
+export const ProductMediaUpdateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 export const productMediaUpdateBodyAltTextMax = 200;
 
 
@@ -65,6 +77,10 @@ export const ProductMediaDeleteParams = zod.strictObject({
   "mediaId": zod.string()
 })
 
+export const ProductMediaDeleteHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Đặt ảnh đại diện atomically trong đúng bộ sưu tập
  * @summary Đặt ảnh đại diện atomically trong đúng bộ sưu tập
@@ -74,12 +90,20 @@ export const ProductMediaSetPrimaryParams = zod.strictObject({
   "mediaId": zod.string()
 })
 
+export const ProductMediaSetPrimaryHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Lưu thứ tự đầy đủ của một bộ sưu tập
  * @summary Lưu thứ tự đầy đủ của một bộ sưu tập
  */
 export const ProductMediaReorderParams = zod.strictObject({
   "productId": zod.ulid()
+})
+
+export const ProductMediaReorderHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const ProductMediaReorderBody = zod.strictObject({
@@ -97,6 +121,10 @@ export const ProductOptionValueImageUploadParams = zod.strictObject({
   "optionValueId": zod.ulid()
 })
 
+export const ProductOptionValueImageUploadHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 export const ProductOptionValueImageUploadBody = zod.strictObject({
   "file": zod.instanceof(File)
 })
@@ -109,5 +137,9 @@ export const ProductOptionValueImageRemoveParams = zod.strictObject({
   "productId": zod.ulid(),
   "optionId": zod.ulid(),
   "optionValueId": zod.ulid()
+})
+
+export const ProductOptionValueImageRemoveHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 

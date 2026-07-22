@@ -26,6 +26,8 @@ import { clientRoutes } from "@/router/client.routes";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBranchStore } from "@/stores/branch.store";
 
+const ULID_ROUTE_PATTERN = "[0-9A-HJKMNP-TV-Z]{26}";
+
 interface AuthGuardStore {
   status: "unknown" | "anonymous" | "authenticated";
   user: AuthMeResponseDto | null;
@@ -452,7 +454,8 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "products",
         name: "super-admin-products",
-        component: () => import("@/features/products/pages/ProductListPage.vue"),
+        component: () =>
+          import("@/features/products/pages/ProductListPage.vue"),
         meta: {
           requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
         },
@@ -460,7 +463,8 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "products/new",
         name: "super-admin-product-new",
-        component: () => import("@/features/products/pages/ProductFormPage.vue"),
+        component: () =>
+          import("@/features/products/pages/ProductFormPage.vue"),
         meta: {
           requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_CREATE],
         },
@@ -468,7 +472,8 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "products/:id",
         name: "super-admin-product-detail",
-        component: () => import("@/features/products/pages/ProductDetailPage.vue"),
+        component: () =>
+          import("@/features/products/pages/ProductDetailPage.vue"),
         meta: {
           requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
         },
@@ -476,7 +481,8 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "products/:id/edit",
         name: "super-admin-product-edit",
-        component: () => import("@/features/products/pages/ProductFormPage.vue"),
+        component: () =>
+          import("@/features/products/pages/ProductFormPage.vue"),
         meta: {
           requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_UPDATE],
         },
@@ -576,9 +582,57 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: "inventory",
+        redirect: { name: "super-admin-inventory" },
+      },
+      {
+        path: "inventory/stocks",
         name: "super-admin-inventory",
-        component: () => import("@/pages/super-admin/InventoryPage.vue"),
-        meta: { requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_READ] },
+        component: () =>
+          import("@/features/inventory/pages/InventoryStocksPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_READ],
+          requiresSelectedBranch: true,
+        },
+      },
+      {
+        path: "inventory/receipts",
+        name: "super-admin-stock-receipts",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptListPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_READ],
+          requiresSelectedBranch: true,
+        },
+      },
+      {
+        path: "inventory/receipts/create",
+        name: "super-admin-stock-receipt-create",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptFormPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_CREATE],
+          requiresSelectedBranch: true,
+        },
+      },
+      {
+        path: "inventory/receipts/:id/edit",
+        name: "super-admin-stock-receipt-edit",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptFormPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE],
+          requiresSelectedBranch: true,
+        },
+      },
+      {
+        path: "inventory/receipts/:id",
+        name: "super-admin-stock-receipt-detail",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_READ],
+          requiresSelectedBranch: true,
+        },
       },
       {
         path: "orders",
@@ -626,6 +680,34 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: "products",
+        name: "branch-admin-products",
+        component: () =>
+          import("@/features/products/pages/ProductListPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
+        },
+      },
+      {
+        path: "products/new",
+        name: "branch-admin-product-new-denied",
+        redirect: { name: "access-denied" },
+      },
+      {
+        path: `products/:id(${ULID_ROUTE_PATTERN})/edit`,
+        name: "branch-admin-product-edit-denied",
+        redirect: { name: "access-denied" },
+      },
+      {
+        path: `products/:id(${ULID_ROUTE_PATTERN})`,
+        name: "branch-admin-product-detail",
+        component: () =>
+          import("@/features/products/pages/ProductDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.PRODUCTS_READ],
+        },
+      },
+      {
         path: "orders",
         name: "branch-admin-orders",
         component: () => import("@/pages/branch-admin/OrdersPage.vue"),
@@ -633,20 +715,46 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: "inventory",
+        redirect: { name: "branch-admin-inventory" },
+      },
+      {
+        path: "inventory/stocks",
         name: "branch-admin-inventory",
-        component: () => import("@/pages/branch-admin/InventoryPage.vue"),
+        component: () =>
+          import("@/features/inventory/pages/InventoryStocksPage.vue"),
         meta: { requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_READ] },
       },
       {
-        path: "stock-movements",
-        name: "branch-admin-stock-movements",
-        component: () => import("@/pages/admin/AdminModulePlaceholderPage.vue"),
+        path: "inventory/receipts",
+        name: "branch-admin-stock-receipts",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptListPage.vue"),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_READ] },
+      },
+      {
+        path: "inventory/receipts/create",
+        name: "branch-admin-stock-receipt-create",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptFormPage.vue"),
         meta: {
-          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_MOVEMENTS_READ],
-          pageTitle: "Lịch sử nhập/xuất kho",
-          pageDescription:
-            "Module biến động kho chưa có API backend trong contract hiện tại.",
+          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_CREATE],
         },
+      },
+      {
+        path: "inventory/receipts/:id/edit",
+        name: "branch-admin-stock-receipt-edit",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptFormPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE],
+        },
+      },
+      {
+        path: "inventory/receipts/:id",
+        name: "branch-admin-stock-receipt-detail",
+        component: () =>
+          import("@/features/inventory/pages/StockReceiptDetailPage.vue"),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_READ] },
       },
     ],
   },

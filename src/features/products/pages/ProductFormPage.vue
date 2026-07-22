@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { ArrowLeft, Save } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import type { CategoryTreeNodeResponseDto, CreateProductDto, ProductAttributeResponseDto, ProductAttributeValueInputDto } from '@/api/generated/models'
+import type { CategoryTreeNodeResponseDto, CreateProductDto } from '@/api/generated/models'
 import AdminBreadcrumb from '@/components/admin/AdminBreadcrumb.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,16 +15,22 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { listAuthors } from '@/features/authors/api/author-api'
 import { listCategoryTree } from '@/features/categories/api/category-api'
-import { listProductAttributes } from '@/features/product-attributes/api/product-attribute-api'
 import { productKeys } from '../api/product-query-keys'
 import { productsCreate, productsGet, productsUpdate } from '../api/product-api'
 import AsyncMasterDataCombobox from '../components/AsyncMasterDataCombobox.vue'
 import ProductDescriptionEditor from '../components/ProductDescriptionEditor.vue'
 import ProductOptionBuilder from '../components/ProductOptionBuilder.vue'
+import ProductSelectedAttributes from '../components/ProductSelectedAttributes.vue'
 import ProductVariantManager from '../components/ProductVariantManager.vue'
 import ProductMediaSection from '../media/components/ProductMediaSection.vue'
 import { toDateInputValue } from '../utils/product-date'
 import { productErrorMessage, productFieldErrors } from '../utils/product-errors'
+import {
+  defaultProductAttributeValue,
+  serializeProductAttributeValues,
+  type ProductAttributeDefinition,
+  type ProductAttributeFormValue,
+} from '../utils/product-attribute-values'
 
 const route = useRoute()
 const router = useRouter()
@@ -48,13 +54,14 @@ type FormState = {
   releaseDate: string
   categoryIds: string[]
   authorIds: string[]
-  attributes: Record<string, string | number | boolean | string[]>
+  attributes: Record<string, ProductAttributeFormValue>
 }
 
 const form = reactive<FormState>({
   name: '', slug: '', shortDescription: '', description: null,
   supplierId: '', publisherId: '', releaseDate: '', categoryIds: [], authorIds: [], attributes: {},
 })
+const selectedAttributes = ref<ProductAttributeDefinition[]>([])
 
 const detailQuery = useQuery({
   queryKey: computed(() => productKeys.detail(productId.value ?? 'new')),
@@ -62,11 +69,9 @@ const detailQuery = useQuery({
   enabled: computed(() => Boolean(productId.value)),
 })
 const authorsQuery = useQuery({ queryKey: ['products', 'selectors', 'authors'], queryFn: ({ signal }) => listAuthors({ limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal) })
-const attributesQuery = useQuery({ queryKey: ['products', 'selectors', 'attributes'], queryFn: ({ signal }) => listProductAttributes({ limit: 100, sortBy: 'name', sortOrder: 'asc' }, undefined, signal) })
 const categoriesQuery = useQuery({ queryKey: ['products', 'selectors', 'categories'], queryFn: ({ signal }) => listCategoryTree({ sortBy: 'sortOrder', sortOrder: 'asc' }, signal) })
 
 const authors = computed(() => authorsQuery.data.value?.data ?? [])
-const attributes = computed(() => attributesQuery.data.value?.data ?? [])
 
 function flattenCategories(nodes: CategoryTreeNodeResponseDto[], depth = 0): Array<CategoryTreeNodeResponseDto & { depth: number }> {
   return nodes.flatMap((node) => [{ ...node, depth }, ...flattenCategories(node.children, depth + 1)])
@@ -88,6 +93,12 @@ watch(() => detailQuery.data.value?.data, (product) => {
     authorIds: product.authors.map((item) => item.id),
     attributes: Object.fromEntries(product.attributeValues.map((item) => [item.attributeId, item.value])),
   })
+  selectedAttributes.value = product.attributeValues.map((item) => ({
+    id: item.attributeId,
+    name: item.name,
+    code: item.code,
+    type: item.type,
+  }))
   hydrating.value = false
   hydrated.value = true
   dirty.value = false
@@ -101,16 +112,6 @@ function toggleId(list: string[], id: string, checked: boolean | 'indeterminate'
   const index = list.indexOf(id)
   if (checked === true && index < 0) list.push(id)
   if (checked !== true && index >= 0) list.splice(index, 1)
-}
-
-function attributeValue(attribute: ProductAttributeResponseDto): ProductAttributeValueInputDto | null {
-  const value = form.attributes[attribute.id]
-  if (value === '' || value === undefined || value === null) return null
-  if (attribute.type === 'MULTI_SELECT' && typeof value === 'string') {
-    const values = value.split(',').map((item) => item.trim()).filter(Boolean)
-    return values.length ? { attributeId: attribute.id, value: values } : null
-  }
-  return { attributeId: attribute.id, value }
 }
 
 function validate() {
@@ -134,7 +135,7 @@ function payload(): CreateProductDto {
     releaseDate: form.releaseDate || null,
     categoryIds: [...form.categoryIds],
     authorIds: [...form.authorIds],
-    attributeValues: attributes.value.map(attributeValue).filter((item): item is ProductAttributeValueInputDto => item !== null),
+    attributeValues: serializeProductAttributeValues(selectedAttributes.value, form.attributes),
   }
 }
 
@@ -172,13 +173,20 @@ function beforeUnload(event: BeforeUnloadEvent) {
   event.preventDefault()
 }
 
-function updateAttributeInput(attributeId: string, value: string | number) {
+function updateAttributeInput(attributeId: string, value: ProductAttributeFormValue) {
   form.attributes[attributeId] = value
 }
 
-function attributeInputValue(attributeId: string): string | number {
-  const value = form.attributes[attributeId]
-  return typeof value === 'string' || typeof value === 'number' ? value : ''
+function addAttribute(attribute: ProductAttributeDefinition): void {
+  if (selectedAttributes.value.some((item) => item.id === attribute.id)) return
+  selectedAttributes.value.push(attribute)
+  form.attributes[attribute.id] = defaultProductAttributeValue(attribute)
+  toast.success('Đã thêm thuộc tính vào sản phẩm.')
+}
+
+function removeAttribute(attributeId: string): void {
+  selectedAttributes.value = selectedAttributes.value.filter((item) => item.id !== attributeId)
+  delete form.attributes[attributeId]
 }
 onMounted(() => window.addEventListener('beforeunload', beforeUnload))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
@@ -214,13 +222,14 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
 
       <Card>
         <CardHeader><CardTitle>Thuộc tính mô tả</CardTitle></CardHeader>
-        <CardContent class="grid gap-4 md:grid-cols-2">
-          <div v-for="attribute in attributes" :key="attribute.id" class="space-y-2">
-            <Label :for="`attribute-${attribute.id}`">{{ attribute.name }}</Label>
-            <label v-if="attribute.type === 'BOOLEAN'" class="flex h-9 items-center gap-2"><Checkbox :model-value="Boolean(form.attributes[attribute.id])" @update:model-value="form.attributes[attribute.id] = $event === true" />Có</label>
-            <Input v-else :id="`attribute-${attribute.id}`" :model-value="attributeInputValue(attribute.id)" :type="attribute.type === 'NUMBER' ? 'number' : attribute.type === 'DATE' ? 'date' : 'text'" :placeholder="attribute.type === 'MULTI_SELECT' ? 'Phân cách các giá trị bằng dấu phẩy' : attribute.code" @update:model-value="updateAttributeInput(attribute.id, $event)" />
-          </div>
-          <p v-if="attributes.length === 0" class="text-sm text-muted-foreground">Chưa định nghĩa thuộc tính sản phẩm.</p>
+        <CardContent>
+          <ProductSelectedAttributes
+            :selected="selectedAttributes"
+            :values="form.attributes"
+            @select="addAttribute"
+            @remove="removeAttribute"
+            @update:value="updateAttributeInput"
+          />
         </CardContent>
       </Card>
 

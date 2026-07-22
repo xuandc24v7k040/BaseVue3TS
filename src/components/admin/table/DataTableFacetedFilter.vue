@@ -22,10 +22,12 @@ interface DataTableFacetedFilterProps {
    * Client-side only. In server-side mode, pass option.count from backend.
    */
   showCounts?: boolean
+  multiple?: boolean
 }
 
 const props = withDefaults(defineProps<DataTableFacetedFilterProps>(), {
   showCounts: false,
+  multiple: true,
 })
 const OPTION_ROW_HEIGHT = 36
 const MAX_OPTION_LIST_HEIGHT = 256
@@ -99,6 +101,12 @@ function getFacetCount(optionValue: string): number | undefined {
 
 function handleSelect(value: string) {
   if (!props.column) return
+
+  if (!props.multiple) {
+    props.column.setFilterValue(selectedValues.value.has(value) ? undefined : value)
+    isOpen.value = false
+    return
+  }
 
   const filterValues = new Set(selectedValues.value)
   if (filterValues.has(value)) filterValues.delete(value)

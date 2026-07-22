@@ -20,8 +20,19 @@ import MasterDataDeleteDialog from '@/features/product-master-data/components/Ma
 import { productMediaDelete, productMediaList, productMediaReorder, productMediaSetPrimary, productMediaUpdate, productMediaUpload } from '../api/product-media-api'
 import { useProductMediaQueue } from '../composables/useProductMediaQueue'
 
-const props = withDefaults(defineProps<{ productId?: string | null; readonly?: boolean }>(), { productId: null, readonly: false })
+const props = withDefaults(defineProps<{
+  productId?: string | null
+  readonly?: boolean
+  branchScoped?: boolean
+  authorizationScope?: string
+}>(), {
+  productId: null,
+  readonly: false,
+  branchScoped: false,
+  authorizationScope: 'global',
+})
 const client = useQueryClient()
+const readRequest = computed(() => props.branchScoped ? { branchScoped: true } as const : undefined)
 const selectedVariantId = ref<string | null>(null)
 const orderedMedia = ref<ProductMediaResponseDto[]>([])
 const preview = ref<ProductMediaResponseDto | null>(null)
@@ -39,17 +50,17 @@ const reorderSnapshot = ref<{
 } | null>(null)
 
 const variantsQuery = useQuery({
-  queryKey: computed(() => productKeys.variants(props.productId ?? 'new')),
-  queryFn: ({ signal }) => productVariantsList(props.productId!, undefined, signal),
+  queryKey: computed(() => [...productKeys.variants(props.productId ?? 'new'), props.authorizationScope]),
+  queryFn: ({ signal }) => productVariantsList(props.productId!, readRequest.value, signal),
   enabled: computed(() => Boolean(props.productId)),
 })
 const variants = computed(() => variantsQuery.data.value?.data ?? [])
 const query = useQuery({
-  queryKey: computed(() => productKeys.media(props.productId ?? 'new', selectedVariantId.value)),
+  queryKey: computed(() => [...productKeys.media(props.productId ?? 'new', selectedVariantId.value), props.authorizationScope]),
   queryFn: ({ signal }) => productMediaList(
     props.productId!,
     selectedVariantId.value ? { variantId: selectedVariantId.value } : undefined,
-    undefined,
+    readRequest.value,
     signal,
   ),
   enabled: computed(() => Boolean(props.productId)),
@@ -60,7 +71,7 @@ watch(
     usingFallback.value = false
     orderedMedia.value = items ? [...items] : []
     if (props.readonly && props.productId && variantId && orderedMedia.value.length === 0) {
-      const general = await productMediaList(props.productId)
+      const general = await productMediaList(props.productId, undefined, readRequest.value)
       orderedMedia.value = [...general.data]
       usingFallback.value = orderedMedia.value.length > 0
     }

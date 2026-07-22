@@ -45,6 +45,13 @@ export function productErrorMessage(error: unknown, fallback: string): string {
   return (code && messages[code]) || error.response?.data.message || fallback
 }
 
+export function productReadErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error) && error.response?.status === 403) {
+    return 'Không có quyền xem sản phẩm tại chi nhánh đang chọn.'
+  }
+  return productErrorMessage(error, fallback)
+}
+
 export function productFieldErrors(error: unknown): Record<string, string> {
   if (!axios.isAxiosError<ErrorResponseDto>(error)) return {}
   const fields = error.response?.data.errors

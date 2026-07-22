@@ -37,10 +37,18 @@ export const ProductsListQueryParams = zod.strictObject({
   "sortOrder": zod.enum(['asc', 'desc']).default(productsListQuerySortOrderDefault)
 })
 
+export const ProductsListHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Tạo sản phẩm bản nháp
  * @summary Tạo sản phẩm bản nháp
  */
+export const ProductsCreateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 export const productsCreateBodyNameMin = 2;
 export const productsCreateBodyNameMax = 255;
 
@@ -73,12 +81,20 @@ export const ProductsGetParams = zod.strictObject({
   "id": zod.ulid()
 })
 
+export const ProductsGetHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Cập nhật thông tin và các liên kết của sản phẩm
  * @summary Cập nhật thông tin và các liên kết của sản phẩm
  */
 export const ProductsUpdateParams = zod.strictObject({
   "id": zod.ulid()
+})
+
+export const ProductsUpdateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const productsUpdateBodyNameMin = 2;
@@ -113,12 +129,20 @@ export const ProductsDeleteParams = zod.strictObject({
   "id": zod.ulid()
 })
 
+export const ProductsDeleteHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Chuyển trạng thái sản phẩm sau khi kiểm tra invariant
  * @summary Chuyển trạng thái sản phẩm sau khi kiểm tra invariant
  */
 export const ProductsUpdateStatusParams = zod.strictObject({
   "id": zod.ulid()
+})
+
+export const ProductsUpdateStatusHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const ProductsUpdateStatusBody = zod.strictObject({
@@ -133,6 +157,10 @@ export const ProductOptionsListParams = zod.strictObject({
   "productId": zod.ulid()
 })
 
+export const ProductOptionsListHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Thêm lựa chọn vào sản phẩm
  * @summary Thêm lựa chọn vào sản phẩm
@@ -141,14 +169,20 @@ export const ProductOptionsCreateParams = zod.strictObject({
   "productId": zod.ulid()
 })
 
+export const ProductOptionsCreateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 export const productOptionsCreateBodyNameMax = 100;
 
 export const productOptionsCreateBodyCodeRegExp = new RegExp('^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$');
+export const productOptionsCreateBodyPresentationTypeDefault = `TEXT`;
 export const productOptionsCreateBodySortOrderDefault = 0;
 
 export const ProductOptionsCreateBody = zod.strictObject({
   "name": zod.string().max(productOptionsCreateBodyNameMax),
   "code": zod.string().regex(productOptionsCreateBodyCodeRegExp),
+  "presentationType": zod.enum(['TEXT', 'COLOR', 'IMAGE']).default(productOptionsCreateBodyPresentationTypeDefault),
   "sortOrder": zod.number().default(productOptionsCreateBodySortOrderDefault)
 })
 
@@ -161,14 +195,20 @@ export const ProductOptionsUpdateParams = zod.strictObject({
   "optionId": zod.ulid()
 })
 
+export const ProductOptionsUpdateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 export const productOptionsUpdateBodyNameMax = 100;
 
 export const productOptionsUpdateBodyCodeRegExp = new RegExp('^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$');
+export const productOptionsUpdateBodyPresentationTypeDefault = `TEXT`;
 export const productOptionsUpdateBodySortOrderDefault = 0;
 
 export const ProductOptionsUpdateBody = zod.strictObject({
   "name": zod.string().max(productOptionsUpdateBodyNameMax).optional(),
   "code": zod.string().regex(productOptionsUpdateBodyCodeRegExp).optional(),
+  "presentationType": zod.enum(['TEXT', 'COLOR', 'IMAGE']).default(productOptionsUpdateBodyPresentationTypeDefault),
   "sortOrder": zod.number().default(productOptionsUpdateBodySortOrderDefault)
 })
 
@@ -181,6 +221,10 @@ export const ProductOptionsDeleteParams = zod.strictObject({
   "optionId": zod.ulid()
 })
 
+export const ProductOptionsDeleteHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Thêm giá trị cho lựa chọn đúng ownership
  * @summary Thêm giá trị cho lựa chọn đúng ownership
@@ -188,6 +232,10 @@ export const ProductOptionsDeleteParams = zod.strictObject({
 export const ProductOptionValuesCreateParams = zod.strictObject({
   "productId": zod.ulid(),
   "optionId": zod.ulid()
+})
+
+export const ProductOptionValuesCreateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const productOptionValuesCreateBodyLabelMax = 100;
@@ -212,6 +260,10 @@ export const ProductOptionValuesUpdateParams = zod.strictObject({
   "valueId": zod.ulid()
 })
 
+export const ProductOptionValuesUpdateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 export const productOptionValuesUpdateBodyLabelMax = 100;
 
 export const productOptionValuesUpdateBodyValueRegExp = new RegExp('^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$');
@@ -234,6 +286,10 @@ export const ProductOptionValuesDeleteParams = zod.strictObject({
   "valueId": zod.ulid()
 })
 
+export const ProductOptionValuesDeleteHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Lấy danh sách biến thể thuộc sản phẩm
  * @summary Lấy danh sách biến thể thuộc sản phẩm
@@ -242,12 +298,20 @@ export const ProductVariantsListParams = zod.strictObject({
   "productId": zod.ulid()
 })
 
+export const ProductVariantsListHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Tạo biến thể với combinationKey do backend sinh
  * @summary Tạo biến thể với combinationKey do backend sinh
  */
 export const ProductVariantsCreateParams = zod.strictObject({
   "productId": zod.ulid()
+})
+
+export const ProductVariantsCreateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const productVariantsCreateBodyNameMax = 255;
@@ -291,12 +355,20 @@ export const ProductVariantsGeneratePreviewParams = zod.strictObject({
   "productId": zod.ulid()
 })
 
+export const ProductVariantsGeneratePreviewHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Tạo nhiều biến thể atomically
  * @summary Tạo nhiều biến thể atomically
  */
 export const ProductVariantsBulkCreateParams = zod.strictObject({
   "productId": zod.ulid()
+})
+
+export const ProductVariantsBulkCreateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const productVariantsBulkCreateBodyVariantsItemNameMax = 255;
@@ -346,6 +418,10 @@ export const ProductVariantsGetParams = zod.strictObject({
   "variantId": zod.ulid()
 })
 
+export const ProductVariantsGetHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Cập nhật biến thể và tái sinh combinationKey atomically
  * @summary Cập nhật biến thể và tái sinh combinationKey atomically
@@ -353,6 +429,10 @@ export const ProductVariantsGetParams = zod.strictObject({
 export const ProductVariantsUpdateParams = zod.strictObject({
   "productId": zod.ulid(),
   "variantId": zod.ulid()
+})
+
+export const ProductVariantsUpdateHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 
 export const productVariantsUpdateBodyNameMax = 255;
@@ -397,6 +477,10 @@ export const ProductVariantsDeleteParams = zod.strictObject({
   "variantId": zod.ulid()
 })
 
+export const ProductVariantsDeleteHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
+})
+
 /**
  * Đặt biến thể mặc định atomically
  * @summary Đặt biến thể mặc định atomically
@@ -404,5 +488,9 @@ export const ProductVariantsDeleteParams = zod.strictObject({
 export const ProductVariantsSetDefaultParams = zod.strictObject({
   "productId": zod.ulid(),
   "variantId": zod.ulid()
+})
+
+export const ProductVariantsSetDefaultHeader = zod.strictObject({
+  "X-Branch-Id": zod.ulid().optional().describe('ULID chi nhánh đang được chọn. Có thể bỏ qua với route Super Admin hoặc route hỗ trợ scope rộng.')
 })
 

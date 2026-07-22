@@ -37,6 +37,8 @@ export interface DataTableFilterableColumn {
   title: string
   options: DataTableFilterOption[]
   operator?: DataTableFilterOperator
+  /** Use a scalar filter value and replace the previous option. */
+  multiple?: boolean
   getLabel?: (value: unknown, options: DataTableFilterOption[]) => string
 }
 

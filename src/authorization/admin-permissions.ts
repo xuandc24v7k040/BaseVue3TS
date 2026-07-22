@@ -50,7 +50,12 @@ export const ADMIN_PERMISSIONS = {
   PRODUCT_ATTRIBUTES_UPDATE: "product_attributes.update",
   PRODUCT_ATTRIBUTES_DELETE: "product_attributes.delete",
   INVENTORY_READ: "inventory.read",
-  STOCK_MOVEMENTS_READ: "stock_movements.read",
+  INVENTORY_UPDATE_THRESHOLD: "inventory.update_threshold",
+  STOCK_RECEIPTS_READ: "stock_receipts.read",
+  STOCK_RECEIPTS_CREATE: "stock_receipts.create",
+  STOCK_RECEIPTS_UPDATE: "stock_receipts.update",
+  STOCK_RECEIPTS_CANCEL: "stock_receipts.cancel",
+  STOCK_RECEIPTS_CONFIRM: "stock_receipts.confirm",
   ORDERS_READ: "orders.read",
   PAYMENTS_CREATE: "payments.create",
 } as const;
