@@ -185,7 +185,8 @@ export async function resolveAuthNavigation(
   const isCustomerProtectedRoute = to.matched.some((record) =>
     record.meta.allowedUserTypes?.includes("CUSTOMER"),
   );
-  const shouldBootstrap = !hasMeta(to, "skipAuthBootstrap");
+  const shouldBootstrap =
+    hasMeta(to, "requiresAuth") || !hasMeta(to, "skipAuthBootstrap");
 
   if (shouldBootstrap) {
     await authStore.ensureBootstrapped();

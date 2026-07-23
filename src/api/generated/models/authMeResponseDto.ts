@@ -34,6 +34,8 @@ export interface AuthMeResponseDto {
      * @nullable
      */
   birthday: string | null;
+  /** @nullable */
+  avatarUrl: string | null;
   type: AuthMeResponseDtoType;
   /** Legacy request-effective roles. Empty for BRANCH users until a branch-scoped request resolves X-Branch-Id. */
   roles: AuthMeRoleDto[];

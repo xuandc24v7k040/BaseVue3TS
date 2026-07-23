@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { Check, MapPin, Search } from '@lucide/vue'
-import { computed, ref } from 'vue'
-import { Button } from '@/components/ui/button'
+import { Check, LoaderCircle, MapPin, Search } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
+import { toast } from "vue-sonner";
+import type { StorefrontBranchResponseDto } from "@/api/generated/models";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,58 +12,94 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useStorefrontBranchesQuery } from "@/features/storefront/api/storefront-api";
+import { storefrontErrorMessage } from "@/features/storefront/utils/storefront-error";
+import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
+import { useAuthStore } from "@/stores/auth.store";
+import { useCartActions } from "@/features/cart/api/cart-api";
+import { cartErrorMessage } from "@/features/cart/utils/cart-error";
 
-interface BranchMock {
-  id: string
-  name: string
-}
+const branchStore = useStorefrontBranchStore();
+const authStore = useAuthStore();
+const cartActions = useCartActions();
+const branchesQuery = useStorefrontBranchesQuery();
+const open = ref(false);
+const draftBranchId = ref<string | null>(null);
+const branchSearch = ref("");
+const confirming = ref(false);
 
-const branches: BranchMock[] = [
-  { id: 'can-tho', name: 'Cần Thơ' },
-  { id: 'hau-giang', name: 'Hậu Giang' },
-  { id: 'ho-chi-minh', name: 'Hồ Chí Minh' },
-  { id: 'ha-noi', name: 'Hà Nội' },
-]
-
-const open = ref(false)
-const selectedBranch = ref(branches[0]!)
-const draftBranch = ref(branches[0]!)
-const branchSearch = ref('')
+watch(
+  () => branchesQuery.data.value,
+  (branches) => {
+    if (branches) branchStore.initialize(branches);
+  },
+  { immediate: true },
+);
 
 const filteredBranches = computed(() => {
-  const query = branchSearch.value.trim().toLocaleLowerCase('vi-VN')
-  if (!query) return branches
-
-  return branches.filter((branch) =>
-    branch.name.toLocaleLowerCase('vi-VN').includes(query),
-  )
-})
+  const query = branchSearch.value.trim().toLocaleLowerCase("vi-VN");
+  if (!query) return branchStore.branches;
+  return branchStore.branches.filter((branch) =>
+    `${branch.name} ${branch.address} ${branch.province ?? ""}`
+      .toLocaleLowerCase("vi-VN")
+      .includes(query),
+  );
+});
 
 function openSelector(): void {
-  draftBranch.value = selectedBranch.value
-  branchSearch.value = ''
-  open.value = true
+  draftBranchId.value = branchStore.selectedBranchId;
+  branchSearch.value = "";
+  open.value = true;
 }
 
-function confirmSelection(): void {
-  selectedBranch.value = draftBranch.value
-  open.value = false
+async function confirmSelection(): Promise<void> {
+  if (!draftBranchId.value || confirming.value) return;
+  confirming.value = true;
+  const changed = draftBranchId.value !== branchStore.selectedBranchId;
+  const draftBranch = branchStore.branches.find(
+    (branch) => branch.id === draftBranchId.value,
+  );
+  try {
+    if (changed && authStore.user?.type === "CUSTOMER") {
+      await cartActions.changeBranch(draftBranchId.value);
+    }
+    const selected = await branchStore.select(draftBranchId.value);
+    if (!selected) {
+      toast.error(
+        "Chi nhánh không còn hoạt động. Vui lòng chọn chi nhánh khác.",
+      );
+      return;
+    }
+    open.value = false;
+    if (changed)
+      toast.success(
+        `Đã chuyển sang chi nhánh ${draftBranch?.name ?? "đã chọn"}.`,
+      );
+  } catch (error: unknown) {
+    toast.error(
+      cartErrorMessage(error, "Không thể thay đổi chi nhánh. Vui lòng thử lại."),
+    );
+  } finally {
+    confirming.value = false;
+  }
 }
 
 function cancelSelection(): void {
-  draftBranch.value = selectedBranch.value
-  branchSearch.value = ''
-  open.value = false
+  draftBranchId.value = branchStore.selectedBranchId;
+  branchSearch.value = "";
+  open.value = false;
 }
 
 function handleOpenChange(nextOpen: boolean): void {
-  open.value = nextOpen
-  if (!nextOpen) {
-    draftBranch.value = selectedBranch.value
-    branchSearch.value = ''
-  }
+  open.value = nextOpen;
+  if (!nextOpen) cancelSelection();
+}
+
+function selectDraft(branch: StorefrontBranchResponseDto): void {
+  draftBranchId.value = branch.id;
 }
 </script>
 
@@ -76,60 +114,126 @@ function handleOpenChange(nextOpen: boolean): void {
         data-testid="branch-selector-trigger"
         @click="openSelector"
       >
-        <MapPin aria-hidden="true" class="size-4.5 text-[var(--bookora-green)]" />
-        <span class="text-sm">
+        <MapPin
+          aria-hidden="true"
+          class="size-4.5 text-[var(--bookora-green)]"
+        />
+        <span class="max-w-48 truncate text-sm">
           <span class="hidden xl:inline">Chọn chi nhánh: </span>
-          <strong class="font-semibold">{{ selectedBranch.name }}</strong>
+          <strong class="font-semibold">{{
+            branchStore.selectedBranch?.name ?? "Đang tải..."
+          }}</strong>
         </span>
       </Button>
     </DialogTrigger>
 
-    <DialogContent class="bookora-client-theme flex max-h-[min(85svh,42rem)] min-h-0 flex-col gap-0 overflow-hidden border-[var(--bookora-border)] bg-[var(--bookora-cream)] p-0 sm:max-w-lg">
-      <DialogHeader class="shrink-0 px-5 pb-4 pt-5 pr-12 sm:px-6 sm:pb-5 sm:pt-6">
-        <DialogTitle class="text-xl text-[var(--bookora-ink)]">Chọn chi nhánh</DialogTitle>
-        <DialogDescription class="leading-6 text-[var(--bookora-muted)]">
-          Chi nhánh được dùng để hiển thị trải nghiệm mua sắm phù hợp.
-        </DialogDescription>
-      </DialogHeader>
+    <DialogContent
+      class="bookora-client-theme grid max-h-[calc(100dvh-1rem)] min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden border-[var(--bookora-border)] bg-[var(--bookora-cream)] p-0 sm:max-h-[min(85dvh,42rem)] sm:max-w-lg"
+    >
+      <div>
+        <DialogHeader class="px-5 pb-4 pt-5 pr-12 sm:px-6 sm:pb-5 sm:pt-6">
+          <DialogTitle class="text-xl text-[var(--bookora-ink)]"
+            >Chọn chi nhánh</DialogTitle
+          >
+          <DialogDescription class="leading-6 text-[var(--bookora-muted)]">
+            Chi nhánh được dùng để hiển thị tình trạng còn hàng của từng phiên
+            bản.
+          </DialogDescription>
+        </DialogHeader>
 
-      <div class="relative shrink-0 px-5 pb-4 sm:px-6">
-        <Search aria-hidden="true" class="pointer-events-none absolute left-8 top-1/2 size-4 -translate-y-[calc(50%+0.5rem)] text-[var(--bookora-muted)] sm:left-9" />
-        <Input
-          v-model="branchSearch"
-          aria-label="Tìm kiếm chi nhánh"
-          placeholder="Tìm theo tên chi nhánh"
-          class="h-11 border-[var(--bookora-border)] bg-background pl-10 shadow-none focus-visible:border-[var(--bookora-green)] focus-visible:ring-[var(--bookora-green)]/20"
-          data-testid="branch-search"
-        />
+        <div class="relative px-5 pb-4 sm:px-6">
+          <Search
+            aria-hidden="true"
+            class="pointer-events-none absolute left-8 top-1/2 size-4 -translate-y-[calc(50%+0.5rem)] text-[var(--bookora-muted)] sm:left-9"
+          />
+          <Input
+            v-model="branchSearch"
+            aria-label="Tìm kiếm chi nhánh"
+            data-testid="branch-search"
+            placeholder="Tìm theo tên hoặc địa chỉ"
+            class="h-11 border-[var(--bookora-border)] bg-background pl-10 shadow-none focus-visible:border-[var(--bookora-green)] focus-visible:ring-[var(--bookora-green)]/20"
+          />
+        </div>
       </div>
 
-      <div class="min-h-0 flex-1 overflow-y-auto px-5 pb-4 sm:px-6" role="radiogroup" aria-label="Danh sách chi nhánh">
-        <div v-if="filteredBranches.length > 0" class="grid gap-2">
+      <ScrollArea class="min-h-0 flex-1 px-5 pb-4 sm:px-6">
+        <div
+          v-if="branchesQuery.isPending.value"
+          class="grid min-h-32 place-items-center text-sm text-[var(--bookora-muted)]"
+        >
+          <LoaderCircle aria-hidden="true" class="size-5 animate-spin" />
+          <span>Đang tải chi nhánh...</span>
+        </div>
+        <div
+          v-else-if="branchesQuery.isError.value"
+          class="rounded-lg border border-dashed p-5 text-center text-sm"
+        >
+          <p>
+            {{
+              storefrontErrorMessage(
+                branchesQuery.error.value,
+                "Không thể tải danh sách chi nhánh.",
+              )
+            }}
+          </p>
+          <Button type="button" variant="link" @click="branchesQuery.refetch()"
+            >Thử lại</Button
+          >
+        </div>
+        <div
+          v-else-if="filteredBranches.length"
+          class="grid gap-2"
+          role="radiogroup"
+          aria-label="Danh sách chi nhánh"
+        >
           <button
             v-for="branch in filteredBranches"
             :key="branch.id"
             type="button"
             role="radio"
-            :aria-checked="draftBranch.id === branch.id"
-            class="flex min-h-12 items-center justify-between rounded-lg border bg-background px-4 py-3 text-left text-sm font-medium transition-colors hover:border-[var(--bookora-green)] hover:bg-[var(--bookora-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
-            :class="draftBranch.id === branch.id ? 'border-[var(--bookora-green)] bg-[var(--bookora-soft)]' : 'border-[var(--bookora-border)]'"
-            @click="draftBranch = branch"
+            :aria-checked="draftBranchId === branch.id"
+            class="flex min-h-14 items-center justify-between rounded-lg border bg-background px-4 py-3 text-left text-sm transition-colors hover:border-[var(--bookora-green)] hover:bg-[var(--bookora-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            :class="
+              draftBranchId === branch.id
+                ? 'border-[var(--bookora-green)] bg-[var(--bookora-soft)]'
+                : 'border-[var(--bookora-border)]'
+            "
+            @click="selectDraft(branch)"
           >
-            {{ branch.name }}
-            <Check v-if="draftBranch.id === branch.id" aria-hidden="true" class="size-4 text-[var(--bookora-green)]" />
+            <span>
+              <strong class="block font-semibold">{{ branch.name }}</strong>
+              <span class="mt-0.5 block text-xs text-[var(--bookora-muted)]">{{
+                branch.address
+              }}</span>
+            </span>
+            <Check
+              v-if="draftBranchId === branch.id"
+              aria-hidden="true"
+              class="size-4 text-[var(--bookora-green)]"
+            />
           </button>
         </div>
-        <p v-else class="rounded-lg border border-dashed border-[var(--bookora-border)] bg-background px-4 py-8 text-center text-sm text-[var(--bookora-muted)]">
+        <p
+          v-else
+          class="rounded-lg border border-dashed border-[var(--bookora-border)] bg-background px-4 py-8 text-center text-sm text-[var(--bookora-muted)]"
+        >
           Không tìm thấy chi nhánh phù hợp.
         </p>
-      </div>
+      </ScrollArea>
 
-      <DialogFooter class="shrink-0 border-t border-[var(--bookora-border)] bg-background/80 px-5 py-4 sm:px-6">
-        <Button type="button" variant="outline" class="border-[var(--bookora-border)] sm:min-w-24" @click="cancelSelection">
-          Hủy
-        </Button>
+      <DialogFooter
+        class="border-t border-[var(--bookora-border)] bg-background/80 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6"
+      >
         <Button
           type="button"
+          variant="outline"
+          class="border-[var(--bookora-border)] sm:min-w-24"
+          @click="cancelSelection"
+          >Hủy</Button
+        >
+        <Button
+          type="button"
+          :disabled="!draftBranchId || confirming"
           class="bg-[var(--bookora-green)] text-white hover:bg-[var(--bookora-green-hover)] sm:min-w-24"
           @click="confirmSelection"
         >

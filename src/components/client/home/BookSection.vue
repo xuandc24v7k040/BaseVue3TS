@@ -2,14 +2,14 @@
 import { ArrowRight, ChevronLeft, ChevronRight } from '@lucide/vue'
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import BookCard from '@/components/client/home/BookCard.vue'
 import { Button } from '@/components/ui/button'
-import type { HomeBookMock } from '@/pages/app/home/home.mock'
+import type { PublicProductListItemDto } from '@/api/generated/models'
+import ProductCard from '@/features/storefront/components/ProductCard.vue'
 
 withDefaults(
   defineProps<{
     title: string
-    books: HomeBookMock[]
+    books: PublicProductListItemDto[]
     viewAllHref: string
     showControls?: boolean
   }>(),
@@ -43,7 +43,7 @@ function scroll(direction: 'previous' | 'next'): void {
       class="grid w-full min-w-0 max-w-full auto-cols-[145px] grid-flow-col gap-2 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 [scrollbar-width:none] lg:auto-cols-auto lg:grid-flow-row"
       :class="books.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
     >
-      <BookCard v-for="book in books" :key="book.id" :book="book" />
+      <ProductCard v-for="book in books" :key="book.id" :product="book" :show-rank="showControls" />
     </div>
 
     <template v-if="showControls">

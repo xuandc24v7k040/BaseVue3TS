@@ -1,313 +1,320 @@
 // @vitest-environment happy-dom
 
-import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
-import { flushPromises, mount } from '@vue/test-utils'
-import { AxiosError } from 'axios'
-import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMemoryHistory, createRouter } from 'vue-router'
-import LoginForm from '@/pages/auth/components/LoginForm.vue'
-import { useAuthStore } from '@/stores/auth.store'
-import type { AuthMeResponseDto } from '@/api/generated/models'
+import { VueQueryPlugin, QueryClient } from "@tanstack/vue-query";
+import { flushPromises, mount } from "@vue/test-utils";
+import { AxiosError } from "axios";
+import { createPinia, setActivePinia } from "pinia";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "vue-router";
+import LoginForm from "@/pages/auth/components/LoginForm.vue";
+import { useAuthStore } from "@/stores/auth.store";
+import type { AuthMeResponseDto } from "@/api/generated/models";
 
 const envMock = vi.hoisted(() => ({
-  apiBaseUrl: 'http://localhost:8000/api/v1',
+  apiBaseUrl: "http://localhost:8000/api/v1",
   turnstileEnabled: false,
-  turnstileSiteKey: '',
-}))
-const toastError = vi.hoisted(() => vi.fn())
-const clearCsrfToken = vi.hoisted(() => vi.fn())
+  turnstileSiteKey: "",
+}));
+const toastError = vi.hoisted(() => vi.fn());
+const clearCsrfToken = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/env', () => ({ env: envMock }))
-vi.mock('vue-sonner', () => ({
+vi.mock("@/lib/env", () => ({ env: envMock }));
+vi.mock("vue-sonner", () => ({
   toast: {
     error: toastError,
     success: vi.fn(),
     warning: vi.fn(),
   },
-}))
-vi.mock('@/api/http/csrf-manager', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/api/http/csrf-manager')>()
+}));
+vi.mock("@/api/http/csrf-manager", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/api/http/csrf-manager")>();
   return {
     ...actual,
     clearCsrfToken,
-  }
-})
-vi.mock('@/api/modules/auth.api', () => ({
+  };
+});
+vi.mock("@/api/modules/auth.api", () => ({
   fetchCurrentUser: vi.fn(),
   loginWithPassword: vi.fn(),
   logoutCurrentAccount: vi.fn(),
-}))
+}));
 
 const branch = {
-  id: '01K00000000000000000000001',
-  code: 'can-tho',
-  name: 'Cần Thơ',
+  id: "01K00000000000000000000001",
+  code: "can-tho",
+  name: "Cần Thơ",
   isPrimary: true,
-}
+};
 
 function makeUser(
-  type: AuthMeResponseDto['type'],
-  permissions: string[] = ['dashboard.read'],
+  type: AuthMeResponseDto["type"],
+  permissions: string[] = ["dashboard.read"],
 ): AuthMeResponseDto {
   return {
-    id: '01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T',
-    email: 'admin@example.com',
-    fullName: 'Bookora Admin',
+    id: "01JY7M9M9Z4Y7Y7K7QZJ9Y4S4T",
+    email: "admin@example.com",
+    fullName: "Bookora Admin",
     phone: null,
     gender: null,
     birthday: null,
+    avatarUrl: null,
     type,
     roles: [],
     permissions: [],
     globalRoles: [],
-    globalPermissions: type === 'SYSTEM' ? permissions : [],
-    branchAssignments: type === 'BRANCH'
-      ? [{
-          branchId: branch.id,
-          userBranchId: 'assignment-a',
-          branch,
-          isPrimary: true,
-          isActive: true,
-          roles: [],
-          permissions,
-          maxRoleLevel: 0,
-        }]
-      : [],
+    globalPermissions: type === "SYSTEM" ? permissions : [],
+    branchAssignments:
+      type === "BRANCH"
+        ? [
+            {
+              branchId: branch.id,
+              userBranchId: "assignment-a",
+              branch,
+              isPrimary: true,
+              isActive: true,
+              roles: [],
+              permissions,
+              maxRoleLevel: 0,
+            },
+          ]
+        : [],
     maxRoleLevel: 0,
-    isSuperAdmin: type === 'SYSTEM',
-    branches: type === 'BRANCH' ? [branch] : [],
-    primaryBranchId: type === 'BRANCH' ? branch.id : null,
-  }
+    isSuperAdmin: type === "SYSTEM",
+    branches: type === "BRANCH" ? [branch] : [],
+    primaryBranchId: type === "BRANCH" ? branch.id : null,
+  };
 }
 
 async function setup() {
-  const pinia = createPinia()
-  setActivePinia(pinia)
+  const pinia = createPinia();
+  setActivePinia(pinia);
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: '/admin/login', name: 'admin-login', component: {} },
-      { path: '/admin-home', name: 'admin-home', component: {} },
+      { path: "/admin/login", name: "admin-login", component: {} },
+      { path: "/admin-home", name: "admin-home", component: {} },
       {
-        path: '/super-admin/dashboard',
-        name: 'super-admin-dashboard',
+        path: "/super-admin/dashboard",
+        name: "super-admin-dashboard",
         component: {},
         meta: {
-          allowedUserTypes: ['SYSTEM'],
-          requiredPermissions: ['dashboard.read'],
+          allowedUserTypes: ["SYSTEM"],
+          requiredPermissions: ["dashboard.read"],
         },
       },
       {
-        path: '/branch-admin/dashboard',
-        name: 'branch-admin-dashboard',
+        path: "/branch-admin/dashboard",
+        name: "branch-admin-dashboard",
         component: {},
         meta: {
-          allowedUserTypes: ['BRANCH'],
+          allowedUserTypes: ["BRANCH"],
           requiresSelectedBranch: true,
-          requiredPermissions: ['dashboard.read'],
+          requiredPermissions: ["dashboard.read"],
         },
       },
       {
-        path: '/branch-admin/orders',
-        name: 'branch-admin-orders',
+        path: "/branch-admin/orders",
+        name: "branch-admin-orders",
         component: {},
         meta: {
-          allowedUserTypes: ['BRANCH'],
+          allowedUserTypes: ["BRANCH"],
           requiresSelectedBranch: true,
-          requiredPermissions: ['orders.read'],
+          requiredPermissions: ["orders.read"],
         },
       },
-      { path: '/access-denied', name: 'access-denied', component: {} },
+      { path: "/access-denied", name: "access-denied", component: {} },
     ],
-  })
-  await router.push('/admin/login')
-  const queryClient = new QueryClient()
+  });
+  await router.push("/admin/login");
+  const queryClient = new QueryClient();
   const wrapper = mount(LoginForm, {
     global: {
-      plugins: [
-        pinia,
-        router,
-        [VueQueryPlugin, { queryClient }],
-      ],
+      plugins: [pinia, router, [VueQueryPlugin, { queryClient }]],
       stubs: {
         TurnstileWidget: {
-          name: 'TurnstileWidget',
-          template: '<div />',
+          name: "TurnstileWidget",
+          template: "<div />",
           methods: {
             reset() {},
           },
         },
       },
     },
-  })
-  return { wrapper, router, store: useAuthStore(pinia) }
+  });
+  return { wrapper, router, store: useAuthStore(pinia) };
 }
 
-async function fillValidForm(wrapper: Awaited<ReturnType<typeof setup>>['wrapper']) {
-  await wrapper.get('#email').setValue('admin@example.com')
-  await wrapper.get('#password').setValue('Password1')
+async function fillValidForm(
+  wrapper: Awaited<ReturnType<typeof setup>>["wrapper"],
+) {
+  await wrapper.get("#email").setValue("admin@example.com");
+  await wrapper.get("#password").setValue("Password1");
 }
 
 beforeEach(() => {
-  envMock.turnstileEnabled = false
-  envMock.turnstileSiteKey = ''
-  toastError.mockReset()
-  clearCsrfToken.mockReset()
-})
+  envMock.turnstileEnabled = false;
+  envMock.turnstileSiteKey = "";
+  toastError.mockReset();
+  clearCsrfToken.mockReset();
+});
 
-describe('real admin login form', () => {
-  it('uses generated validation for email and password', async () => {
-    const { wrapper, store } = await setup()
-    const login = vi.spyOn(store, 'login')
+describe("real admin login form", () => {
+  it("uses generated validation for email and password", async () => {
+    const { wrapper, store } = await setup();
+    const login = vi.spyOn(store, "login");
 
-    await wrapper.get('form').trigger('submit')
+    await wrapper.get("form").trigger("submit");
 
-    expect(login).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Vui lòng nhập email hợp lệ.')
-    expect(wrapper.text()).toContain('Mật khẩu cần ít nhất 8 ký tự')
-  })
+    expect(login).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Vui lòng nhập email hợp lệ.");
+    expect(wrapper.text()).toContain("Mật khẩu cần ít nhất 8 ký tự");
+  });
 
-  it('clears stale field errors as the user edits each value', async () => {
-    const { wrapper } = await setup()
-    await wrapper.get('form').trigger('submit')
+  it("clears stale field errors as the user edits each value", async () => {
+    const { wrapper } = await setup();
+    await wrapper.get("form").trigger("submit");
 
-    expect(wrapper.text()).toContain('Vui lòng nhập email hợp lệ.')
-    expect(wrapper.text()).toContain('Mật khẩu cần ít nhất 8 ký tự')
+    expect(wrapper.text()).toContain("Vui lòng nhập email hợp lệ.");
+    expect(wrapper.text()).toContain("Mật khẩu cần ít nhất 8 ký tự");
 
-    await wrapper.get('#email').setValue('admin@example.com')
-    expect(wrapper.text()).not.toContain('Vui lòng nhập email hợp lệ.')
+    await wrapper.get("#email").setValue("admin@example.com");
+    expect(wrapper.text()).not.toContain("Vui lòng nhập email hợp lệ.");
 
-    await wrapper.get('#password').setValue('Password1')
-    expect(wrapper.text()).not.toContain('Mật khẩu cần ít nhất 8 ký tự')
-  })
+    await wrapper.get("#password").setValue("Password1");
+    expect(wrapper.text()).not.toContain("Mật khẩu cần ít nhất 8 ký tự");
+  });
 
   it.each([
-    ['SYSTEM', '/super-admin/dashboard'],
-    ['BRANCH', '/branch-admin/dashboard'],
-    ['CUSTOMER', '/access-denied'],
-  ] as const)('routes %s from the /auth/me principal', async (type, expectedPath) => {
-    const { wrapper, router, store } = await setup()
-    vi.spyOn(store, 'login').mockResolvedValue(makeUser(type))
-    await fillValidForm(wrapper)
+    ["SYSTEM", "/super-admin/dashboard"],
+    ["BRANCH", "/branch-admin/dashboard"],
+    ["CUSTOMER", "/access-denied"],
+  ] as const)(
+    "routes %s from the /auth/me principal",
+    async (type, expectedPath) => {
+      const { wrapper, router, store } = await setup();
+      vi.spyOn(store, "login").mockResolvedValue(makeUser(type));
+      await fillValidForm(wrapper);
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+      await wrapper.get("form").trigger("submit");
+      await flushPromises();
 
-    expect(router.currentRoute.value.path).toBe(expectedPath)
-  })
+      expect(router.currentRoute.value.path).toBe(expectedPath);
+    },
+  );
 
-  it('ignores a stale unauthorized redirect and uses the new principal safe landing', async () => {
-    const { wrapper, router, store } = await setup()
-    await router.replace('/admin/login?redirect=/branch-admin/dashboard')
-    vi.spyOn(store, 'login').mockResolvedValue(makeUser('BRANCH', ['orders.read']))
-    await fillValidForm(wrapper)
+  it("ignores a stale unauthorized redirect and uses the new principal safe landing", async () => {
+    const { wrapper, router, store } = await setup();
+    await router.replace("/admin/login?redirect=/branch-admin/dashboard");
+    vi.spyOn(store, "login").mockResolvedValue(
+      makeUser("BRANCH", ["orders.read"]),
+    );
+    await fillValidForm(wrapper);
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
 
-    expect(router.currentRoute.value.path).toBe('/branch-admin/orders')
-    expect(router.currentRoute.value.name).not.toBe('access-denied')
-  })
+    expect(router.currentRoute.value.path).toBe("/branch-admin/orders");
+    expect(router.currentRoute.value.name).not.toBe("access-denied");
+  });
 
-  it('shows a credential-safe message for 401', async () => {
-    const { wrapper, store } = await setup()
-    vi.spyOn(store, 'login').mockRejectedValue(
-      new AxiosError('Unauthorized', undefined, undefined, undefined, {
+  it("shows a credential-safe message for 401", async () => {
+    const { wrapper, store } = await setup();
+    vi.spyOn(store, "login").mockRejectedValue(
+      new AxiosError("Unauthorized", undefined, undefined, undefined, {
         data: { statusCode: 401 },
         status: 401,
-        statusText: 'Unauthorized',
+        statusText: "Unauthorized",
         headers: {},
         config: { headers: {} } as never,
       }),
-    )
-    await fillValidForm(wrapper)
+    );
+    await fillValidForm(wrapper);
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
 
-    expect(wrapper.text()).toContain('Email hoặc mật khẩu không chính xác.')
-    expect(wrapper.html().indexOf('Email hoặc mật khẩu không chính xác.')).toBeLessThan(
-      wrapper.html().indexOf('id="email"'),
-    )
-  })
+    expect(wrapper.text()).toContain("Email hoặc mật khẩu không chính xác.");
+    expect(
+      wrapper.html().indexOf("Email hoặc mật khẩu không chính xác."),
+    ).toBeLessThan(wrapper.html().indexOf('id="email"'));
+  });
 
-  it('keeps login visible and reports backend unavailability', async () => {
-    const { wrapper, router, store } = await setup()
-    vi.spyOn(store, 'login').mockRejectedValue(new AxiosError('Network Error'))
-    await fillValidForm(wrapper)
+  it("keeps login visible and reports backend unavailability", async () => {
+    const { wrapper, router, store } = await setup();
+    vi.spyOn(store, "login").mockRejectedValue(new AxiosError("Network Error"));
+    await fillValidForm(wrapper);
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
 
-    expect(router.currentRoute.value.path).toBe('/admin/login')
-    expect(wrapper.text()).toContain('Không thể kết nối đến máy chủ.')
-    expect(store.status).toBe('unknown')
-    expect(wrapper.get('#email').attributes('disabled')).toBeUndefined()
-    expect(wrapper.get('#password').attributes('disabled')).toBeUndefined()
-  })
+    expect(router.currentRoute.value.path).toBe("/admin/login");
+    expect(wrapper.text()).toContain("Không thể kết nối đến máy chủ.");
+    expect(store.status).toBe("unknown");
+    expect(wrapper.get("#email").attributes("disabled")).toBeUndefined();
+    expect(wrapper.get("#password").attributes("disabled")).toBeUndefined();
+  });
 
-  it('prevents a second submit while login is pending', async () => {
-    const { wrapper, store } = await setup()
-    let resolveLogin!: (user: AuthMeResponseDto) => void
-    const login = vi.spyOn(store, 'login').mockReturnValue(
+  it("prevents a second submit while login is pending", async () => {
+    const { wrapper, store } = await setup();
+    let resolveLogin!: (user: AuthMeResponseDto) => void;
+    const login = vi.spyOn(store, "login").mockReturnValue(
       new Promise((resolve) => {
-        resolveLogin = resolve
+        resolveLogin = resolve;
       }),
-    )
-    await fillValidForm(wrapper)
+    );
+    await fillValidForm(wrapper);
 
-    await wrapper.get('form').trigger('submit')
-    await wrapper.get('form').trigger('submit')
-    expect(login).toHaveBeenCalledOnce()
+    await wrapper.get("form").trigger("submit");
+    await wrapper.get("form").trigger("submit");
+    expect(login).toHaveBeenCalledOnce();
 
-    resolveLogin(makeUser('SYSTEM'))
-    await flushPromises()
-  })
+    resolveLogin(makeUser("SYSTEM"));
+    await flushPromises();
+  });
 
-  it('blocks submission when Turnstile is enabled without a site key', async () => {
-    envMock.turnstileEnabled = true
-    const { wrapper, store } = await setup()
-    const login = vi.spyOn(store, 'login')
-    await fillValidForm(wrapper)
+  it("blocks submission when Turnstile is enabled without a site key", async () => {
+    envMock.turnstileEnabled = true;
+    const { wrapper, store } = await setup();
+    const login = vi.spyOn(store, "login");
+    await fillValidForm(wrapper);
 
-    await wrapper.get('form').trigger('submit')
+    await wrapper.get("form").trigger("submit");
 
-    expect(login).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Thiếu cấu hình VITE_TURNSTILE_SITE_KEY')
-  })
+    expect(login).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Thiếu cấu hình VITE_TURNSTILE_SITE_KEY");
+  });
 
-  it('clears CSRF and does not reuse Turnstile after CSRF_INVALID', async () => {
-    envMock.turnstileEnabled = true
-    envMock.turnstileSiteKey = 'site-key'
-    const { wrapper, router, store } = await setup()
-    const login = vi.spyOn(store, 'login').mockRejectedValue(
-      new AxiosError('Forbidden', undefined, undefined, undefined, {
+  it("clears CSRF and does not reuse Turnstile after CSRF_INVALID", async () => {
+    envMock.turnstileEnabled = true;
+    envMock.turnstileSiteKey = "site-key";
+    const { wrapper, router, store } = await setup();
+    const login = vi.spyOn(store, "login").mockRejectedValue(
+      new AxiosError("Forbidden", undefined, undefined, undefined, {
         data: {
           statusCode: 403,
-          code: 'CSRF_INVALID',
-          message: 'Invalid CSRF',
+          code: "CSRF_INVALID",
+          message: "Invalid CSRF",
         },
         status: 403,
-        statusText: 'Forbidden',
+        statusText: "Forbidden",
         headers: {},
         config: { headers: {} } as never,
       }),
-    )
-    await fillValidForm(wrapper)
-    wrapper.findComponent({ name: 'TurnstileWidget' }).vm.$emit(
-      'verified',
-      'turnstile-token',
-    )
+    );
+    await fillValidForm(wrapper);
+    wrapper
+      .findComponent({ name: "TurnstileWidget" })
+      .vm.$emit("verified", "turnstile-token");
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
 
-    expect(clearCsrfToken).toHaveBeenCalledOnce()
-    expect(wrapper.text()).toContain('Phiên bảo mật không hợp lệ')
-    expect(router.currentRoute.value.path).toBe('/admin/login')
+    expect(clearCsrfToken).toHaveBeenCalledOnce();
+    expect(wrapper.text()).toContain("Phiên bảo mật không hợp lệ");
+    expect(router.currentRoute.value.path).toBe("/admin/login");
 
-    await wrapper.get('form').trigger('submit')
-    expect(login).toHaveBeenCalledOnce()
-  })
-})
+    await wrapper.get("form").trigger("submit");
+    expect(login).toHaveBeenCalledOnce();
+  });
+});

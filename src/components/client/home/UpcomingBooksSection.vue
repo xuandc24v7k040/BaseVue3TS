@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ArrowRight } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
-import type { UpcomingBookMock } from '@/pages/app/home/home.mock'
+import type { PublicProductListItemDto } from '@/api/generated/models'
 
-defineProps<{ books: UpcomingBookMock[] }>()
+defineProps<{ books: PublicProductListItemDto[] }>()
+
+const dateFormatter = new Intl.DateTimeFormat('vi-VN')
 </script>
 
 <template>
@@ -19,13 +21,13 @@ defineProps<{ books: UpcomingBookMock[] }>()
       <RouterLink
         v-for="book in books"
         :key="book.id"
-        :to="book.href"
+        :to="`/books/${book.slug}`"
         class="group min-w-0 rounded-lg border border-[var(--bookora-border)] p-2 text-center transition-colors hover:border-[var(--bookora-green)] hover:bg-[var(--bookora-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
       >
-        <time class="text-xs font-bold text-[var(--bookora-ink)]">{{ book.releaseDate }}</time>
-        <img :src="book.cover" :alt="`Bìa sách ${book.title}`" class="mx-auto mt-2 aspect-[2/3] w-full max-w-24 object-contain drop-shadow-sm" width="300" height="450" loading="lazy">
-        <h3 class="mt-2 line-clamp-2 text-xs font-semibold leading-4">{{ book.title }}</h3>
-        <p class="mt-1 truncate text-[10px] text-[var(--bookora-muted)]">{{ book.author }}</p>
+        <time class="text-xs font-bold text-[var(--bookora-ink)]">{{ book.releaseDate ? dateFormatter.format(new Date(book.releaseDate)) : '' }}</time>
+        <img :src="book.primaryImage.url" :alt="book.primaryImage.altText || `Bìa sách ${book.name}`" class="mx-auto mt-2 aspect-[2/3] w-full max-w-24 object-contain drop-shadow-sm" width="300" height="450" loading="lazy">
+        <h3 class="mt-2 line-clamp-2 text-xs font-semibold leading-4">{{ book.name }}</h3>
+        <p class="mt-1 truncate text-[10px] text-[var(--bookora-muted)]">{{ book.authors.map(author => author.name).join(', ') }}</p>
       </RouterLink>
     </div>
   </section>

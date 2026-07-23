@@ -10,6 +10,7 @@ import { toBookoraApiError } from '@/api/http/errors'
 import { clearAuthSensitiveQueries } from '@/api/query-cache'
 import { useAuthStore } from '@/stores/auth.store'
 import { useBranchStore } from '@/stores/branch.store'
+import { useStorefrontBranchStore } from '@/stores/storefront-branch.store'
 import type { ApiError } from '@/types/api.type'
 
 interface SetupApiInterceptorsOptions {
@@ -29,10 +30,11 @@ export function setupApiInterceptors(
 ): void {
   const authStore = useAuthStore(pinia)
   const branchStore = useBranchStore(pinia)
+  const storefrontBranchStore = useStorefrontBranchStore(pinia)
   let recoveredBranchId: string | null = null
 
   setupHttpClient({
-    getSelectedBranchId: () => branchStore.selectedBranchId,
+    getSelectedBranchId: () => branchStore.selectedBranchId ?? storefrontBranchStore.selectedBranchId,
     onBranchScopeForbidden: () => {
       const invalidBranchId = branchStore.selectedBranchId
       if (!invalidBranchId || recoveredBranchId === invalidBranchId) return

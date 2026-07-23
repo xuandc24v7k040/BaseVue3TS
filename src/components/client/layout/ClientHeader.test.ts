@@ -1,10 +1,25 @@
 // @vitest-environment happy-dom
 
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia } from 'pinia'
 import ClientHeader from '@/components/client/layout/ClientHeader.vue'
+
+vi.mock('@/features/storefront/api/storefront-api', async () => {
+  const { ref } = await import('vue')
+  const query = <T>(data: T) => ({ data: ref(data), isPending: ref(false), isError: ref(false), error: ref(null), refetch: vi.fn() })
+  return {
+    useStorefrontCategoriesQuery: () => query([
+      { id: '01J00000000000000000000000', name: 'Văn học', slug: 'van-hoc', imageUrl: null, sortOrder: 1, children: [{ id: '01J00000000000000000000001', name: 'Tiểu thuyết', slug: 'tieu-thuyet', imageUrl: null, sortOrder: 1, children: [] }] },
+    ]),
+    useStorefrontBranchesQuery: () => query([
+      { id: '01J00000000000000000000000', code: 'can-tho', name: 'Cần Thơ', address: 'Ninh Kiều', province: 'Cần Thơ', ward: null },
+      { id: '01J00000000000000000000001', code: 'hau-giang', name: 'Hậu Giang', address: 'Vị Thanh', province: 'Hậu Giang', ward: null },
+      { id: '01J00000000000000000000002', code: 'ho-chi-minh', name: 'Hồ Chí Minh', address: 'Quận 1', province: 'Hồ Chí Minh', ward: null },
+    ]),
+  }
+})
 
 function createTestRouter() {
   return createRouter({
@@ -36,6 +51,7 @@ async function mountHeader() {
 
 afterEach(() => {
   document.body.innerHTML = ''
+  localStorage.clear()
 })
 
 describe('ClientHeader', () => {
@@ -53,13 +69,23 @@ describe('ClientHeader', () => {
 
   it('navigates to the search route with a trimmed query', async () => {
     const { router, wrapper } = await mountHeader()
+    await router.push('/books?page=4&author=j-k-rowling')
     const input = wrapper.find<HTMLInputElement>('#desktop-book-search')
 
     await input.setValue('  sách kỹ năng  ')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(router.currentRoute.value.fullPath).toBe('/search?q=s%C3%A1ch+k%E1%BB%B9+n%C4%83ng')
+    expect(router.currentRoute.value.fullPath).toBe('/books?search=s%C3%A1ch+k%E1%BB%B9+n%C4%83ng')
+  })
+
+  it('left-aligns the desktop wishlist labels', async () => {
+    const { wrapper } = await mountHeader()
+    const wishlist = wrapper.findAll('button').find(button => button.text().includes('Danh sách yêu thích'))
+
+    expect(wishlist?.find('span.hidden').classes()).toEqual(
+      expect.arrayContaining(['flex-col', 'items-start', 'text-left', 'xl:flex']),
+    )
   })
 
   it('does not navigate when the search query is empty', async () => {
@@ -83,7 +109,7 @@ describe('ClientHeader', () => {
     expect(document.body.textContent).toContain('Hậu Giang')
 
     const hauGiangButton = Array.from(document.body.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'Hậu Giang',
+      (button) => button.textContent?.includes('Hậu Giang'),
     )
     hauGiangButton?.click()
     await flushPromises()
@@ -118,7 +144,8 @@ describe('ClientHeader', () => {
       document.body.querySelectorAll<HTMLButtonElement>('button[role="radio"]'),
     ).map((button) => button.textContent?.trim())
 
-    expect(visibleBranches).toEqual(['Hồ Chí Minh'])
+    expect(visibleBranches).toHaveLength(1)
+    expect(visibleBranches[0]).toContain('Hồ Chí Minh')
     expect(wrapper.text()).toContain('Cần Thơ')
   })
 
@@ -129,7 +156,7 @@ describe('ClientHeader', () => {
     await flushPromises()
 
     const hauGiangButton = Array.from(document.body.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'Hậu Giang',
+      (button) => button.textContent?.includes('Hậu Giang'),
     )
     hauGiangButton?.click()
     await flushPromises()

@@ -1,96 +1,105 @@
 <script setup lang="ts">
-import {
-  BookOpen,
-  Heart,
-  Menu,
-  Search,
-  ShoppingCart,
-  UserRound,
-} from '@lucide/vue'
-import { computed, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import BranchSelector from '@/components/client/layout/BranchSelector.vue'
-import ClientBrand from '@/components/client/layout/ClientBrand.vue'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
-import { hasSessionHint } from '@/features/auth/session-hint'
-import { useAuthStore } from '@/stores/auth.store'
-
-interface HeaderCategory {
-  name: string
-  href: string
-}
+import { Heart, Search, ShoppingCart, UserRound } from "@lucide/vue";
+import { computed, ref } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
+import BranchSelector from "@/components/client/layout/BranchSelector.vue";
+import ClientBrand from "@/components/client/layout/ClientBrand.vue";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { hasSessionHint } from "@/features/auth/session-hint";
+import { useStorefrontCategoriesQuery } from "@/features/storefront/api/storefront-api";
+import CategoryMegaMenu from "@/features/storefront/components/CategoryMegaMenu.vue";
+import MobileCategorySheet from "@/features/storefront/components/MobileCategorySheet.vue";
+import { useAuthStore } from "@/stores/auth.store";
+import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
+import { useCartQuery } from "@/features/cart/api/cart-api";
 
 interface HeaderLink {
-  label: string
-  href: string
+  label: string;
+  href: string;
 }
 
-const categories: HeaderCategory[] = [
-  { name: 'Văn học', href: '/books?category=van-hoc' },
-  { name: 'Kinh tế', href: '/books?category=kinh-te' },
-  { name: 'Kỹ năng sống', href: '/books?category=ky-nang-song' },
-  { name: 'Thiếu nhi', href: '/books?category=thieu-nhi' },
-  { name: 'Tâm lý', href: '/books?category=tam-ly' },
-  { name: 'Khoa học', href: '/books?category=khoa-hoc' },
-  { name: 'Lịch sử', href: '/books?category=lich-su' },
-]
-
 const navigationLinks: HeaderLink[] = [
-  { label: 'Sách mới', href: '/books?sort=new' },
-  { label: 'Sách bán chạy', href: '/books?sort=best-selling' },
-  { label: 'Sách sắp phát hành', href: '/books?filter=upcoming' },
-  { label: 'Tác giả', href: '/search?type=author' },
-  { label: 'Nhà xuất bản', href: '/search?type=publisher' },
-  { label: 'Khuyến mãi', href: '/books?filter=promotion' },
-]
+  { label: "Sách mới", href: "/books?sort=newest" },
+  { label: "Sách bán chạy", href: "/books?sort=popular" },
+  {
+    label: "Sách sắp phát hành",
+    href: "/books?upcoming=true&sort=release_asc",
+  },
+  { label: "Tác giả", href: "/books" },
+  { label: "Nhà xuất bản", href: "/books" },
+  { label: "Khuyến mãi", href: "/books?onSale=true" },
+];
 
-const router = useRouter()
-const authStore = useAuthStore()
-const searchQuery = ref('')
+const router = useRouter();
+const authStore = useAuthStore();
+const storefrontBranchStore = useStorefrontBranchStore();
+const cartQuery = useCartQuery(
+  computed(
+    () =>
+      authStore.user?.type === "CUSTOMER" &&
+      Boolean(storefrontBranchStore.selectedBranchId),
+  ),
+);
+const cartQuantity = computed(() => cartQuery.data.value?.totalQuantity ?? 0);
+const categoriesQuery = useStorefrontCategoriesQuery();
+const searchQuery = ref("");
 const showAccountSkeleton = computed(
-  () => hasSessionHint()
-    && authStore.status === 'unknown'
-    && !authStore.bootstrapError,
-)
+  () =>
+    hasSessionHint() &&
+    authStore.status === "unknown" &&
+    !authStore.bootstrapError,
+);
 const accountTarget = computed(() => {
-  if (authStore.user?.type === 'CUSTOMER') return '/account'
-  if (authStore.user?.type === 'SYSTEM') return '/super-admin/dashboard'
-  if (authStore.user?.type === 'BRANCH') return '/branch-admin/dashboard'
-  return '/login'
-})
-const accountPrimaryLabel = computed(() => authStore.user?.fullName || 'Đăng nhập')
-const accountSecondaryLabel = computed(() => authStore.user ? (authStore.user.type === 'CUSTOMER' ? 'Tài khoản' : 'Quản trị') : 'Tài khoản')
+  if (authStore.user?.type === "CUSTOMER") return "/account";
+  if (authStore.user?.type === "SYSTEM") return "/super-admin/dashboard";
+  if (authStore.user?.type === "BRANCH") return "/branch-admin/dashboard";
+  return "/login";
+});
+const accountPrimaryLabel = computed(
+  () => authStore.user?.fullName || "Đăng nhập",
+);
+const accountSecondaryLabel = computed(() =>
+  authStore.user
+    ? authStore.user.type === "CUSTOMER"
+      ? "Tài khoản"
+      : "Quản trị"
+    : "Tài khoản",
+);
 
 function submitSearch(): void {
-  const query = searchQuery.value.trim()
-  if (!query) return
+  const query = searchQuery.value.trim();
+  if (!query) return;
 
-  void router.push({ path: '/search', query: { q: query } })
+  void router.push({ path: "/books", query: { search: query } });
+}
+
+function deferredWishlist(): void {
+  toast.info("Tính năng yêu thích sẽ được hoàn thiện ở giai đoạn tiếp theo", {
+    id: "storefront-wishlist-deferred",
+  });
+}
+
+async function openCart(): Promise<void> {
+  if (authStore.user?.type !== "CUSTOMER") {
+    toast.info("Vui lòng đăng nhập để xem giỏ hàng.");
+    await router.push({ path: "/login", query: { returnTo: "/cart" } });
+    return;
+  }
+  await router.push("/cart");
 }
 </script>
 
 <template>
-  <header class="bookora-client-theme border-b border-[var(--bookora-border)] bg-[var(--bookora-canvas)] text-[var(--bookora-ink)]">
+  <header
+    class="bookora-client-theme border-b border-[var(--bookora-border)] bg-[var(--bookora-canvas)] text-[var(--bookora-ink)]"
+  >
     <div class="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10 xl:px-12">
-      <div class="hidden min-h-24 grid-cols-[210px_minmax(280px,1fr)_auto] items-center gap-7 lg:grid">
+      <div
+        class="hidden min-h-24 grid-cols-[210px_minmax(280px,1fr)_auto] items-center gap-7 lg:grid"
+      >
         <ClientBrand />
 
         <form role="search" class="flex min-w-0" @submit.prevent="submitSearch">
@@ -112,9 +121,15 @@ function submitSearch(): void {
         </form>
 
         <div class="flex items-center gap-5">
-          <div v-if="showAccountSkeleton" class="flex min-h-11 w-32 items-center gap-2" aria-label="Đang kiểm tra tài khoản">
+          <div
+            v-if="showAccountSkeleton"
+            class="flex min-h-11 w-32 items-center gap-2"
+            aria-label="Đang kiểm tra tài khoản"
+          >
             <Skeleton class="size-6 rounded-full" />
-            <div class="space-y-1"><Skeleton class="h-4 w-20" /><Skeleton class="h-3 w-16" /></div>
+            <div class="space-y-1">
+              <Skeleton class="h-4 w-20" /><Skeleton class="h-3 w-16" />
+            </div>
           </div>
           <RouterLink
             v-else
@@ -123,76 +138,80 @@ function submitSearch(): void {
           >
             <UserRound aria-hidden="true" class="size-6" :stroke-width="1.6" />
             <span>
-              <span class="block max-w-32 truncate text-sm font-semibold">{{ accountPrimaryLabel }}</span>
-              <span class="block text-xs text-[var(--bookora-muted)]">{{ accountSecondaryLabel }}</span>
+              <span class="block max-w-32 truncate text-sm font-semibold">{{
+                accountPrimaryLabel
+              }}</span>
+              <span class="block text-xs text-[var(--bookora-muted)]">{{
+                accountSecondaryLabel
+              }}</span>
             </span>
           </RouterLink>
-          <RouterLink
-            to="/account/favorites"
+          <button
+            type="button"
             class="flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            @click="deferredWishlist"
           >
             <Heart aria-hidden="true" class="size-6" :stroke-width="1.6" />
-            <span class="hidden xl:block">
+            <span class="hidden flex-col items-start text-left xl:flex">
               <span class="block text-sm font-semibold">Yêu thích</span>
-              <span class="block text-xs text-[var(--bookora-muted)]">Danh sách yêu thích</span>
+              <span class="block text-xs text-[var(--bookora-muted)]"
+                >Danh sách yêu thích</span
+              >
             </span>
-          </RouterLink>
-          <RouterLink
-            to="/cart"
+          </button>
+          <button
+            type="button"
             class="relative flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            @click="openCart"
           >
-            <ShoppingCart aria-hidden="true" class="size-7" :stroke-width="1.6" />
-            <Badge class="absolute -right-1 -top-1 size-5 rounded-full border-0 bg-red-500 p-0 text-[10px] text-white xl:right-10">2</Badge>
+            <ShoppingCart
+              aria-hidden="true"
+              class="size-7"
+              :stroke-width="1.6"
+            />
+            <span
+              v-if="cartQuantity > 0"
+              class="absolute -top-1 left-4 grid min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-5 text-white"
+              aria-label="Số lượng sản phẩm trong giỏ"
+              >{{ cartQuantity > 99 ? "99+" : cartQuantity }}</span
+            >
             <span class="hidden xl:block text-sm font-semibold">Giỏ hàng</span>
-          </RouterLink>
+          </button>
         </div>
       </div>
 
       <div class="grid gap-3 py-3 lg:hidden">
         <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2">
-          <Sheet>
-            <SheetTrigger as-child>
-              <Button type="button" variant="ghost" size="icon" aria-label="Mở menu">
-                <Menu aria-hidden="true" class="size-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" class="bookora-client-theme border-[var(--bookora-border)] bg-[var(--bookora-cream)]">
-              <SheetHeader class="text-left">
-                <SheetTitle><ClientBrand /></SheetTitle>
-                <SheetDescription>Khám phá sách và dịch vụ của Bookora.</SheetDescription>
-              </SheetHeader>
-              <nav aria-label="Menu di động" class="grid gap-1 px-4">
-                <SheetClose as-child>
-                  <RouterLink :to="accountTarget" class="rounded-md px-3 py-3 font-medium hover:bg-[var(--bookora-soft)]">{{ accountPrimaryLabel }}</RouterLink>
-                </SheetClose>
-                <SheetClose
-                  v-for="link in navigationLinks"
-                  :key="link.label"
-                  as-child
-                >
-                  <RouterLink :to="link.href" class="rounded-md px-3 py-3 font-medium hover:bg-[var(--bookora-soft)]">
-                    {{ link.label }}
-                  </RouterLink>
-                </SheetClose>
-                <p class="mt-4 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--bookora-muted)]">Danh mục</p>
-                <SheetClose v-for="category in categories" :key="category.name" as-child>
-                  <RouterLink :to="category.href" class="rounded-md px-3 py-2.5 text-sm hover:bg-[var(--bookora-soft)]">
-                    {{ category.name }}
-                  </RouterLink>
-                </SheetClose>
-              </nav>
-            </SheetContent>
-          </Sheet>
+          <MobileCategorySheet
+            :categories="categoriesQuery.data.value ?? []"
+            :links="navigationLinks"
+            :account-target="accountTarget"
+            :account-label="accountPrimaryLabel"
+          />
 
           <ClientBrand compact />
 
-          <RouterLink to="/account/favorites" aria-label="Yêu thích" class="grid size-11 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]">
+          <button
+            type="button"
+            aria-label="Yêu thích"
+            class="grid size-11 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            @click="deferredWishlist"
+          >
             <Heart aria-hidden="true" class="size-5.5" />
-          </RouterLink>
-          <RouterLink to="/cart" aria-label="Giỏ hàng, 2 sản phẩm" class="relative grid size-11 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]">
+          </button>
+          <button
+            type="button"
+            aria-label="Giỏ hàng"
+            class="relative grid size-11 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            @click="openCart"
+          >
             <ShoppingCart aria-hidden="true" class="size-6" />
-            <Badge class="absolute right-0 top-0 size-5 rounded-full border-0 bg-red-500 p-0 text-[10px] text-white">2</Badge>
-          </RouterLink>
+            <span
+              v-if="cartQuantity > 0"
+              class="absolute right-0 top-0 grid min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-5 text-white"
+              >{{ cartQuantity > 99 ? "99+" : cartQuantity }}</span
+            >
+          </button>
         </div>
 
         <form role="search" class="flex" @submit.prevent="submitSearch">
@@ -204,7 +223,11 @@ function submitSearch(): void {
             placeholder="Bạn đang tìm sách gì?"
             class="h-11 rounded-r-none border-[var(--bookora-border)] bg-background shadow-none focus-visible:z-10 focus-visible:border-[var(--bookora-green)] focus-visible:ring-[var(--bookora-green)]/20"
           />
-          <Button type="submit" aria-label="Tìm kiếm" class="h-11 w-12 rounded-l-none bg-[var(--bookora-green)] text-white hover:bg-[var(--bookora-green-hover)]">
+          <Button
+            type="submit"
+            aria-label="Tìm kiếm"
+            class="h-11 w-12 rounded-l-none bg-[var(--bookora-green)] text-white hover:bg-[var(--bookora-green-hover)]"
+          >
             <Search aria-hidden="true" class="size-5" />
           </Button>
         </form>
@@ -212,25 +235,15 @@ function submitSearch(): void {
         <BranchSelector />
       </div>
 
-      <div class="hidden min-h-16 items-center gap-6 border-t border-[var(--bookora-border)]/70 lg:flex">
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button type="button" variant="ghost" class="gap-2 px-2 text-sm font-semibold hover:bg-[var(--bookora-soft)]">
-              <Menu aria-hidden="true" class="size-5" />
-              Danh mục
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" class="bookora-client-theme w-52 border-[var(--bookora-border)]">
-            <DropdownMenuItem v-for="category in categories" :key="category.name" as-child>
-              <RouterLink :to="category.href">
-                <BookOpen aria-hidden="true" class="size-4 text-[var(--bookora-green)]" />
-                {{ category.name }}
-              </RouterLink>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div
+        class="hidden min-h-16 items-center gap-6 border-t border-[var(--bookora-border)]/70 lg:flex"
+      >
+        <CategoryMegaMenu :categories="categoriesQuery.data.value ?? []" />
 
-        <nav aria-label="Điều hướng mua sắm" class="flex min-w-0 flex-1 items-center justify-around gap-4">
+        <nav
+          aria-label="Điều hướng mua sắm"
+          class="flex min-w-0 flex-1 items-center justify-around gap-4"
+        >
           <RouterLink
             v-for="link in navigationLinks"
             :key="link.label"

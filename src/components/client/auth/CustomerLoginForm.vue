@@ -157,7 +157,11 @@ async function submitLogin(): Promise<void> {
     }
 
     await router.replace(
-      safeRedirectForUser(router, route.query.redirect, user.type) ??
+      safeRedirectForUser(
+        router,
+        route.query.returnTo ?? route.query.redirect,
+        user.type,
+      ) ??
         customerLandingRouteForUserType(user.type),
     );
   } catch (error: unknown) {

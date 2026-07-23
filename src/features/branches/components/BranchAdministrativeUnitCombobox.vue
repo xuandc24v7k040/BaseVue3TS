@@ -18,11 +18,13 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   error?: boolean
   disabled?: boolean
+  invalid?: boolean
 }>(), {
   fallbackLabel: '',
   loading: false,
   error: false,
   disabled: false,
+  invalid: false,
 })
 
 const emit = defineEmits<{
@@ -82,6 +84,7 @@ function onSearchKeydown(event: KeyboardEvent): void {
         variant="outline"
         role="combobox"
         :aria-expanded="open"
+        :aria-invalid="invalid"
         :disabled="disabled"
         class="w-full justify-between font-normal"
       >
