@@ -7,7 +7,14 @@ export type CoordinateInputResult =
 
 export type VietnamLocationVerification =
   | { status: 'idle' | 'pending' | 'valid'; message?: undefined }
-  | { status: 'invalid' | 'network-error'; message: string }
+  | {
+      status: 'invalid' | 'network-error'
+      code:
+        | 'BRANCH_LOCATION_OUTSIDE_VIETNAM'
+        | 'BRANCH_LOCATION_ADMIN_MAPPING_INVALID'
+        | 'VIETMAP_PROVIDER_UNAVAILABLE'
+      message: string
+    }
 
 export function parseBranchCoordinates(latitudeValue: string, longitudeValue: string): CoordinateInputResult {
   const latitudeText = latitudeValue.trim()
@@ -41,7 +48,14 @@ export async function verifyVietnamAdministrativeLocation(
   if (!location.province?.trim() || !location.ward?.trim()) {
     return {
       status: 'invalid',
-      message: 'Không thể xác minh vị trí này thuộc một đơn vị hành chính của Việt Nam. Vui lòng chọn lại vị trí.',
+      code:
+        location.countryCode && location.countryCode !== 'VN'
+          ? 'BRANCH_LOCATION_OUTSIDE_VIETNAM'
+          : 'BRANCH_LOCATION_ADMIN_MAPPING_INVALID',
+      message:
+        location.countryCode && location.countryCode !== 'VN'
+          ? 'Vị trí đã chọn nằm ngoài lãnh thổ Việt Nam.'
+          : 'Đã nhận diện vị trí tại Việt Nam nhưng chưa thể đối chiếu đơn vị hành chính. Vui lòng kiểm tra hoặc chọn lại địa chỉ.',
     }
   }
 
@@ -49,7 +63,14 @@ export async function verifyVietnamAdministrativeLocation(
   if (!province) {
     return {
       status: 'invalid',
-      message: 'Vị trí đã chọn nằm ngoài lãnh thổ Việt Nam hoặc không xác định được đơn vị hành chính hợp lệ.',
+      code:
+        location.countryCode && location.countryCode !== 'VN'
+          ? 'BRANCH_LOCATION_OUTSIDE_VIETNAM'
+          : 'BRANCH_LOCATION_ADMIN_MAPPING_INVALID',
+      message:
+        location.countryCode && location.countryCode !== 'VN'
+          ? 'Vị trí đã chọn nằm ngoài lãnh thổ Việt Nam.'
+          : 'Đã nhận diện vị trí tại Việt Nam nhưng chưa thể đối chiếu đơn vị hành chính. Vui lòng kiểm tra hoặc chọn lại địa chỉ.',
     }
   }
 
@@ -57,7 +78,8 @@ export async function verifyVietnamAdministrativeLocation(
   if (!ward || ward.provinceCode !== province.code) {
     return {
       status: 'invalid',
-      message: 'Vị trí đã chọn nằm ngoài lãnh thổ Việt Nam hoặc không xác định được đơn vị hành chính hợp lệ.',
+      code: 'BRANCH_LOCATION_ADMIN_MAPPING_INVALID',
+      message: 'Đã nhận diện vị trí tại Việt Nam nhưng chưa thể đối chiếu đơn vị hành chính. Vui lòng kiểm tra hoặc chọn lại địa chỉ.',
     }
   }
 

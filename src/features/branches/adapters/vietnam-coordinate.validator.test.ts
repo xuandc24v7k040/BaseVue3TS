@@ -7,16 +7,20 @@ const provinces = [
 ]
 const wards = {
   1: [{ code: 101, name: 'Phường Hoàn Kiếm', codename: 'hoan_kiem', divisionType: 'phường', provinceCode: 1 }],
-  92: [{ code: 9201, name: 'Phường Ninh Kiều', codename: 'ninh_kieu', divisionType: 'phường', provinceCode: 92 }],
+  92: [
+    { code: 9201, name: 'Phường Ninh Kiều', codename: 'ninh_kieu', divisionType: 'phường', provinceCode: 92 },
+    { code: 31473, name: 'Phường Long Bình', codename: 'long_binh', divisionType: 'phường', provinceCode: 92 },
+  ],
 }
 
 const loadProvinces = vi.fn(async () => provinces)
 const loadWards = vi.fn(async (provinceCode: number) => wards[provinceCode as keyof typeof wards] ?? [])
 
-function location(province: string | null, ward: string | null) {
+function location(province: string | null, ward: string | null, countryCode: string | null = 'VN') {
   return {
     latitude: 10.0452,
     longitude: 105.7469,
+    countryCode,
     province,
     ward,
     address: 'Địa chỉ',
@@ -44,6 +48,7 @@ describe('Vietnam coordinate validation', () => {
 
   it.each([
     ['Thành phố Cần Thơ', 'Phường Ninh Kiều'],
+    ['Thành phố Cần Thơ', 'Phường Long Bình'],
     ['Thành phố Hà Nội', 'Phường Hoàn Kiếm'],
   ])('accepts a matched official province/ward pair', async (province, ward) => {
     await expect(verifyVietnamAdministrativeLocation(
@@ -55,10 +60,14 @@ describe('Vietnam coordinate validation', () => {
 
   it('blocks locations outside Vietnam or with a ward outside the matched province', async () => {
     await expect(verifyVietnamAdministrativeLocation(
-      location('Phnom Penh', 'Chamkar Mon'),
+      location('Phnom Penh', 'Chamkar Mon', 'KH'),
       loadProvinces,
       loadWards,
-    )).resolves.toMatchObject({ status: 'invalid' })
+    )).resolves.toMatchObject({
+      status: 'invalid',
+      code: 'BRANCH_LOCATION_OUTSIDE_VIETNAM',
+      message: 'Vị trí đã chọn nằm ngoài lãnh thổ Việt Nam.',
+    })
 
     await expect(verifyVietnamAdministrativeLocation(
       location('Thành phố Cần Thơ', 'Phường Hoàn Kiếm'),
@@ -69,12 +78,13 @@ describe('Vietnam coordinate validation', () => {
 
   it('blocks sea/unresolved results without administrative units', async () => {
     await expect(verifyVietnamAdministrativeLocation(
-      location(null, null),
+      location(null, null, null),
       loadProvinces,
       loadWards,
     )).resolves.toEqual({
       status: 'invalid',
-      message: 'Không thể xác minh vị trí này thuộc một đơn vị hành chính của Việt Nam. Vui lòng chọn lại vị trí.',
+      code: 'BRANCH_LOCATION_ADMIN_MAPPING_INVALID',
+      message: 'Đã nhận diện vị trí tại Việt Nam nhưng chưa thể đối chiếu đơn vị hành chính. Vui lòng kiểm tra hoặc chọn lại địa chỉ.',
     })
   })
 

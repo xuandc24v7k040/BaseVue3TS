@@ -3,6 +3,7 @@ import type { BranchResponseDto } from '@/api/generated/models'
 export interface BranchLocation {
   latitude: number
   longitude: number
+  countryCode?: string | null
   province: string | null
   ward: string | null
   address: string

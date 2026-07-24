@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { Check, LoaderCircle, MapPin, Search } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import { toast } from "vue-sonner";
 import type { StorefrontBranchResponseDto } from "@/api/generated/models";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +32,10 @@ import { useCartActions } from "@/features/cart/api/cart-api";
 import { cartErrorMessage } from "@/features/cart/utils/cart-error";
 
 const branchStore = useStorefrontBranchStore();
+const route = useRoute();
+const isCheckoutRoute = computed(() =>
+  String(route.name ?? "").startsWith("client-checkout"),
+);
 const authStore = useAuthStore();
 const cartActions = useCartActions();
 const branchesQuery = useStorefrontBranchesQuery();
@@ -30,6 +43,7 @@ const open = ref(false);
 const draftBranchId = ref<string | null>(null);
 const branchSearch = ref("");
 const confirming = ref(false);
+const checkoutConfirmOpen = ref(false);
 
 watch(
   () => branchesQuery.data.value,
@@ -57,6 +71,16 @@ function openSelector(): void {
 
 async function confirmSelection(): Promise<void> {
   if (!draftBranchId.value || confirming.value) return;
+  const changed = draftBranchId.value !== branchStore.selectedBranchId;
+  if (changed && isCheckoutRoute.value) {
+    checkoutConfirmOpen.value = true;
+    return;
+  }
+  await commitSelection();
+}
+
+async function commitSelection(): Promise<void> {
+  if (!draftBranchId.value || confirming.value) return;
   confirming.value = true;
   const changed = draftBranchId.value !== branchStore.selectedBranchId;
   const draftBranch = branchStore.branches.find(
@@ -74,6 +98,7 @@ async function confirmSelection(): Promise<void> {
       return;
     }
     open.value = false;
+    checkoutConfirmOpen.value = false;
     if (changed)
       toast.success(
         `Đã chuyển sang chi nhánh ${draftBranch?.name ?? "đã chọn"}.`,
@@ -242,4 +267,28 @@ function selectDraft(branch: StorefrontBranchResponseDto): void {
       </DialogFooter>
     </DialogContent>
   </Dialog>
+
+  <AlertDialog
+    :open="checkoutConfirmOpen"
+    @update:open="checkoutConfirmOpen = $event"
+  >
+    <AlertDialogContent class="bookora-client-theme">
+      <AlertDialogTitle>Thay đổi chi nhánh?</AlertDialogTitle>
+      <AlertDialogDescription>
+        Giá, tồn kho và phí vận chuyển sẽ được kiểm tra lại. Một số sản phẩm có
+        thể không còn khả dụng tại chi nhánh mới.
+      </AlertDialogDescription>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <AlertDialogCancel>Giữ chi nhánh hiện tại</AlertDialogCancel>
+        <AlertDialogAction
+          :disabled="confirming"
+          class="bg-[var(--bookora-green)] hover:bg-[var(--bookora-green-hover)]"
+          @click="commitSelection"
+        >
+          <LoaderCircle v-if="confirming" class="mr-2 size-4 animate-spin" />
+          Đổi chi nhánh
+        </AlertDialogAction>
+      </div>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>

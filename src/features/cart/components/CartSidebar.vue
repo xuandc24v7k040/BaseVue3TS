@@ -8,13 +8,17 @@ import {
   ShieldCheck,
   ShoppingCart,
 } from "@lucide/vue";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import BranchSelector from "@/components/client/layout/BranchSelector.vue";
+import { serializeCheckoutCartItemIds } from "@/features/checkout/utils/checkout-selection";
 import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
 
-defineProps<{
+const props = defineProps<{
+  selectedItemIds: string[];
   selectedQuantity: number;
   subtotal: number;
   discount: number;
@@ -22,16 +26,27 @@ defineProps<{
 }>();
 
 const branchStore = useStorefrontBranchStore();
+const router = useRouter();
+const isStartingCheckout = ref(false);
 const formatter = new Intl.NumberFormat("vi-VN");
 
 function formatPrice(value: number): string {
   return `${formatter.format(value)}đ`;
 }
 
-function deferredCheckout(): void {
-  toast.info("Thanh toán sẽ được hoàn thiện ở Phase 15.", {
-    id: "cart-checkout-deferred",
-  });
+async function startCheckout(): Promise<void> {
+  if (isStartingCheckout.value || props.selectedItemIds.length === 0) return;
+  isStartingCheckout.value = true;
+  try {
+    await router.push({
+      name: "client-checkout",
+      query: { items: serializeCheckoutCartItemIds(props.selectedItemIds) },
+    });
+  } catch {
+    toast.error("Không thể bắt đầu thanh toán. Vui lòng kiểm tra lại giỏ hàng.");
+  } finally {
+    isStartingCheckout.value = false;
+  }
 }
 
 const commitments = [
@@ -126,10 +141,11 @@ const commitments = [
       <Button
         type="button"
         class="mt-4 h-11 w-full bg-[var(--bookora-green)] text-white hover:bg-[var(--bookora-green-hover)]"
-        :disabled="selectedQuantity === 0"
-        @click="deferredCheckout"
+        :disabled="selectedQuantity === 0 || isStartingCheckout"
+        @click="startCheckout"
       >
-        <ShieldCheck class="size-4.5" /> Tiến hành thanh toán
+        <ShieldCheck class="size-4.5" />
+        {{ isStartingCheckout ? "Đang chuẩn bị..." : "Tiến hành thanh toán" }}
       </Button>
       <Button as-child variant="outline" class="mt-2 h-11 w-full">
         <RouterLink to="/books">

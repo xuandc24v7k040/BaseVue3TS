@@ -101,7 +101,12 @@ describe('BranchLocationPickerDialog validation', () => {
 
   it('distinguishes outside results from reverse network failures', async () => {
     vi.mocked(reverseBranchLocation).mockResolvedValue({
-      data: { ...canTho, province: 'Phnom Penh', ward: 'Chamkar Mon' },
+      data: {
+        ...canTho,
+        countryCode: 'KH',
+        province: 'Phnom Penh',
+        ward: 'Chamkar Mon',
+      },
     } as never)
     const wrapper = mountPicker()
     await wrapper.setProps({ open: true })

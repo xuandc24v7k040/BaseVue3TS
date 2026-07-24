@@ -246,6 +246,7 @@ async function removeItem(itemId: string): Promise<void> {
         </main>
 
         <CartSidebar
+          :selected-item-ids="[...selectedItemIds]"
           :selected-quantity="selectedQuantity"
           :subtotal="subtotal"
           :discount="discount"

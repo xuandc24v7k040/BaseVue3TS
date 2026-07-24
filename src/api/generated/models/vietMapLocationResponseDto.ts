@@ -10,7 +10,11 @@ export interface VietMapLocationResponseDto {
   latitude: number;
   longitude: number;
   /** @nullable */
+  countryCode: string | null;
+  /** @nullable */
   province: string | null;
+  /** @nullable */
+  district: string | null;
   /** @nullable */
   ward: string | null;
   address: string;

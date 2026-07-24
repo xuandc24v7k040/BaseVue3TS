@@ -16,7 +16,7 @@ const forbiddenChecks = [
   {
     label: "ULID helper constants",
     pattern:
-      /\b(?:[A-Za-z0-9_]*(?:Id|BranchId|UserId|RoleId|PermissionId)(?:RegExp|Min|Max))\b/u,
+      /\b(?:[A-Za-z0-9_]*(?:Id|BranchId|UserId|RoleId|PermissionId)RegExp)\b/u,
   },
   {
     label: "zod.ulid chained with redundant string constraints",

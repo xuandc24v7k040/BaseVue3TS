@@ -26,6 +26,7 @@ export default defineConfig({
       schemas: "src/api/generated/models",
       client: "vue-query",
       httpClient: "axios",
+      clean: true,
       tsconfig: {
         compilerOptions: {
           target: "esnext",
