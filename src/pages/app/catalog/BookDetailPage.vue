@@ -80,10 +80,13 @@ async function addToCart(buyNow = false): Promise<void> {
 
   cartPending.value = true;
   try {
-    await cartActions.add({
-      productVariantId: selectedVariant.value.id,
-      quantity: quantity.value,
-    });
+    await cartActions.add(
+      {
+        productVariantId: selectedVariant.value.id,
+        quantity: quantity.value,
+      },
+      buyNow ? "BUY_NOW" : "ADD_ITEM",
+    );
     toast.success("Đã thêm sản phẩm vào giỏ hàng.");
     if (buyNow) await router.push("/cart");
   } catch (error: unknown) {

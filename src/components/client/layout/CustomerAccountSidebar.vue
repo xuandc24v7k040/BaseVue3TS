@@ -31,7 +31,10 @@ const displayEmail = computed(
   () => profileQuery.data.value?.email ?? authStore.user?.email ?? "",
 );
 const avatarUrl = computed(
-  () => profileQuery.data.value?.avatarUrl ?? authStore.user?.avatarUrl,
+  () =>
+    profileQuery.data.value !== undefined
+      ? profileQuery.data.value.avatarUrl
+      : (authStore.user?.avatarUrl ?? null),
 );
 const initials = computed(
   () =>
@@ -66,7 +69,9 @@ const items = [
           data-testid="customer-avatar-trigger"
           @click="avatarDialogOpen = true"
         >
-          <Avatar class="size-18 bg-[var(--bookora-soft)]"
+          <Avatar
+            :key="avatarUrl ?? 'avatar-fallback'"
+            class="size-18 bg-[var(--bookora-soft)]"
             ><AvatarImage
               v-if="avatarUrl"
               :src="avatarUrl"

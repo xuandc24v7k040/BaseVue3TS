@@ -5,6 +5,7 @@ export function toBranchLocation(value: VietMapLocationResponseDto): BranchLocat
   return {
     latitude: Number(value.latitude),
     longitude: Number(value.longitude),
+    countryCode: value.countryCode?.trim().toUpperCase() || null,
     province: value.province?.trim() || null,
     ward: value.ward?.trim() || null,
     address: value.address.trim(),

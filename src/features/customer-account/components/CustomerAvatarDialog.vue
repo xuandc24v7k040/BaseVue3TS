@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { LoaderCircle } from "@lucide/vue";
 import { toast } from "vue-sonner";
+import type { CustomerProfileResponseDto } from "@/api/generated/models";
 import ImageDropzone from "@/components/shared/ImageDropzone.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,12 +33,13 @@ const emit = defineEmits<{ "update:open": [open: boolean] }>();
 const authStore = useAuthStore();
 const queryClient = useQueryClient();
 const selectedFile = ref<File | null>(null);
+const removeRequested = ref(false);
 const fileError = ref("");
 
 const uploadMutation = useMutation({
   mutationFn: uploadCustomerAvatar,
-  onSuccess: async () => {
-    await refreshIdentity();
+  onSuccess: async (profile) => {
+    await refreshIdentity(profile);
     toast.success(props.avatarUrl ? "Đã thay ảnh đại diện." : "Đã thêm ảnh đại diện.");
     close();
   },
@@ -50,8 +52,8 @@ const uploadMutation = useMutation({
 
 const deleteMutation = useMutation({
   mutationFn: removeCustomerAvatar,
-  onSuccess: async () => {
-    await refreshIdentity();
+  onSuccess: async (profile) => {
+    await refreshIdentity(profile);
     toast.success("Đã gỡ ảnh đại diện.");
     close();
   },
@@ -65,21 +67,34 @@ const deleteMutation = useMutation({
 const pending = computed(
   () => uploadMutation.isPending.value || deleteMutation.isPending.value,
 );
+const effectiveCurrentUrl = computed(() =>
+  removeRequested.value ? null : props.avatarUrl,
+);
+const hasChanges = computed(
+  () => selectedFile.value !== null || removeRequested.value,
+);
 
 watch(
   () => props.open,
   () => resetLocalState(),
 );
 
-async function refreshIdentity(): Promise<void> {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: customerAccountKeys.profile() }),
-    authStore.refreshCurrentUser(),
-  ]);
+async function refreshIdentity(
+  profile: CustomerProfileResponseDto,
+): Promise<void> {
+  queryClient.setQueryData(customerAccountKeys.profile(), profile);
+  try {
+    await authStore.refreshCurrentUser();
+  } catch {
+    await queryClient.invalidateQueries({
+      queryKey: customerAccountKeys.profile(),
+    });
+  }
 }
 
 function resetLocalState(): void {
   selectedFile.value = null;
+  removeRequested.value = false;
   fileError.value = "";
   uploadMutation.reset();
   deleteMutation.reset();
@@ -95,13 +110,18 @@ function close(): void {
 }
 
 function submit(): void {
-  if (!selectedFile.value || pending.value) return;
-  uploadMutation.mutate(selectedFile.value);
+  if (pending.value) return;
+  if (selectedFile.value) {
+    uploadMutation.mutate(selectedFile.value);
+    return;
+  }
+  if (removeRequested.value) deleteMutation.mutate();
 }
 
 function remove(): void {
   if (!props.avatarUrl || pending.value) return;
-  deleteMutation.mutate();
+  selectedFile.value = null;
+  removeRequested.value = true;
 }
 
 function handleInvalid(message: string): void {
@@ -127,7 +147,7 @@ function handleInvalid(message: string): void {
           <div class="space-y-3 px-5 py-4">
             <ImageDropzone
               v-model="selectedFile"
-              :current-url="avatarUrl"
+              :current-url="effectiveCurrentUrl"
               :disabled="pending"
               :image-alt="`Ảnh đại diện ${fullName}`"
               @remove="remove"
@@ -148,7 +168,7 @@ function handleInvalid(message: string): void {
         <Button
           type="button"
           class="bg-[var(--bookora-green)] text-white hover:bg-[var(--bookora-green-hover)] disabled:bg-[var(--bookora-green)] disabled:text-white"
-          :disabled="!selectedFile || pending"
+          :disabled="!hasChanges || pending"
           @click="submit"
         >
           <LoaderCircle v-if="pending" class="size-4 animate-spin" />

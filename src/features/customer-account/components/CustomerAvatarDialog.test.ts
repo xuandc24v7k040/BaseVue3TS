@@ -10,7 +10,10 @@ import {
   removeCustomerAvatar,
   uploadCustomerAvatar,
 } from "@/features/customer-account/api/customer-account-api";
+import { customerAccountKeys } from "@/features/customer-account/api/customer-account-query-keys";
 import CustomerAvatarDialog from "./CustomerAvatarDialog.vue";
+
+let activeQueryClient: QueryClient;
 
 vi.mock("vue-sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
@@ -49,11 +52,12 @@ const ImageDropzoneStub = defineComponent({
 
 function mountDialog(open = true, avatarUrl: string | null = null) {
   const pinia = createPinia();
+  activeQueryClient = new QueryClient();
   setActivePinia(pinia);
   return mount(CustomerAvatarDialog, {
     props: { open, avatarUrl, fullName: "Nguyễn An" },
     global: {
-      plugins: [pinia, [VueQueryPlugin, { queryClient: new QueryClient() }]],
+      plugins: [pinia, [VueQueryPlugin, { queryClient: activeQueryClient }]],
       stubs: {
         Dialog: WrapperStub,
         DialogContent: WrapperStub,
@@ -72,7 +76,12 @@ describe("CustomerAvatarDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(uploadCustomerAvatar).mockResolvedValue({} as never);
-    vi.mocked(removeCustomerAvatar).mockResolvedValue({} as never);
+    vi.mocked(removeCustomerAvatar).mockResolvedValue({
+      id: "customer-1",
+      fullName: "Nguyễn An",
+      email: "reader@bookora.vn",
+      avatarUrl: null,
+    } as never);
   });
 
   it("uploads once, blocks double-submit and reports success", async () => {
@@ -97,13 +106,50 @@ describe("CustomerAvatarDialog", () => {
     expect(toast.success).toHaveBeenCalledWith("Đã thêm ảnh đại diện.");
   });
 
-  it("deletes an existing avatar through the generated API", async () => {
+  it("only deletes an existing avatar after save is confirmed", async () => {
     const wrapper = mountDialog(true, "https://cdn.example/avatar.webp");
+    activeQueryClient.setQueryData(customerAccountKeys.profile(), {
+      avatarUrl: "https://cdn.example/avatar.webp",
+    });
     await wrapper.get('[data-testid="remove"]').trigger("click");
+    await nextTick();
+
+    expect(removeCustomerAvatar).not.toHaveBeenCalled();
+    expect(
+      activeQueryClient.getQueryData<{ avatarUrl: string | null }>(
+        customerAccountKeys.profile(),
+      )?.avatarUrl,
+    ).toBe("https://cdn.example/avatar.webp");
+    expect(wrapper.emitted("update:open")).toBeUndefined();
+
+    const save = wrapper.findAll("button").find((button) =>
+      button.text().includes("Lưu thay đổi"),
+    );
+    expect(save?.attributes("disabled")).toBeUndefined();
+    await save?.trigger("click");
     await flushPromises();
 
     expect(removeCustomerAvatar).toHaveBeenCalledOnce();
+    expect(
+      activeQueryClient.getQueryData<{ avatarUrl: string | null }>(
+        customerAccountKeys.profile(),
+      )?.avatarUrl,
+    ).toBeNull();
     expect(toast.success).toHaveBeenCalledWith("Đã gỡ ảnh đại diện.");
+  });
+
+  it("discards a pending avatar removal when the dialog is cancelled", async () => {
+    const wrapper = mountDialog(true, "https://cdn.example/avatar.webp");
+
+    await wrapper.get('[data-testid="remove"]').trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Hủy bỏ"))
+      ?.trigger("click");
+    await flushPromises();
+
+    expect(removeCustomerAvatar).not.toHaveBeenCalled();
+    expect(wrapper.emitted("update:open")).toEqual([[false]]);
   });
 
   it("shows validation failure and resets file and error after close/reopen", async () => {

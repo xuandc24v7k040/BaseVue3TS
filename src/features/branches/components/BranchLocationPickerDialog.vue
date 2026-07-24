@@ -153,7 +153,11 @@ onBeforeUnmount(cleanup)
 async function setCoordinate(coordinate: { latitude: number; longitude: number }): Promise<void> {
   const parsed = parseBranchCoordinates(String(coordinate.latitude), String(coordinate.longitude))
   if (!parsed.valid) {
-    verification.value = { status: 'invalid', message: parsed.message }
+    verification.value = {
+      status: 'invalid',
+      code: 'BRANCH_LOCATION_ADMIN_MAPPING_INVALID',
+      message: parsed.message,
+    }
     toast.error(parsed.message)
     return
   }
@@ -212,7 +216,11 @@ async function reverse(coordinate: { latitude: number; longitude: number }): Pro
   } catch (error) {
     if (controller.signal.aborted) return
     const message = 'Không thể xác minh tọa độ vào lúc này. Vui lòng thử lại hoặc nhập địa chỉ thủ công mà không lưu tọa độ.'
-    verification.value = { status: 'network-error', message }
+    verification.value = {
+      status: 'network-error',
+      code: 'VIETMAP_PROVIDER_UNAVAILABLE',
+      message,
+    }
     toast.warning(message)
   } finally {
     if (sequence === reverseSequence) isResolving.value = false
@@ -273,7 +281,11 @@ async function useCurrentLocation(): Promise<void> {
 function applyManualCoordinates(): void {
   const parsed = parseBranchCoordinates(latitudeInput.value, longitudeInput.value)
   if (!parsed.valid) {
-    verification.value = { status: 'invalid', message: parsed.message }
+    verification.value = {
+      status: 'invalid',
+      code: 'BRANCH_LOCATION_ADMIN_MAPPING_INVALID',
+      message: parsed.message,
+    }
     toast.error(parsed.message)
     return
   }
