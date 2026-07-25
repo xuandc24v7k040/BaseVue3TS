@@ -121,8 +121,8 @@ async function retryPayment(): Promise<void> {
           resultState === "success"
             ? "Đơn hàng đã được ghi nhận và đang chờ xác nhận."
             : resultState === "invalid"
-            ? "Dữ liệu trả về không có chữ ký hợp lệ. Trạng thái bên dưới vẫn được lấy trực tiếp từ hệ thống Bookora."
-            : "Bookora đang đối chiếu trạng thái thanh toán đã lưu."
+              ? "Dữ liệu trả về không có chữ ký hợp lệ. Trạng thái bên dưới vẫn được lấy trực tiếp từ hệ thống Bookora."
+              : "Bookora đang đối chiếu trạng thái thanh toán đã lưu."
         }}
       </p>
       <div

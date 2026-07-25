@@ -97,7 +97,9 @@ describe("Phase 15 checkout UI hotfix contract", () => {
   });
 
   it("keeps preview and Place Order on the same canonical selection", () => {
-    expect(checkoutSource).toContain("const currentInputFingerprint = computed");
+    expect(checkoutSource).toContain(
+      "const currentInputFingerprint = computed",
+    );
     expect(checkoutSource).toContain("committedInputFingerprint");
     expect(checkoutSource).toContain("previewDirty.value");
     expect(checkoutSource).toContain("sequence !== previewSequence");
@@ -107,7 +109,9 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     expect(checkoutSource).toContain("preview.branch.id !== requestedBranchId");
     expect(checkoutSource).toContain("CHECKOUT_PREVIEW_CHANGED");
     expect(checkoutSource).toContain("await refreshPreview()");
-    expect(checkoutSource).not.toContain("placeCodOrder(payload);\n      const order = await placeCodOrder");
+    expect(checkoutSource).not.toContain(
+      "placeCodOrder(payload);\n      const order = await placeCodOrder",
+    );
   });
 
   it("uses the active request branch for all-invalid feedback", () => {
@@ -147,7 +151,9 @@ describe("Phase 15 checkout UI hotfix contract", () => {
   });
 
   it("bounds payment polling and renders all safe result states", () => {
-    expect(paymentResultSource).toContain("Date.now() - pollingStartedAt < 60_000");
+    expect(paymentResultSource).toContain(
+      "Date.now() - pollingStartedAt < 60_000",
+    );
     expect(paymentResultSource).toContain("onBeforeUnmount");
     expect(paymentResultSource).toContain('returnResult ?? "invalid"');
     expect(paymentResultSource).toContain("Thanh toán thành công");
