@@ -66,6 +66,7 @@ export const ProductsCreateBody = zod.strictObject({
   "publisherId": zod.ulid().nullish(),
   "releaseDate": zod.iso.datetime({"offset":true}).nullish(),
   "categoryIds": zod.array(zod.ulid()).default(productsCreateBodyCategoryIdsDefault),
+  "primaryCategoryId": zod.ulid().nullable(),
   "authorIds": zod.array(zod.ulid()).default(productsCreateBodyAuthorIdsDefault),
   "attributeValues": zod.array(zod.strictObject({
   "attributeId": zod.ulid(),
@@ -114,6 +115,7 @@ export const ProductsUpdateBody = zod.strictObject({
   "publisherId": zod.ulid().nullish(),
   "releaseDate": zod.iso.datetime({"offset":true}).nullish(),
   "categoryIds": zod.array(zod.ulid()).default(productsUpdateBodyCategoryIdsDefault),
+  "primaryCategoryId": zod.ulid().nullish(),
   "authorIds": zod.array(zod.ulid()).default(productsUpdateBodyAuthorIdsDefault),
   "attributeValues": zod.array(zod.strictObject({
   "attributeId": zod.ulid(),

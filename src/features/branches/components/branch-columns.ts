@@ -1,6 +1,7 @@
 import { h } from 'vue'
 import type { Column, ColumnDef } from '@tanstack/vue-table'
 import DataTableColumnHeader from '@/components/admin/table/DataTableColumnHeader.vue'
+import { formatDateTime } from '@/lib/date-format'
 import type { Branch } from '../types'
 import BranchStatusBadge from './BranchStatusBadge.vue'
 
@@ -12,20 +13,8 @@ export function formatBranchAddress(branch: Branch): string {
   return [branch.address, branch.ward, branch.province].filter(Boolean).join(', ')
 }
 
-const branchDateTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
-  timeZone: 'Asia/Ho_Chi_Minh',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-  day: 'numeric',
-  month: 'numeric',
-  year: 'numeric',
-})
-
 export function formatBranchDateTime(value: string | null | undefined): string {
-  if (!value) return '—'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : branchDateTimeFormatter.format(date)
+  return formatDateTime(value)
 }
 
 export function createBranchColumns(): ColumnDef<Branch, unknown>[] {

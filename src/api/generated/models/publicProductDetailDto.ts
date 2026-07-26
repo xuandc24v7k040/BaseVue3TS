@@ -11,6 +11,7 @@ import type { PublicNamedEntityDto } from './publicNamedEntityDto';
 import type { PublicOptionDto } from './publicOptionDto';
 import type { PublicProductListItemDto } from './publicProductListItemDto';
 import type { PublicProductMediaDto } from './publicProductMediaDto';
+import type { PublicProductPrimaryCategoryDto } from './publicProductPrimaryCategoryDto';
 import type { PublicSeoDto } from './publicSeoDto';
 import type { PublicVariantDto } from './publicVariantDto';
 
@@ -30,6 +31,8 @@ export interface PublicProductDetailDto {
   /** @nullable */
   releaseDate?: string | null;
   categories: PublicCategoryResponseDto[];
+  /** @nullable */
+  primaryCategory?: PublicProductPrimaryCategoryDto | null;
   authors: PublicNamedEntityDto[];
   /** @nullable */
   publisher?: PublicNamedEntityDto | null;

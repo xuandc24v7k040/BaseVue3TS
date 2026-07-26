@@ -89,9 +89,8 @@ describe('Phase 8A UI hotfix invariants', () => {
 
     expect(component).not.toContain('branch.updatedAt')
     expect(component).not.toContain('Ngày cập nhật')
-    expect(component).toContain("day: '2-digit'")
-    expect(component).toContain("month: '2-digit'")
-    expect(component).toContain("year: 'numeric'")
+    expect(component).toContain("import { formatDateTime } from '@/lib/date-format'")
+    expect(component).toContain('return formatDateTime(value)')
     expect(component).toContain('Chi nhánh chưa được định vị trên bản đồ.')
   })
 

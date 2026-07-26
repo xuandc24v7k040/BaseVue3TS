@@ -56,7 +56,7 @@ const ORDER_TABS = [
   { key: "returned", label: "Đã hoàn trả", statuses: ["RETURNED"] },
 ] as const satisfies readonly CustomerOrderTab[];
 
-const PAGE_LIMIT = 5;
+const ACCOUNT_ORDERS_PAGE_SIZE = 3;
 const route = useRoute();
 const router = useRouter();
 const money = new Intl.NumberFormat("vi-VN");
@@ -81,7 +81,7 @@ const listParams = computed<CustomerOrdersListParams>(() => ({
     ? [...activeTab.value.statuses]
     : undefined,
   page: currentPage.value,
-  limit: PAGE_LIMIT,
+  limit: ACCOUNT_ORDERS_PAGE_SIZE,
 }));
 const ordersQuery = useQuery({
   queryKey: computed(() => customerOrderKeys.list(listParams.value)),
@@ -166,11 +166,11 @@ async function changePage(page: number, replace = false): Promise<void> {
           type="button"
           role="tab"
           :aria-selected="tab.key === activeTab.key"
-          class="border-b-2 px-1 pb-3 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+          class="border-b-2 px-1 pb-3 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
           :class="
             tab.key === activeTab.key
-              ? 'border-red-600 text-red-600'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[var(--bookora-green)] text-[var(--bookora-green)]'
+              : 'border-transparent text-slate-500 hover:text-[var(--bookora-green)]'
           "
           @click="changeTab(tab)"
         >
@@ -183,7 +183,11 @@ async function changePage(page: number, replace = false): Promise<void> {
       v-if="ordersQuery.isLoading.value && !ordersQuery.data.value"
       class="mt-6 space-y-3"
     >
-      <Skeleton v-for="index in PAGE_LIMIT" :key="index" class="h-36 rounded-xl" />
+      <Skeleton
+        v-for="index in ACCOUNT_ORDERS_PAGE_SIZE"
+        :key="index"
+        class="h-36 rounded-xl"
+      />
     </div>
 
     <div

@@ -1,3 +1,5 @@
+import { formatDateOnly } from '@/lib/date-format'
+
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/
 
 function validDateParts(value: string): { year: number; month: number; day: number } | null {
@@ -20,13 +22,5 @@ export function toDateInputValue(value: string | null | undefined): string {
 }
 
 export function formatProductDate(value: string | null | undefined): string {
-  if (!value) return '—'
-  const parts = validDateParts(value)
-  if (!parts) return '—'
-  return new Intl.DateTimeFormat('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(parts.year, parts.month - 1, parts.day)))
+  return formatDateOnly(value)
 }

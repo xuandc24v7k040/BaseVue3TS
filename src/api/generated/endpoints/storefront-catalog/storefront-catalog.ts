@@ -259,8 +259,8 @@ export function useStorefrontProductsList<TData = Awaited<ReturnType<typeof stor
 
 
 /**
- * Lấy tồn kho public theo chi nhánh và biến thể
- * @summary Lấy tồn kho public theo chi nhánh và biến thể
+ * Lấy tồn kho public của các biến thể theo chi nhánh
+ * @summary Lấy tồn kho public của các biến thể theo chi nhánh
  */
 export const storefrontProductAvailability = (
     productId: MaybeRef<string>,
@@ -312,7 +312,7 @@ export type StorefrontProductAvailabilityQueryError = ErrorType<ErrorResponseDto
 
 
 /**
- * @summary Lấy tồn kho public theo chi nhánh và biến thể
+ * @summary Lấy tồn kho public của các biến thể theo chi nhánh
  */
 
 export function useStorefrontProductAvailability<TData = Awaited<ReturnType<typeof storefrontProductAvailability>>, TError = ErrorType<ErrorResponseDto>>(

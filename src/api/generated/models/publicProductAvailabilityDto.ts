@@ -7,6 +7,7 @@
  */
 import type { PublicBranchSummaryDto } from './publicBranchSummaryDto';
 import type { PublicProductAvailabilityDtoStatus } from './publicProductAvailabilityDtoStatus';
+import type { PublicVariantAvailabilityDto } from './publicVariantAvailabilityDto';
 
 export interface PublicProductAvailabilityDto {
   branch: PublicBranchSummaryDto;
@@ -25,4 +26,5 @@ export interface PublicProductAvailabilityDto {
   /** @minimum 0 */
   availableQuantity: number;
   status: PublicProductAvailabilityDtoStatus;
+  variants: PublicVariantAvailabilityDto[];
 }

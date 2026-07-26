@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BookOpen, Minus, Plus, ShoppingCart, Zap } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,12 @@ import ProductAvailability from "@/features/storefront/components/ProductAvailab
 import ProductCard from "@/features/storefront/components/ProductCard.vue";
 import ProductGallery from "@/features/storefront/components/ProductGallery.vue";
 import ProductVariantSelector from "@/features/storefront/components/ProductVariantSelector.vue";
+import { formatProductDate } from "@/features/products/utils/product-date";
 import { useProductSeo } from "@/features/storefront/composables/use-product-seo";
 import { useVariantSelection } from "@/features/storefront/composables/use-variant-selection";
+import type { VariantQuantities } from "@/features/storefront/composables/use-variant-selection";
 import { storefrontErrorMessage } from "@/features/storefront/utils/storefront-error";
+import { buildPrimaryCategoryBreadcrumb } from "@/features/storefront/utils/product-breadcrumb";
 import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartActions } from "@/features/cart/api/cart-api";
@@ -28,35 +31,85 @@ const cartActions = useCartActions();
 const slug = computed(() => String(route.params.slug ?? ""));
 const detailQuery = useStorefrontProductDetailQuery(slug);
 const product = computed(() => detailQuery.data.value ?? null);
-const { selectedVariantId, selectedVariant, selectVariant } =
-  useVariantSelection(product);
+const categoryBreadcrumbItems = computed(() =>
+  product.value ? buildPrimaryCategoryBreadcrumb(product.value) : [],
+);
 const branchStore = useStorefrontBranchStore();
 const availabilityQuery = useStorefrontAvailabilityQuery(
   computed(() => branchStore.selectedBranchId),
   computed(() => product.value?.id ?? ""),
-  computed(() => ({ variantId: selectedVariant.value?.id })),
+);
+const variantQuantities = computed<VariantQuantities | null>(() => {
+  if (!availabilityQuery.isSuccess.value || !availabilityQuery.data.value) {
+    return null;
+  }
+  return Object.fromEntries(
+    availabilityQuery.data.value.variants.map((variant) => [
+      variant.variantId,
+      variant.availableQuantity,
+    ]),
+  );
+});
+const availabilityState = computed<"loading" | "error" | "success">(() =>
+  availabilityQuery.isError.value
+    ? "error"
+    : availabilityQuery.isSuccess.value
+      ? "success"
+      : "loading",
+);
+const {
+  selectedVariantId,
+  selectedVariant,
+  displayedVariant,
+  selectVariant,
+} = useVariantSelection(product, variantQuantities);
+const selectedAvailability = computed(() =>
+  availabilityQuery.data.value?.variants.find(
+    (variant) => variant.variantId === selectedVariantId.value,
+  ),
 );
 const availableQuantity = computed(
-  () => availabilityQuery.data.value?.availableQuantity ?? 0,
+  () => selectedAvailability.value?.availableQuantity ?? 0,
 );
 const canOrder = computed(
-  () => availabilityQuery.isSuccess.value && availableQuantity.value > 0,
+  () =>
+    availabilityQuery.isSuccess.value &&
+    Boolean(selectedVariant.value) &&
+    availableQuantity.value > 0,
 );
 const quantity = ref(1);
 const cartPending = ref(false);
 const activeTab = ref<"description" | "details">("description");
 const priceFormatter = new Intl.NumberFormat("vi-VN");
-const dateFormatter = new Intl.DateTimeFormat("vi-VN");
 const gallery = computed(() =>
-  selectedVariant.value?.media.length
-    ? selectedVariant.value.media
+  displayedVariant.value?.media.length
+    ? displayedVariant.value.media
     : (product.value?.generalMedia ?? []),
 );
+const isSimpleProduct = computed(
+  () =>
+    product.value?.options.length === 0 &&
+    product.value.variants.length === 1,
+);
+
+watch(availableQuantity, (nextQuantity) => {
+  quantity.value =
+    nextQuantity > 0 ? Math.min(quantity.value, nextQuantity) : 1;
+});
 
 useProductSeo(computed(() => product.value?.seo ?? null));
 
 function formatPrice(value: number): string {
   return `${priceFormatter.format(value)} đ`;
+}
+
+function formatAttributeValue(attribute: {
+  code: string;
+  value: string;
+}): string {
+  return attribute.code === "PUBLICATION_DATE"
+    ? formatProductDate(attribute.value)
+    : attribute.value;
 }
 
 async function addToCart(buyNow = false): Promise<void> {
@@ -127,19 +180,21 @@ async function addToCart(buyNow = false): Promise<void> {
         >
       </div>
     </div>
-    <div v-else-if="product && selectedVariant" class="space-y-6">
+    <div v-else-if="product && displayedVariant" class="space-y-6">
       <nav
         aria-label="Breadcrumb"
         class="flex flex-wrap items-center gap-2 text-sm text-[var(--bookora-muted)]"
-      >
-        <RouterLink to="/">Trang chủ</RouterLink><span>/</span
-        ><RouterLink to="/books">Sách</RouterLink
-        ><template v-for="category in product.categories" :key="category.id"
+        >
+          <RouterLink to="/">Trang chủ</RouterLink><span>/</span
+          ><RouterLink to="/books">Sách</RouterLink
+          ><template
+            v-for="category in categoryBreadcrumbItems"
+            :key="category.id"
+            ><span>/</span
+            ><RouterLink :to="category.to">{{
+              category.label
+            }}</RouterLink></template
           ><span>/</span
-          ><RouterLink :to="`/books?category=${category.slug}`">{{
-            category.name
-          }}</RouterLink></template
-        ><span>/</span
         ><span aria-current="page" class="text-[var(--bookora-ink)]">{{
           product.name
         }}</span>
@@ -175,16 +230,16 @@ async function addToCart(buyNow = false): Promise<void> {
           </p>
           <div class="mt-5 flex flex-wrap items-baseline gap-3">
             <strong class="text-3xl text-red-600">{{
-              formatPrice(selectedVariant.price.current)
+              formatPrice(displayedVariant.price.current)
             }}</strong
             ><del
-              v-if="selectedVariant.price.onSale"
+              v-if="displayedVariant.price.onSale"
               class="text-sm text-[var(--bookora-muted)]"
-              >{{ formatPrice(selectedVariant.price.original) }}</del
+              >{{ formatPrice(displayedVariant.price.original) }}</del
             ><span
-              v-if="selectedVariant.price.onSale"
+              v-if="displayedVariant.price.onSale"
               class="rounded bg-red-600 px-2 py-1 text-xs font-bold text-white"
-              >-{{ selectedVariant.price.discountPercent }}%</span
+              >-{{ displayedVariant.price.discountPercent }}%</span
             >
           </div>
           <p
@@ -192,25 +247,29 @@ async function addToCart(buyNow = false): Promise<void> {
             class="mt-2 text-sm text-[var(--bookora-green)]"
           >
             Ngày phát hành:
-            {{ dateFormatter.format(new Date(product.releaseDate)) }}
+            {{ formatProductDate(product.releaseDate) }}
           </p>
           <div class="mt-5 rounded-lg bg-[var(--bookora-soft)] p-3 text-sm">
             Bạn sẽ tích lũy Bookora Xu cho đơn hàng này trong giai đoạn thanh
             toán.
           </div>
 
-          <div v-if="product.options.length" class="mt-6">
-            <ProductVariantSelector
-              :options="product.options"
-              :variants="product.variants"
-              :model-value="selectedVariantId ?? selectedVariant.id"
-              @update:model-value="selectVariant"
-            />
-          </div>
-          <p v-else class="mt-6 text-sm">
-            <span class="font-semibold">Phiên bản:</span>
-            {{ selectedVariant.name }}
-          </p>
+          <template v-if="!isSimpleProduct">
+            <div v-if="product.options.length" class="mt-6">
+              <ProductVariantSelector
+                :options="product.options"
+                :variants="product.variants"
+                :model-value="selectedVariantId"
+                :variant-quantities="variantQuantities"
+                :availability-state="availabilityState"
+                @update:model-value="selectVariant"
+              />
+            </div>
+            <p v-else class="mt-6 text-sm">
+              <span class="font-semibold">Phiên bản:</span>
+              {{ displayedVariant.name }}
+            </p>
+          </template>
 
           <div class="mt-6 flex items-center gap-4">
             <span class="text-sm font-semibold">Số lượng</span>
@@ -256,13 +315,13 @@ async function addToCart(buyNow = false): Promise<void> {
           class="lg:col-span-2 xl:col-span-1"
           :product-id="product.id"
           :product-slug="product.slug"
-          :variant-id="selectedVariant.id"
+          :variant-id="selectedVariant?.id ?? displayedVariant.id"
         />
       </div>
 
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+      <div class="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <section
-          class="rounded-xl border border-[var(--bookora-border)] bg-background p-5 sm:p-6"
+          class="min-w-0 rounded-xl border border-[var(--bookora-border)] bg-background p-5 sm:p-6"
         >
           <div class="flex gap-6 border-b">
             <button
@@ -305,33 +364,35 @@ async function addToCart(buyNow = false): Promise<void> {
               class="rounded-lg bg-[var(--bookora-cream)] p-3"
             >
               <dt class="text-[var(--bookora-muted)]">{{ attribute.name }}</dt>
-              <dd class="mt-1 font-semibold">{{ attribute.value }}</dd>
+              <dd class="mt-1 font-semibold">
+                {{ formatAttributeValue(attribute) }}
+              </dd>
             </div>
             <div
-              v-if="selectedVariant.isbn"
+              v-if="displayedVariant.isbn"
               class="rounded-lg bg-[var(--bookora-cream)] p-3"
             >
               <dt>ISBN</dt>
-              <dd class="font-semibold">{{ selectedVariant.isbn }}</dd>
+              <dd class="font-semibold">{{ displayedVariant.isbn }}</dd>
             </div>
             <div
-              v-if="selectedVariant.pageCount"
+              v-if="displayedVariant.pageCount"
               class="rounded-lg bg-[var(--bookora-cream)] p-3"
             >
               <dt>Số trang</dt>
-              <dd class="font-semibold">{{ selectedVariant.pageCount }}</dd>
+              <dd class="font-semibold">{{ displayedVariant.pageCount }}</dd>
             </div>
             <div
-              v-if="selectedVariant.packageSize"
+              v-if="displayedVariant.packageSize"
               class="rounded-lg bg-[var(--bookora-cream)] p-3"
             >
               <dt>Kích thước</dt>
-              <dd class="font-semibold">{{ selectedVariant.packageSize }}</dd>
+              <dd class="font-semibold">{{ displayedVariant.packageSize }}</dd>
             </div>
           </dl>
         </section>
         <section
-          class="rounded-xl border border-[var(--bookora-border)] bg-background p-5"
+          class="min-w-0 rounded-xl border border-[var(--bookora-border)] bg-background p-5"
         >
           <div class="mb-4 flex items-center justify-between">
             <h2 class="text-xl font-bold">Sản phẩm liên quan</h2>

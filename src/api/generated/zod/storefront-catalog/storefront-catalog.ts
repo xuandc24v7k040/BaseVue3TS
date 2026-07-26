@@ -37,8 +37,8 @@ export const StorefrontProductsListQueryParams = zod.strictObject({
 })
 
 /**
- * Lấy tồn kho public theo chi nhánh và biến thể
- * @summary Lấy tồn kho public theo chi nhánh và biến thể
+ * Lấy tồn kho public của các biến thể theo chi nhánh
+ * @summary Lấy tồn kho public của các biến thể theo chi nhánh
  */
 export const StorefrontProductAvailabilityParams = zod.strictObject({
   "productId": zod.ulid()

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { formatDateTime as formatSharedDateTime } from "@/lib/date-format";
 
 export const stockStateLabel = {
   OUT_OF_STOCK: "Hết hàng",
@@ -21,10 +22,7 @@ export function formatMoney(value: string | number): string {
 }
 
 export function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return formatSharedDateTime(value);
 }
 
 export function inventoryErrorMessage(

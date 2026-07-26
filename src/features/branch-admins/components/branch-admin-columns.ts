@@ -1,6 +1,7 @@
 import { h } from "vue";
 import type { Column, ColumnDef } from "@tanstack/vue-table";
 import DataTableColumnHeader from "@/components/admin/table/DataTableColumnHeader.vue";
+import { formatDateTime } from "@/lib/date-format";
 import { isBranchAdminAssignment } from "../types";
 import type { BranchAdmin } from "../types";
 
@@ -12,19 +13,8 @@ function sortableHeader(column: Column<BranchAdmin, unknown>, title: string) {
   });
 }
 
-const formatter = new Intl.DateTimeFormat("vi-VN", {
-  timeZone: "Asia/Ho_Chi_Minh",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
 export function formatBranchAdminDate(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : formatter.format(date);
+  return formatDateTime(value);
 }
 
 export function createBranchAdminColumns(): ColumnDef<BranchAdmin, unknown>[] {

@@ -41,6 +41,8 @@ export interface ProductDetailResponseDto {
   createdAt: string;
   updatedAt: string;
   /** @nullable */
+  primaryCategoryId?: string | null;
+  /** @nullable */
   shortDescription?: string | null;
   /** @nullable */
   description?: string | null;

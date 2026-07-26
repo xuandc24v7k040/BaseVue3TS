@@ -83,9 +83,36 @@ async function reorder(wrapper: ReturnType<typeof renderSection>, nextOrder: Pro
   await flushPromises()
 }
 
+function queuedFiles(count: number): File[] {
+  return Array.from({ length: count }, (_, index) =>
+    new File(
+      ['RIFFxxxxWEBP'],
+      `${index}-${'ten-file-rat-dai-'.repeat(8)}.webp`,
+      { type: 'image/webp', lastModified: index },
+    ),
+  )
+}
+
+async function selectQueuedFiles(
+  wrapper: ReturnType<typeof renderSection>,
+  count: number,
+): Promise<void> {
+  const input = wrapper.get('input[type="file"]')
+  Object.defineProperty(input.element, 'files', {
+    configurable: true,
+    value: queuedFiles(count),
+  })
+  await input.trigger('change')
+  await flushPromises()
+}
+
 describe('Product Media final hotfix interactions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn((file: File) => `blob:${file.name}`),
+      revokeObjectURL: vi.fn(),
+    })
     productApi.productVariantsList.mockResolvedValue({ data: [] })
     mediaApi.productMediaList.mockResolvedValue({ data: [first, second] })
     mediaApi.productMediaReorder.mockResolvedValue({ data: [second, first] })
@@ -175,5 +202,36 @@ describe('Product Media final hotfix interactions', () => {
     expect(wrapper.findAll('button[aria-label="Kéo để sắp xếp ảnh"]')).toHaveLength(2)
     expect(wrapper.find('button[aria-label="Di chuyển ảnh sang trái"]').exists()).toBe(false)
     expect(wrapper.find('button[aria-label="Di chuyển ảnh sang phải"]').exists()).toBe(false)
+  })
+
+  it.each([1, 4, 8, 12])('keeps %i queued files inside the bounded ScrollArea', async (count) => {
+    mediaApi.productMediaList.mockResolvedValue({ data: [] })
+    const wrapper = renderSection()
+    await flushPromises()
+    await selectQueuedFiles(wrapper, count)
+
+    const scrollArea = wrapper.get('[data-slot="scroll-area"]')
+    expect(scrollArea.classes()).toContain('h-[min(18rem,45vh)]')
+    expect(scrollArea.findAll('article')).toHaveLength(count)
+    expect(scrollArea.find('.truncate[title]').exists()).toBe(true)
+    expect(wrapper.get('button').text()).not.toBe('')
+  })
+
+  it('keeps queue actions working without touching product option state', async () => {
+    mediaApi.productMediaList.mockResolvedValue({ data: [] })
+    mediaApi.productMediaUpload.mockResolvedValue({ data: {} })
+    const wrapper = renderSection()
+    await flushPromises()
+    await selectQueuedFiles(wrapper, 4)
+
+    const before = wrapper.get('[data-slot="scroll-area"]')
+    expect(before.findAll('article')).toHaveLength(4)
+    await before.findAll('button').find((button) => button.text().includes('Bỏ'))?.trigger('click')
+    expect(wrapper.get('[data-slot="scroll-area"]').findAll('article')).toHaveLength(3)
+
+    await wrapper.findAll('button').find((button) => button.text().includes('Tải lên tất cả'))?.trigger('click')
+    await flushPromises()
+    expect(mediaApi.productMediaUpload).toHaveBeenCalledTimes(3)
+    expect(wrapper.find('[data-slot="scroll-area"]').exists()).toBe(false)
   })
 })

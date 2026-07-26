@@ -5,7 +5,9 @@ import type { PublicOptionDto, PublicVariantDto } from '@/api/generated/models'
 const props = defineProps<{
   options: PublicOptionDto[]
   variants: PublicVariantDto[]
-  modelValue: string
+  modelValue: string | null
+  variantQuantities: Readonly<Record<string, number>> | null
+  availabilityState: 'loading' | 'error' | 'success'
 }>()
 const emit = defineEmits<{ 'update:modelValue': [variantId: string] }>()
 
@@ -26,9 +28,29 @@ function candidate(optionId: string, optionValueId: string): PublicVariantDto | 
   })
 }
 
+function isVariantDisabled(variant: PublicVariantDto | undefined): boolean {
+  if (!variant) return true
+  if (props.availabilityState !== 'success' || !props.variantQuantities) return true
+  return (props.variantQuantities[variant.id] ?? 0) <= 0
+}
+
+function isValueDisabled(optionId: string, optionValueId: string): boolean {
+  return isVariantDisabled(candidate(optionId, optionValueId))
+}
+
+function unavailableTitle(optionId: string, optionValueId: string): string | undefined {
+  const variant = candidate(optionId, optionValueId)
+  if (!variant) return 'Tổ hợp phiên bản này hiện không khả dụng'
+  if (props.availabilityState === 'loading') return 'Đang tải tồn kho tại chi nhánh'
+  if (props.availabilityState === 'error') return 'Không thể xác minh tồn kho tại chi nhánh'
+  return isVariantDisabled(variant) ? 'Phiên bản này đã hết hàng tại chi nhánh' : undefined
+}
+
 function choose(optionId: string, optionValueId: string): void {
   const variant = candidate(optionId, optionValueId)
-  if (variant) emit('update:modelValue', variant.id)
+  if (variant && !isVariantDisabled(variant)) {
+    emit('update:modelValue', variant.id)
+  }
 }
 </script>
 
@@ -41,11 +63,16 @@ function choose(optionId: string, optionValueId: string): void {
           v-for="value in option.values"
           :key="value.id"
           type="button"
-          :disabled="!candidate(option.id, value.id)"
+          :disabled="isValueDisabled(option.id, value.id)"
+          :aria-disabled="isValueDisabled(option.id, value.id)"
           :aria-pressed="selectedValues.get(option.id) === value.id"
-          :title="!candidate(option.id, value.id) ? 'Tổ hợp phiên bản này hiện không khả dụng' : undefined"
+          :title="unavailableTitle(option.id, value.id)"
           class="min-h-11 rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)] disabled:cursor-not-allowed disabled:opacity-40"
-          :class="selectedValues.get(option.id) === value.id ? 'border-[var(--bookora-green)] bg-[var(--bookora-soft)] text-[var(--bookora-green)]' : 'border-[var(--bookora-border)] bg-background hover:border-[var(--bookora-green)]'"
+          :class="selectedValues.get(option.id) === value.id
+            ? 'border-[var(--bookora-green)] bg-[var(--bookora-soft)] text-[var(--bookora-green)]'
+            : isValueDisabled(option.id, value.id)
+              ? 'border-[var(--bookora-border)] bg-background'
+              : 'border-[var(--bookora-border)] bg-background hover:border-[var(--bookora-green)]'"
           @click="choose(option.id, value.id)"
         >
           <span v-if="option.presentationType === 'COLOR' && value.colorCode" class="mr-2 inline-block size-4 rounded-full border align-[-3px]" :style="{ backgroundColor: value.colorCode }" />

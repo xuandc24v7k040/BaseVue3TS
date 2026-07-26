@@ -1,4 +1,5 @@
 import type { ProductAttributeResponseDtoType } from '@/api/generated/models'
+import { formatDateTime } from '@/lib/date-format'
 
 export const PRODUCT_ATTRIBUTE_TYPE_OPTIONS: readonly {
   value: ProductAttributeResponseDtoType
@@ -21,9 +22,8 @@ export function productAttributeTypeLabel(
   )
 }
 
-export function formatAdminDate(value: string): string {
-  return new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(value))
+export function formatAdminDate(
+  value: string | Date | null | undefined,
+): string {
+  return formatDateTime(value)
 }

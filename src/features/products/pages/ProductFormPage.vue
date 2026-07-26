@@ -8,10 +8,12 @@ import type { CategoryTreeNodeResponseDto, CreateProductDto } from '@/api/genera
 import AdminBreadcrumb from '@/components/admin/AdminBreadcrumb.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { listAuthors } from '@/features/authors/api/author-api'
 import { listCategoryTree } from '@/features/categories/api/category-api'
@@ -25,6 +27,7 @@ import ProductVariantManager from '../components/ProductVariantManager.vue'
 import ProductMediaSection from '../media/components/ProductMediaSection.vue'
 import { toDateInputValue } from '../utils/product-date'
 import { productErrorMessage, productFieldErrors } from '../utils/product-errors'
+import { selectProductCategory, setProductPrimaryCategory, unselectProductCategory } from '../utils/product-primary-category'
 import {
   defaultProductAttributeValue,
   serializeProductAttributeValues,
@@ -53,13 +56,14 @@ type FormState = {
   publisherId: string
   releaseDate: string
   categoryIds: string[]
+  primaryCategoryId: string | null
   authorIds: string[]
   attributes: Record<string, ProductAttributeFormValue>
 }
 
 const form = reactive<FormState>({
   name: '', slug: '', shortDescription: '', description: null,
-  supplierId: '', publisherId: '', releaseDate: '', categoryIds: [], authorIds: [], attributes: {},
+  supplierId: '', publisherId: '', releaseDate: '', categoryIds: [], primaryCategoryId: null, authorIds: [], attributes: {},
 })
 const selectedAttributes = ref<ProductAttributeDefinition[]>([])
 
@@ -90,6 +94,7 @@ watch(() => detailQuery.data.value?.data, (product) => {
     publisherId: product.publisher?.id ?? '',
     releaseDate: toDateInputValue(product.releaseDate),
     categoryIds: product.categories.map((item) => item.id),
+    primaryCategoryId: product.primaryCategoryId ?? null,
     authorIds: product.authors.map((item) => item.id),
     attributes: Object.fromEntries(product.attributeValues.map((item) => [item.attributeId, item.value])),
   })
@@ -114,10 +119,24 @@ function toggleId(list: string[], id: string, checked: boolean | 'indeterminate'
   if (checked !== true && index >= 0) list.splice(index, 1)
 }
 
+function toggleCategory(categoryId: string, checked: boolean | 'indeterminate'): void {
+  if (checked === true) selectProductCategory(form, categoryId)
+  else unselectProductCategory(form, categoryId, categories.value.map((item) => item.id))
+  if (form.primaryCategoryId) clearFieldError('primaryCategoryId')
+}
+
+function selectPrimaryCategory(categoryId: unknown): void {
+  if (typeof categoryId !== 'string') return
+  setProductPrimaryCategory(form, categoryId)
+  if (form.primaryCategoryId) clearFieldError('primaryCategoryId')
+}
+
 function validate() {
   Object.keys(errors).forEach((key) => delete errors[key])
   if (form.name.trim().length < 2) errors.name = 'Tên sản phẩm phải có ít nhất 2 ký tự.'
   if (form.shortDescription.length > 500) errors.shortDescription = 'Mô tả ngắn tối đa 500 ký tự.'
+  if (form.categoryIds.length > 0 && !form.primaryCategoryId) errors.primaryCategoryId = 'Vui lòng chọn danh mục chính.'
+  else if (form.primaryCategoryId && !form.categoryIds.includes(form.primaryCategoryId)) errors.primaryCategoryId = 'Danh mục chính phải thuộc danh sách danh mục đã chọn.'
   return Object.keys(errors).length === 0
 }
 
@@ -134,6 +153,7 @@ function payload(): CreateProductDto {
     publisherId: form.publisherId || null,
     releaseDate: form.releaseDate || null,
     categoryIds: [...form.categoryIds],
+    primaryCategoryId: form.primaryCategoryId,
     authorIds: [...form.authorIds],
     attributeValues: serializeProductAttributeValues(selectedAttributes.value, form.attributes),
   }
@@ -216,7 +236,49 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
       </Card>
 
       <div class="grid gap-6 xl:grid-cols-2">
-        <Card><CardHeader><CardTitle>Danh mục</CardTitle></CardHeader><CardContent><ScrollArea class="h-72"><div class="space-y-2 pr-4"><label v-for="item in categories" :key="item.id" class="flex items-center gap-2 rounded-sm py-0.5 text-sm hover:bg-muted/40" :style="{ paddingLeft: `${item.depth * 16}px` }"><Checkbox class="focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2" :model-value="form.categoryIds.includes(item.id)" :disabled="!item.effectiveActive" @update:model-value="toggleId(form.categoryIds, item.id, $event)" />{{ item.name }}</label><p v-if="categories.length === 0" class="text-sm text-muted-foreground">Chưa có danh mục.</p></div></ScrollArea></CardContent></Card>
+        <Card>
+          <CardHeader><CardTitle>Danh mục</CardTitle></CardHeader>
+          <CardContent class="space-y-3">
+            <p id="product-category-help" class="text-xs text-muted-foreground">Có thể chọn nhiều danh mục. Chọn một danh mục chính để dùng cho điều hướng và breadcrumb.</p>
+            <ScrollArea class="h-72">
+              <RadioGroup
+                :model-value="form.primaryCategoryId ?? undefined"
+                aria-describedby="product-category-help product-category-error"
+                class="space-y-2 pr-4"
+                @update:model-value="selectPrimaryCategory"
+              >
+                <div
+                  v-for="item in categories"
+                  :key="item.id"
+                  class="flex flex-wrap items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm transition-colors hover:bg-muted/40"
+                  :class="{ 'border-primary/30 bg-primary/5': form.primaryCategoryId === item.id }"
+                  :style="{ marginLeft: `${item.depth * 16}px` }"
+                >
+                  <Checkbox
+                    :id="`product-category-${item.id}`"
+                    class="focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
+                    :model-value="form.categoryIds.includes(item.id)"
+                    :disabled="!item.effectiveActive"
+                    @update:model-value="toggleCategory(item.id, $event)"
+                  />
+                  <label :for="`product-category-${item.id}`" class="min-w-0 flex-1 cursor-pointer">{{ item.name }}</label>
+                  <div class="ml-auto flex items-center gap-2">
+                    <RadioGroupItem
+                      :id="`product-primary-category-${item.id}`"
+                      :value="item.id"
+                      :disabled="!form.categoryIds.includes(item.id)"
+                      :aria-label="`Chọn ${item.name} làm danh mục chính`"
+                    />
+                    <label :for="`product-primary-category-${item.id}`" class="cursor-pointer text-xs text-muted-foreground">Danh mục chính</label>
+                    <Badge v-if="form.primaryCategoryId === item.id" variant="secondary" class="text-[10px]">Danh mục chính</Badge>
+                  </div>
+                </div>
+                <p v-if="categories.length === 0" class="text-sm text-muted-foreground">Chưa có danh mục.</p>
+              </RadioGroup>
+            </ScrollArea>
+            <p v-if="errors.primaryCategoryId" id="product-category-error" class="text-xs text-destructive">{{ errors.primaryCategoryId }}</p>
+          </CardContent>
+        </Card>
         <Card><CardHeader><CardTitle>Tác giả</CardTitle></CardHeader><CardContent><ScrollArea class="h-72"><div class="grid gap-2 pr-4 sm:grid-cols-2"><label v-for="item in authors" :key="item.id" class="flex items-center gap-2 rounded-sm py-0.5 text-sm hover:bg-muted/40"><Checkbox class="focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2" :model-value="form.authorIds.includes(item.id)" @update:model-value="toggleId(form.authorIds, item.id, $event)" />{{ item.name }}</label><p v-if="authors.length === 0" class="text-sm text-muted-foreground">Chưa có tác giả.</p></div></ScrollArea></CardContent></Card>
       </div>
 

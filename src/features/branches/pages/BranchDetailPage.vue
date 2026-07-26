@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { computed, ref } from 'vue'
+import { formatDateTime } from '@/lib/date-format'
 import { Copy, ExternalLink, MapPin, Pencil, Phone, Power, Store, UserRoundCog } from '@lucide/vue'
 import { useQuery } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
@@ -27,14 +28,8 @@ const branchId = computed(() => String(route.params.id))
 const editOpen = ref(false)
 const deactivateOpen = ref(false)
 const managerOpen = ref(false)
-const branchDateFormatter = new Intl.DateTimeFormat('vi-VN', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-})
-
 function formatBranchDate(value: string): string {
-  return branchDateFormatter.format(new Date(value))
+  return formatDateTime(value)
 }
 
 const branchQuery = useQuery({

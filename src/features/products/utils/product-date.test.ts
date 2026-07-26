@@ -3,12 +3,12 @@ import { formatProductDate, toDateInputValue } from './product-date'
 
 describe('product date helpers', () => {
   it('formats ISO midnight UTC without shifting the calendar day', () => {
-    expect(formatProductDate('2021-11-25T00:00:00.000Z')).toBe('25/11/2021')
+    expect(formatProductDate('2021-11-25T00:00:00.000Z')).toBe('25-11-2021')
     expect(toDateInputValue('2021-11-25T00:00:00.000Z')).toBe('2021-11-25')
   })
 
   it('accepts date-only values', () => {
-    expect(formatProductDate('2021-11-25')).toBe('25/11/2021')
+    expect(formatProductDate('2021-11-25')).toBe('25-11-2021')
     expect(toDateInputValue('2021-11-25')).toBe('2021-11-25')
   })
 

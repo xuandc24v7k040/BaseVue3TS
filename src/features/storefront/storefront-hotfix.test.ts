@@ -117,10 +117,10 @@ describe("storefront hotfix contracts", () => {
     expect(listing).not.toContain('type="checkbox"');
     expect(listing).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
     expect(gallery).not.toContain("ScrollArea");
-    expect(gallery).toContain("overflow-auto");
-    expect(gallery).toContain(':style="{ transform: `scale(${zoom})` }"');
-    expect(gallery).toContain('@keydown.left.prevent="move(-1)"');
-    expect(gallery).toContain('@keydown.right.prevent="move(1)"');
+    expect(gallery).toContain("VueEasyLightbox");
+    expect(gallery).toContain(':visible="lightboxVisible"');
+    expect(gallery).toContain('@on-index-change="syncLightboxIndex"');
+    expect(gallery).toContain('@click="selectedIndex = index"');
     expect(branch).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
     expect(branch.indexOf("<ScrollArea")).toBeLessThan(
       branch.indexOf("<DialogFooter"),

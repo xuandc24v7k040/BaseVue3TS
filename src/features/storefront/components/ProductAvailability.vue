@@ -34,15 +34,16 @@ const defaultAddress = computed(
   () => addressesQuery.data.value?.find((address) => address.isDefault) ?? null,
 );
 const hasAddresses = computed(() => Boolean(addressesQuery.data.value?.length));
-const availabilityParams = computed(() => ({
-  variantId: props.variantId || undefined,
-}));
 const availabilityQuery = useStorefrontAvailabilityQuery(
   computed(() => branchStore.selectedBranchId),
   computed(() => props.productId),
-  availabilityParams,
 );
-const status = computed(() => availabilityQuery.data.value?.status);
+const selectedAvailability = computed(() =>
+  availabilityQuery.data.value?.variants.find(
+    (variant) => variant.variantId === props.variantId,
+  ),
+);
+const status = computed(() => selectedAvailability.value?.status);
 </script>
 
 <template>
@@ -155,7 +156,7 @@ const status = computed(() => availabilityQuery.data.value?.status);
           </p>
           <p class="mt-1 text-xs text-[var(--bookora-muted)]">
             Số lượng khả dụng:
-            {{ availabilityQuery.data.value.availableQuantity }}
+            {{ selectedAvailability?.availableQuantity ?? 0 }}
           </p>
         </div>
       </div>

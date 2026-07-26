@@ -45,6 +45,8 @@ export interface CreateProductDto {
      * @items.pattern ^[0-7][0-9A-HJKMNP-TV-Z]{25}$
      */
   categoryIds: string[];
+  /** @nullable */
+  primaryCategoryId: string | null;
   /**
      * @items.minLength 26
      * @items.maxLength 26

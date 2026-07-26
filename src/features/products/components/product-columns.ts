@@ -4,6 +4,7 @@ import type { ProductListItemResponseDto } from '@/api/generated/models'
 import DataTableColumnHeader from '@/components/admin/table/DataTableColumnHeader.vue'
 import { formatAdminDate } from '@/features/product-master-data/utils/master-data-labels'
 import { formatProductPriceRange } from '../utils/product-money'
+import { formatProductDate } from '../utils/product-date'
 
 const head = (column: Column<ProductListItemResponseDto, unknown>, title: string, sortable = true) => h(DataTableColumnHeader<ProductListItemResponseDto>, { column, title, mode: sortable ? { type: 'sort' } : { type: 'none' } })
 const summary = (items: Array<{ name: string }>, empty = '—') => {
@@ -60,7 +61,7 @@ export function createProductColumns(): ColumnDef<ProductListItemResponseDto, un
     },
     {
       accessorKey: 'releaseDate', header: ({ column }) => head(column, 'Ngày phát hành'),
-      cell: ({ row }) => h('span', { class: 'whitespace-nowrap' }, row.original.releaseDate ? formatAdminDate(row.original.releaseDate) : '—'),
+      cell: ({ row }) => h('span', { class: 'whitespace-nowrap' }, formatProductDate(row.original.releaseDate)),
       meta: { title: 'Ngày phát hành' }, size: 165,
     },
     {

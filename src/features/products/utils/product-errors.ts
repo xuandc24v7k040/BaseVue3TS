@@ -32,6 +32,8 @@ const messages: Record<string, string> = {
   PRODUCT_PRICE_INVALID: 'Giá biến thể không hợp lệ.',
   PRODUCT_SALE_PERIOD_INVALID: 'Thời gian khuyến mãi không hợp lệ.',
   PRODUCT_ATTRIBUTE_VALUE_INVALID: 'Giá trị thuộc tính mô tả không hợp lệ.',
+  PRODUCT_PRIMARY_CATEGORY_REQUIRED: 'Vui lòng chọn danh mục chính.',
+  PRODUCT_PRIMARY_CATEGORY_INVALID: 'Danh mục chính phải thuộc danh sách danh mục đã chọn.',
 }
 
 export function productErrorCode(error: unknown): string | undefined {
@@ -54,6 +56,12 @@ export function productReadErrorMessage(error: unknown, fallback: string): strin
 
 export function productFieldErrors(error: unknown): Record<string, string> {
   if (!axios.isAxiosError<ErrorResponseDto>(error)) return {}
+  if (error.response?.data.code === 'PRODUCT_PRIMARY_CATEGORY_REQUIRED') {
+    return { primaryCategoryId: 'Vui lòng chọn danh mục chính.' }
+  }
+  if (error.response?.data.code === 'PRODUCT_PRIMARY_CATEGORY_INVALID') {
+    return { primaryCategoryId: 'Danh mục chính phải thuộc danh sách danh mục đã chọn.' }
+  }
   const fields = error.response?.data.errors
   if (!fields) return {}
   return Object.fromEntries(

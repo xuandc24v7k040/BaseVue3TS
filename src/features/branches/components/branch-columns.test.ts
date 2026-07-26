@@ -5,7 +5,7 @@ import branchListPage from "../pages/BranchListPage.vue?raw";
 describe("branch columns", () => {
   it("formats created time with a four-digit Vietnamese year and no seconds", () => {
     expect(formatBranchDateTime("2026-06-27T07:47:00.000Z")).toBe(
-      "14:47 27/6/2026",
+      "14:47 27-06-2026",
     );
   });
 

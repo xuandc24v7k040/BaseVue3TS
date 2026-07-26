@@ -1,4 +1,5 @@
 import type { CategoryLevel, CategoryType } from "../types";
+import { formatDateTime } from "@/lib/date-format";
 
 export const CATEGORY_TYPE_OPTIONS: { label: string; value: CategoryType }[] = [
   { label: "Thông thường", value: "NORMAL" },
@@ -20,8 +21,5 @@ export function categoryLevelLabel(value: CategoryLevel): string {
 }
 
 export function formatCategoryDate(value: string): string {
-  return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return formatDateTime(value);
 }

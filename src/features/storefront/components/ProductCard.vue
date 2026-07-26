@@ -6,6 +6,7 @@ import { toast } from "vue-sonner";
 import type { PublicProductListItemDto } from "@/api/generated/models";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatProductDate } from "@/features/products/utils/product-date";
 
 withDefaults(
   defineProps<{
@@ -21,7 +22,6 @@ withDefaults(
 
 const imageFailed = ref(false);
 const priceFormatter = new Intl.NumberFormat("vi-VN");
-const dateFormatter = new Intl.DateTimeFormat("vi-VN");
 
 function formatPrice(price: number): string {
   return `${priceFormatter.format(price)}đ`;
@@ -121,7 +121,7 @@ function deferredWishlist(): void {
         v-if="product.releaseDate"
         class="mt-2 text-xs text-[var(--bookora-green)]"
       >
-        Phát hành {{ dateFormatter.format(new Date(product.releaseDate)) }}
+        Phát hành {{ formatProductDate(product.releaseDate) }}
       </p>
       <p
         v-if="view === 'list'"

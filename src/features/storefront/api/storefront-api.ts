@@ -10,7 +10,6 @@ import {
 } from "@/api/generated/endpoints/storefront-catalog/storefront-catalog";
 import { storefrontBranchesList } from "@/api/generated/endpoints/storefront-branches/storefront-branches";
 import type {
-  StorefrontProductAvailabilityParams,
   StorefrontProductsListParams,
 } from "@/api/generated/models";
 
@@ -25,13 +24,11 @@ export const storefrontQueryKeys = {
   availability: (
     branchId: string | null,
     productId: string,
-    variantId: string | undefined,
   ) =>
     [
       "storefront-availability",
       branchId,
       productId,
-      variantId ?? null,
     ] as const,
 };
 
@@ -95,20 +92,18 @@ export function useStorefrontProductDetailQuery(slug: MaybeRef<string>) {
 export function useStorefrontAvailabilityQuery(
   branchId: MaybeRef<string | null>,
   productId: MaybeRef<string>,
-  params: MaybeRef<StorefrontProductAvailabilityParams>,
 ) {
   return useQuery({
     queryKey: computed(() =>
       storefrontQueryKeys.availability(
         unref(branchId),
         unref(productId),
-        unref(params).variantId,
       ),
     ),
     queryFn: ({ signal }) =>
       storefrontProductAvailability(
         unref(productId),
-        unref(params),
+        undefined,
         { branchScoped: true },
         signal,
       ).then((response) => response.data),
