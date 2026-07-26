@@ -5,15 +5,9 @@
  * Contract OpenAPI chính thức cho backend Bookora. Frontend dùng cookie credentials, cookie accessToken/refreshToken và header X-CSRF-Token cho mutation cần CSRF.
  * OpenAPI spec version: 1.0
  */
-import type { StockReceiptItemResponseDtoProductStatus } from './stockReceiptItemResponseDtoProductStatus';
+import type { InventoryStockVariantResponseDtoStockState } from './inventoryStockVariantResponseDtoStockState';
 
-export interface StockReceiptItemResponseDto {
-  /**
-     * @minLength 26
-     * @maxLength 26
-     * @pattern ^[0-7][0-9A-HJKMNP-TV-Z]{25}$
-     */
-  id: string;
+export interface InventoryStockVariantResponseDto {
   /**
      * @minLength 26
      * @maxLength 26
@@ -28,20 +22,18 @@ export interface StockReceiptItemResponseDto {
   productId: string;
   productName: string;
   variantName: string;
-  isDefault: boolean;
+  /** @nullable */
+  optionSummary?: string | null;
   sku: string;
   /** @nullable */
   barcode?: string | null;
   /** @nullable */
-  optionSummary?: string | null;
-  /** @nullable */
   thumbnailUrl?: string | null;
-  variantActive: boolean;
-  productStatus: StockReceiptItemResponseDtoProductStatus;
-  /** @minimum 1 */
+  /** @minimum 0 */
   quantity: number;
-  /** @nullable */
-  costPrice?: string | null;
-  /** @nullable */
-  lineTotal?: string | null;
+  /** @minimum 0 */
+  lowStockThreshold: number;
+  stockState: InventoryStockVariantResponseDtoStockState;
+  updatedAt: string;
+  isDefault: boolean;
 }

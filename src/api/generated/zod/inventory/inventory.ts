@@ -50,6 +50,71 @@ export const InventoryStocksListQueryParams = zod.strictObject({
 })
 
 /**
+ * Lấy tồn kho phân nhóm theo sản phẩm tại chi nhánh đang chọn
+ * @summary Lấy tồn kho phân nhóm theo sản phẩm tại chi nhánh đang chọn
+ */
+export const inventoryGroupedStocksListQueryPageDefault = 1;
+
+export const inventoryGroupedStocksListQueryLimitDefault = 10;
+export const inventoryGroupedStocksListQueryLimitMax = 100;
+
+
+
+export const InventoryGroupedStocksListQueryParams = zod.strictObject({
+  "page": zod.number().min(1).default(inventoryGroupedStocksListQueryPageDefault),
+  "limit": zod.number().min(1).max(inventoryGroupedStocksListQueryLimitMax).default(inventoryGroupedStocksListQueryLimitDefault),
+  "search": zod.string().optional(),
+  "stockState": zod.enum(['IN_STOCK', 'LOW_STOCK', 'OUT_OF_STOCK']).optional(),
+  "sortBy": zod.enum(['productName', 'quantity', 'updatedAt']).optional(),
+  "sortOrder": zod.enum(['asc', 'desc']).optional()
+})
+
+/**
+ * Lấy nhật ký biến động tồn kho tại chi nhánh đang chọn
+ * @summary Lấy nhật ký biến động tồn kho tại chi nhánh đang chọn
+ */
+export const inventoryMovementsListQueryPageDefault = 1;
+
+export const inventoryMovementsListQueryLimitDefault = 10;
+export const inventoryMovementsListQueryLimitMax = 100;
+
+
+
+export const InventoryMovementsListQueryParams = zod.strictObject({
+  "page": zod.number().min(1).default(inventoryMovementsListQueryPageDefault),
+  "limit": zod.number().min(1).max(inventoryMovementsListQueryLimitMax).default(inventoryMovementsListQueryLimitDefault),
+  "search": zod.string().optional(),
+  "type": zod.enum(['MANUAL_ADJUSTMENT', 'STOCK_RECEIPT_CONFIRMED', 'ORDER_STOCK_DEDUCTED', 'ORDER_STOCK_RESTORED']).optional(),
+  "dateFrom": zod.string().optional(),
+  "dateTo": zod.string().optional(),
+  "sortOrder": zod.enum(['asc', 'desc']).optional()
+})
+
+/**
+ * Điều chỉnh số lượng tồn kho tại chi nhánh đang chọn
+ * @summary Điều chỉnh số lượng tồn kho tại chi nhánh đang chọn
+ */
+export const InventoryStocksAdjustQuantityParams = zod.strictObject({
+  "variantId": zod.ulid()
+})
+
+export const inventoryStocksAdjustQuantityBodyExpectedCurrentQuantityMin = 0;
+export const inventoryStocksAdjustQuantityBodyExpectedCurrentQuantityMax = 2147483647;
+
+export const inventoryStocksAdjustQuantityBodyQuantityMax = 1000;
+
+export const inventoryStocksAdjustQuantityBodyNoteMax = 1000;
+
+
+
+export const InventoryStocksAdjustQuantityBody = zod.strictObject({
+  "expectedCurrentQuantity": zod.number().min(inventoryStocksAdjustQuantityBodyExpectedCurrentQuantityMin).max(inventoryStocksAdjustQuantityBodyExpectedCurrentQuantityMax),
+  "direction": zod.enum(['INCREASE', 'DECREASE']),
+  "quantity": zod.number().min(1).max(inventoryStocksAdjustQuantityBodyQuantityMax),
+  "note": zod.string().max(inventoryStocksAdjustQuantityBodyNoteMax)
+})
+
+/**
  * Cập nhật ngưỡng cảnh báo tồn thấp tại chi nhánh đang chọn
  * @summary Cập nhật ngưỡng cảnh báo tồn thấp tại chi nhánh đang chọn
  */

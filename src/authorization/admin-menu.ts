@@ -179,6 +179,16 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
         requiresSelectedBranch: true,
       },
       {
+        id: "inventory-movements",
+        label: "Nhật ký tồn kho",
+        routeNames: {
+          SYSTEM: "super-admin-inventory-movements",
+          BRANCH: "branch-admin-inventory-movements",
+        },
+        requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_MOVEMENTS_READ],
+        requiresSelectedBranch: true,
+      },
+      {
         id: "stock-receipts",
         label: "Phiếu nhập kho",
         routeNames: {

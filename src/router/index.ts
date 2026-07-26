@@ -606,6 +606,16 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: "inventory/movements",
+        name: "super-admin-inventory-movements",
+        component: () =>
+          import("@/features/inventory/pages/InventoryMovementsPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_MOVEMENTS_READ],
+          requiresSelectedBranch: true,
+        },
+      },
+      {
         path: "inventory/receipts/create",
         name: "super-admin-stock-receipt-create",
         component: () =>
@@ -731,6 +741,15 @@ export const routes: RouteRecordRaw[] = [
         component: () =>
           import("@/features/inventory/pages/StockReceiptListPage.vue"),
         meta: { requiredPermissions: [ADMIN_PERMISSIONS.STOCK_RECEIPTS_READ] },
+      },
+      {
+        path: "inventory/movements",
+        name: "branch-admin-inventory-movements",
+        component: () =>
+          import("@/features/inventory/pages/InventoryMovementsPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.INVENTORY_MOVEMENTS_READ],
+        },
       },
       {
         path: "inventory/receipts/create",

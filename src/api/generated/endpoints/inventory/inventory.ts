@@ -29,7 +29,13 @@ import type {
 } from 'vue';
 
 import type {
+  AdjustInventoryQuantityDto,
   ErrorResponseDto,
+  InventoryGroupedStocksList200,
+  InventoryGroupedStocksListParams,
+  InventoryMovementsList200,
+  InventoryMovementsListParams,
+  InventoryStocksAdjustQuantity200,
   InventoryStocksList200,
   InventoryStocksListParams,
   InventoryStocksUpdateThreshold200,
@@ -191,6 +197,216 @@ export function useInventoryStocksList<TData = Awaited<ReturnType<typeof invento
 
 
 /**
+ * Lấy tồn kho phân nhóm theo sản phẩm tại chi nhánh đang chọn
+ * @summary Lấy tồn kho phân nhóm theo sản phẩm tại chi nhánh đang chọn
+ */
+export const inventoryGroupedStocksList = (
+    params?: MaybeRef<InventoryGroupedStocksListParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      params = unref(params);
+
+      return customInstance<InventoryGroupedStocksList200>(
+      {url: `/inventory/stocks/grouped`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getInventoryGroupedStocksListQueryKey = (params?: MaybeRef<InventoryGroupedStocksListParams>,) => {
+    return [
+    'inventory','stocks','grouped', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getInventoryGroupedStocksListQueryOptions = <TData = Awaited<ReturnType<typeof inventoryGroupedStocksList>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<InventoryGroupedStocksListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryGroupedStocksList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getInventoryGroupedStocksListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryGroupedStocksList>>> = ({ signal }) => inventoryGroupedStocksList(params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof inventoryGroupedStocksList>>, TError, TData>
+}
+
+export type InventoryGroupedStocksListQueryResult = NonNullable<Awaited<ReturnType<typeof inventoryGroupedStocksList>>>
+export type InventoryGroupedStocksListQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary Lấy tồn kho phân nhóm theo sản phẩm tại chi nhánh đang chọn
+ */
+
+export function useInventoryGroupedStocksList<TData = Awaited<ReturnType<typeof inventoryGroupedStocksList>>, TError = ErrorType<ErrorResponseDto>>(
+ params?: MaybeRef<InventoryGroupedStocksListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryGroupedStocksList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getInventoryGroupedStocksListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
+ * Lấy nhật ký biến động tồn kho tại chi nhánh đang chọn
+ * @summary Lấy nhật ký biến động tồn kho tại chi nhánh đang chọn
+ */
+export const inventoryMovementsList = (
+    params?: MaybeRef<InventoryMovementsListParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      params = unref(params);
+
+      return customInstance<InventoryMovementsList200>(
+      {url: `/inventory/movements`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getInventoryMovementsListQueryKey = (params?: MaybeRef<InventoryMovementsListParams>,) => {
+    return [
+    'inventory','movements', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getInventoryMovementsListQueryOptions = <TData = Awaited<ReturnType<typeof inventoryMovementsList>>, TError = ErrorType<ErrorResponseDto>>(params?: MaybeRef<InventoryMovementsListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryMovementsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getInventoryMovementsListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryMovementsList>>> = ({ signal }) => inventoryMovementsList(params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof inventoryMovementsList>>, TError, TData>
+}
+
+export type InventoryMovementsListQueryResult = NonNullable<Awaited<ReturnType<typeof inventoryMovementsList>>>
+export type InventoryMovementsListQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary Lấy nhật ký biến động tồn kho tại chi nhánh đang chọn
+ */
+
+export function useInventoryMovementsList<TData = Awaited<ReturnType<typeof inventoryMovementsList>>, TError = ErrorType<ErrorResponseDto>>(
+ params?: MaybeRef<InventoryMovementsListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryMovementsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getInventoryMovementsListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
+ * Điều chỉnh số lượng tồn kho tại chi nhánh đang chọn
+ * @summary Điều chỉnh số lượng tồn kho tại chi nhánh đang chọn
+ */
+export const inventoryStocksAdjustQuantity = (
+    variantId: MaybeRef<string>,
+    adjustInventoryQuantityDto: MaybeRef<AdjustInventoryQuantityDto>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      variantId = unref(variantId);
+adjustInventoryQuantityDto = unref(adjustInventoryQuantityDto);
+
+      return customInstance<InventoryStocksAdjustQuantity200>(
+      {url: `/inventory/stocks/${variantId}/adjust`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: adjustInventoryQuantityDto, signal
+    },
+      options);
+    }
+
+
+
+export const getInventoryStocksAdjustQuantityMutationOptions = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryStocksAdjustQuantity>>, TError,{variantId: string;data: BodyType<AdjustInventoryQuantityDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof inventoryStocksAdjustQuantity>>, TError,{variantId: string;data: BodyType<AdjustInventoryQuantityDto>}, TContext> => {
+
+const mutationKey = ['inventoryStocksAdjustQuantity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryStocksAdjustQuantity>>, {variantId: string;data: BodyType<AdjustInventoryQuantityDto>}> = (props) => {
+          const {variantId,data} = props ?? {};
+
+          return  inventoryStocksAdjustQuantity(variantId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InventoryStocksAdjustQuantityMutationResult = NonNullable<Awaited<ReturnType<typeof inventoryStocksAdjustQuantity>>>
+    export type InventoryStocksAdjustQuantityMutationBody = BodyType<AdjustInventoryQuantityDto>
+    export type InventoryStocksAdjustQuantityMutationError = ErrorType<ErrorResponseDto>
+
+    /**
+ * @summary Điều chỉnh số lượng tồn kho tại chi nhánh đang chọn
+ */
+export const useInventoryStocksAdjustQuantity = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryStocksAdjustQuantity>>, TError,{variantId: string;data: BodyType<AdjustInventoryQuantityDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof inventoryStocksAdjustQuantity>>,
+        TError,
+        {variantId: string;data: BodyType<AdjustInventoryQuantityDto>},
+        TContext
+      > => {
+      return useMutation(getInventoryStocksAdjustQuantityMutationOptions(options), queryClient);
+    }
+    /**
  * Cập nhật ngưỡng cảnh báo tồn thấp tại chi nhánh đang chọn
  * @summary Cập nhật ngưỡng cảnh báo tồn thấp tại chi nhánh đang chọn
  */

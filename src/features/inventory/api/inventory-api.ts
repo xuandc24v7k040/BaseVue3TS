@@ -1,5 +1,8 @@
 import type {
   CreateStockReceiptDto,
+  AdjustInventoryQuantityDto,
+  InventoryGroupedStocksListParams,
+  InventoryMovementsListParams,
   InventoryStocksListParams,
   InventoryVariantOptionsParams,
   StockReceiptsListParams,
@@ -7,6 +10,9 @@ import type {
   UpdateStockReceiptDraftDto,
 } from "@/api/generated/models";
 import {
+  inventoryGroupedStocksList,
+  inventoryMovementsList,
+  inventoryStocksAdjustQuantity,
   inventoryStocksList,
   inventoryStocksUpdateThreshold,
   inventoryVariantOptions,
@@ -37,6 +43,21 @@ export const listStocks = (
   params: InventoryStocksListParams,
   signal?: AbortSignal,
 ) => inventoryStocksList(params, branchScopedRequest, signal);
+
+export const listGroupedStocks = (
+  params: InventoryGroupedStocksListParams,
+  signal?: AbortSignal,
+) => inventoryGroupedStocksList(params, branchScopedRequest, signal);
+
+export const listInventoryMovements = (
+  params: InventoryMovementsListParams,
+  signal?: AbortSignal,
+) => inventoryMovementsList(params, branchScopedRequest, signal);
+
+export const adjustStockQuantity = (
+  variantId: string,
+  payload: AdjustInventoryQuantityDto,
+) => inventoryStocksAdjustQuantity(variantId, payload, branchScopedRequest);
 
 export const updateStockThreshold = (
   variantId: string,

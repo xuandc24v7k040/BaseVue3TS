@@ -51,6 +51,8 @@ export const ADMIN_PERMISSIONS = {
   PRODUCT_ATTRIBUTES_DELETE: "product_attributes.delete",
   INVENTORY_READ: "inventory.read",
   INVENTORY_UPDATE_THRESHOLD: "inventory.update_threshold",
+  INVENTORY_ADJUST_QUANTITY: "inventory.adjust_quantity",
+  INVENTORY_MOVEMENTS_READ: "inventory.movements.read",
   STOCK_RECEIPTS_READ: "stock_receipts.read",
   STOCK_RECEIPTS_CREATE: "stock_receipts.create",
   STOCK_RECEIPTS_UPDATE: "stock_receipts.update",

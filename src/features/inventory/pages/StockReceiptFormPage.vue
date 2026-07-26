@@ -60,6 +60,7 @@ interface VariantGroup {
   productName: string;
   thumbnailUrl: string | null;
   variants: InventoryVariantOptionResponseDto[];
+  isSimple: boolean;
 }
 
 const route = useRoute();
@@ -126,11 +127,18 @@ const variantGroups = computed<VariantGroup[]>(() => {
       productName: variant.productName,
       thumbnailUrl: variant.thumbnailUrl ?? null,
       variants: [],
+      isSimple: false,
     };
     group.variants.push(variant);
     groups.set(variant.productId, group);
   }
-  return [...groups.values()];
+  return [...groups.values()].map((group) => ({
+    ...group,
+    isSimple:
+      group.variants.length === 1 &&
+      group.variants[0]?.isDefault === true &&
+      !group.variants[0]?.optionSummary,
+  }));
 });
 
 function snapshot(): string {
@@ -179,7 +187,7 @@ watch(
         variantName: item.variantName,
         sku: item.sku,
         barcode: item.barcode,
-        isDefault: false,
+        isDefault: item.isDefault,
         isActive: item.variantActive,
         productStatus: item.productStatus,
         optionSummary: item.optionSummary,
@@ -257,6 +265,7 @@ function removeItem(index: number) {
 
 function validate(): boolean {
   const next: Record<string, string> = {};
+  if (!note.value.trim()) next.note = "Vui lòng nhập ghi chú phiếu nhập.";
   if (!items.value.length)
     next.items = "Phiếu nhập phải có ít nhất một sản phẩm.";
   items.value.forEach((item, index) => {
@@ -274,7 +283,7 @@ async function save() {
   saving.value = true;
   const payload = {
     supplierId: supplierId.value || null,
-    note: note.value.trim() || null,
+    note: note.value.trim(),
     items: items.value.map<StockReceiptItemInputDto>(
       ({ variant, quantity, costPrice }) => ({
         variantId: variant.id,
@@ -363,20 +372,36 @@ onBeforeUnmount(() => {
             label="Nhà cung cấp (không bắt buộc)"
             :selected-label="detailQuery.data.value?.supplier?.name"
             :branch-scoped="routePrefix === 'branch-admin'"
-            :authorization-scope="routePrefix === 'branch-admin' ? branchId : 'global'"
+            :authorization-scope="
+              routePrefix === 'branch-admin' ? branchId : 'global'
+            "
             nullable
           />
         </div>
         <div class="space-y-2 md:col-span-2">
-          <Label for="receipt-note">Ghi chú</Label
+          <Label for="receipt-note"
+            >Ghi chú
+            <span class="text-destructive" aria-hidden="true">*</span></Label
           ><Textarea
             id="receipt-note"
             v-model="note"
             maxlength="1000"
+            required
+            :aria-invalid="Boolean(errors.note)"
+            aria-describedby="receipt-note-error"
             placeholder="Ghi chú nội bộ cho phiếu nhập..."
           />
-        </div> </CardContent
-    ></Card>
+          <p
+            v-if="errors.note"
+            id="receipt-note-error"
+            class="text-sm text-destructive"
+            role="alert"
+          >
+            {{ errors.note }}
+          </p>
+        </div>
+      </CardContent></Card
+    >
 
     <Card
       ><CardHeader class="flex-row items-center justify-between"
@@ -417,7 +442,10 @@ onBeforeUnmount(() => {
               >
                 <td class="p-3">
                   <p class="font-medium">{{ item.variant.productName }}</p>
-                  <p class="text-xs text-muted-foreground">
+                  <p
+                    v-if="!item.variant.isDefault"
+                    class="text-xs text-muted-foreground"
+                  >
                     {{ item.variant.variantName }}
                   </p>
                 </td>
@@ -518,21 +546,32 @@ onBeforeUnmount(() => {
         show-scroll-buttons
         class="h-full min-h-0 w-full overflow-hidden"
         ><div class="space-y-3 px-5 py-4 pb-6 pr-7">
-          <div v-if="variantQuery.isFetching.value" class="py-10 text-center text-sm text-muted-foreground">Đang tải danh sách biến thể...</div>
-          <div v-else-if="variantQuery.isError.value" class="space-y-3 py-10 text-center">
-            <p class="text-sm text-destructive">Không thể tải danh sách biến thể sản phẩm.</p>
-            <Button type="button" size="sm" variant="outline" @click="variantQuery.refetch()">Thử lại</Button>
+          <div
+            v-if="variantQuery.isFetching.value"
+            class="py-10 text-center text-sm text-muted-foreground"
+          >
+            Đang tải danh sách biến thể...
+          </div>
+          <div
+            v-else-if="variantQuery.isError.value"
+            class="space-y-3 py-10 text-center"
+          >
+            <p class="text-sm text-destructive">
+              Không thể tải danh sách biến thể sản phẩm.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              @click="variantQuery.refetch()"
+              >Thử lại</Button
+            >
           </div>
           <template v-else>
-            <Collapsible
-              v-for="group in variantGroups"
-              :key="group.productId"
-              :open="expandedProductIds.has(group.productId)"
-              class="overflow-hidden rounded-lg border bg-card"
-              @update:open="(open) => setProductExpanded(group.productId, open)"
-            >
-              <CollapsibleTrigger
-                class="flex w-full items-center gap-3 p-3 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            <template v-for="group in variantGroups" :key="group.productId">
+              <label
+                v-if="group.isSimple && group.variants[0]"
+                class="flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3 has-[:disabled]:cursor-not-allowed"
               >
                 <img
                   v-if="group.thumbnailUrl"
@@ -540,42 +579,124 @@ onBeforeUnmount(() => {
                   :alt="group.productName"
                   class="size-10 shrink-0 rounded-md border object-cover"
                 />
-                <div class="min-w-0 flex-1">
-                  <p class="truncate font-medium" :title="group.productName">{{ group.productName }}</p>
-                  <p class="text-xs text-muted-foreground">{{ group.variants.length }} biến thể</p>
-                </div>
-                <ChevronDown
-                  class="size-4 shrink-0 transition-transform"
-                  :class="expandedProductIds.has(group.productId) ? 'rotate-180' : ''"
-                />
-              </CollapsibleTrigger>
-              <CollapsibleContent class="border-t">
-                <label
-                  v-for="variant in group.variants"
-                  :key="variant.id"
-                  class="flex cursor-pointer items-start gap-3 border-b p-3 last:border-b-0 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
-                >
-                  <Checkbox
-                    class="mt-0.5"
-                    :model-value="selectorSelected.has(variant.id)"
-                    :disabled="items.some((item) => item.variant.id === variant.id)"
-                    @update:model-value="(checked) => toggleVariant(variant, checked)"
-                  />
-                  <span class="min-w-0 flex-1 space-y-1">
-                    <span class="flex flex-wrap items-center gap-2">
-                      <span class="font-medium">{{ variantDisplayName(variant) }}</span>
-                      <span
-                        v-if="items.some((item) => item.variant.id === variant.id)"
-                        class="text-xs text-muted-foreground"
-                      >Đã thêm</span>
-                    </span>
-                    <span v-if="variant.optionSummary" class="block text-sm text-muted-foreground">{{ variant.optionSummary }}</span>
-                    <span class="block break-all font-mono text-xs text-muted-foreground">SKU: {{ variant.sku }}</span>
-                    <span v-if="variant.barcode" class="block break-all text-xs text-muted-foreground">Barcode: {{ variant.barcode }}</span>
+                <span class="min-w-0 flex-1">
+                  <span class="flex flex-wrap items-center gap-2">
+                    <span
+                      class="truncate font-medium"
+                      :title="group.productName"
+                      >{{ group.productName }}</span
+                    >
+                    <span
+                      v-if="
+                        items.some(
+                          (item) => item.variant.id === group.variants[0]?.id,
+                        )
+                      "
+                      class="text-xs text-muted-foreground"
+                      >Đã thêm</span
+                    >
                   </span>
-                </label>
-              </CollapsibleContent>
-            </Collapsible>
+                  <span
+                    class="block truncate font-mono text-xs text-muted-foreground"
+                    >SKU: {{ group.variants[0].sku }}</span
+                  >
+                </span>
+                <Checkbox
+                  class="ml-auto shrink-0 shadow-sm"
+                  :model-value="selectorSelected.has(group.variants[0].id)"
+                  :disabled="
+                    items.some(
+                      (item) => item.variant.id === group.variants[0]?.id,
+                    )
+                  "
+                  :aria-label="`Chọn ${group.productName}`"
+                  @update:model-value="
+                    (checked) => toggleVariant(group.variants[0]!, checked)
+                  "
+                />
+              </label>
+              <Collapsible
+                v-else
+                :open="expandedProductIds.has(group.productId)"
+                class="overflow-hidden rounded-lg border bg-card"
+                @update:open="
+                  (open) => setProductExpanded(group.productId, open)
+                "
+              >
+                <CollapsibleTrigger
+                  class="flex w-full items-center gap-3 p-3 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                >
+                  <img
+                    v-if="group.thumbnailUrl"
+                    :src="group.thumbnailUrl"
+                    :alt="group.productName"
+                    class="size-10 shrink-0 rounded-md border object-cover"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate font-medium" :title="group.productName">
+                      {{ group.productName }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                      {{ group.variants.length }} biến thể
+                    </p>
+                  </div>
+                  <ChevronDown
+                    class="size-4 shrink-0 transition-transform"
+                    :class="
+                      expandedProductIds.has(group.productId)
+                        ? 'rotate-180'
+                        : ''
+                    "
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent class="border-t">
+                  <label
+                    v-for="variant in group.variants"
+                    :key="variant.id"
+                    class="flex cursor-pointer items-start gap-3 border-b p-3 last:border-b-0 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
+                  >
+                    <Checkbox
+                      class="mt-0.5"
+                      :model-value="selectorSelected.has(variant.id)"
+                      :disabled="
+                        items.some((item) => item.variant.id === variant.id)
+                      "
+                      @update:model-value="
+                        (checked) => toggleVariant(variant, checked)
+                      "
+                    />
+                    <span class="min-w-0 flex-1 space-y-1">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <span class="font-medium">{{
+                          variantDisplayName(variant)
+                        }}</span>
+                        <span
+                          v-if="
+                            items.some((item) => item.variant.id === variant.id)
+                          "
+                          class="text-xs text-muted-foreground"
+                          >Đã thêm</span
+                        >
+                      </span>
+                      <span
+                        v-if="variant.optionSummary"
+                        class="block text-sm text-muted-foreground"
+                        >{{ variant.optionSummary }}</span
+                      >
+                      <span
+                        class="block break-all font-mono text-xs text-muted-foreground"
+                        >SKU: {{ variant.sku }}</span
+                      >
+                      <span
+                        v-if="variant.barcode"
+                        class="block break-all text-xs text-muted-foreground"
+                        >Barcode: {{ variant.barcode }}</span
+                      >
+                    </span>
+                  </label>
+                </CollapsibleContent>
+              </Collapsible>
+            </template>
           </template>
           <p
             v-if="
@@ -588,7 +709,8 @@ onBeforeUnmount(() => {
             Không tìm thấy biến thể phù hợp.
           </p>
         </div></ScrollArea
-      ><DialogFooter class="z-10 shrink-0 flex-col gap-3 border-t bg-background p-4 sm:flex-row sm:flex-wrap sm:items-center"
+      ><DialogFooter
+        class="z-10 shrink-0 flex-col gap-3 border-t bg-background p-4 sm:flex-row sm:flex-wrap sm:items-center"
         ><div class="flex items-center gap-2 sm:mr-auto">
           <Button
             size="icon"
@@ -609,12 +731,19 @@ onBeforeUnmount(() => {
             ><ChevronRight class="size-4"
           /></Button>
         </div>
-        <div class="flex w-full gap-2 sm:w-auto"><Button class="flex-1 sm:flex-none" variant="outline" @click="selectorOpen = false">Đóng</Button
-        ><Button class="flex-1 sm:flex-none"
-          :disabled="selectorSelected.size === 0"
-          @click="addSelectedVariants"
-          >Thêm {{ selectorSelected.size }} biến thể</Button></div
-        ></DialogFooter
+        <div class="flex w-full gap-2 sm:w-auto">
+          <Button
+            class="flex-1 sm:flex-none"
+            variant="outline"
+            @click="selectorOpen = false"
+            >Đóng</Button
+          ><Button
+            class="flex-1 sm:flex-none"
+            :disabled="selectorSelected.size === 0"
+            @click="addSelectedVariants"
+            >Thêm {{ selectorSelected.size }} biến thể</Button
+          >
+        </div></DialogFooter
       ></DialogContent
     ></Dialog
   >

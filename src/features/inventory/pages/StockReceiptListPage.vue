@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { keepPreviousData, useQuery } from "@tanstack/vue-query";
-import { Eye, Plus, RefreshCcw } from "@lucide/vue";
+import { MoreHorizontal, Plus, RefreshCcw } from "@lucide/vue";
 import { useRoute, useRouter } from "vue-router";
 import type {
   StockReceiptListItemResponseDto,
@@ -16,7 +16,15 @@ import type {
   DataTableQuery,
 } from "@/components/admin/table/interface";
 import PermissionGate from "@/components/authorization/PermissionGate.vue";
+import { useAdminPermissions } from "@/composables/use-admin-permissions";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useBranchStore } from "@/stores/branch.store";
 import { inventoryKeys } from "../api/inventory-query-keys";
 import { listStockReceipts } from "../api/inventory-api";
@@ -25,6 +33,7 @@ import { createReceiptColumns, isReceiptSortBy } from "../components/inventory-c
 const route = useRoute();
 const router = useRouter();
 const branchStore = useBranchStore();
+const { can, canAny } = useAdminPermissions();
 const page = ref(1);
 const limit = ref(10);
 const search = ref("");
@@ -180,26 +189,36 @@ function openDetail(
         </Button>
       </template>
       <template #row-actions="{ rowData }">
-        <div class="flex items-center gap-1 whitespace-nowrap">
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            title="Xem chi tiết"
-            aria-label="Xem chi tiết"
-            @click.stop="openDetail(rowData)"
-          >
-            <Eye class="size-4" />
-          </Button>
-          <PermissionGate v-if="rowData.status === 'DRAFT'" :all-of="[ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE]">
-            <Button size="sm" variant="ghost" @click.stop="router.push({ name: `${routePrefix}-stock-receipt-edit`, params: { id: rowData.id } })">Chỉnh sửa</Button>
-          </PermissionGate>
-          <PermissionGate v-if="rowData.status === 'DRAFT'" :all-of="[ADMIN_PERMISSIONS.STOCK_RECEIPTS_CONFIRM]">
-            <Button size="sm" variant="ghost" @click.stop="openDetail(rowData, 'confirm')">Xác nhận nhập kho</Button>
-          </PermissionGate>
-          <PermissionGate v-if="rowData.status === 'DRAFT'" :all-of="[ADMIN_PERMISSIONS.STOCK_RECEIPTS_CANCEL]">
-            <Button size="sm" variant="ghost" @click.stop="openDetail(rowData, 'cancel')">Hủy phiếu</Button>
-          </PermissionGate>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button size="icon-sm" variant="ghost" title="Thao tác phiếu nhập" aria-label="Mở menu thao tác phiếu nhập" @click.stop>
+              <MoreHorizontal class="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" @click.stop>
+            <DropdownMenuItem @select="openDetail(rowData)">Xem chi tiết</DropdownMenuItem>
+            <template v-if="rowData.status === 'DRAFT' && canAny([
+              ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE,
+              ADMIN_PERMISSIONS.STOCK_RECEIPTS_CONFIRM,
+              ADMIN_PERMISSIONS.STOCK_RECEIPTS_CANCEL,
+            ])">
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                v-if="can(ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE)"
+                @select="router.push({ name: `${routePrefix}-stock-receipt-edit`, params: { id: rowData.id } })"
+              >Chỉnh sửa</DropdownMenuItem>
+              <DropdownMenuItem
+                v-if="can(ADMIN_PERMISSIONS.STOCK_RECEIPTS_CONFIRM)"
+                @select="openDetail(rowData, 'confirm')"
+              >Xác nhận nhập kho</DropdownMenuItem>
+              <DropdownMenuItem
+                v-if="can(ADMIN_PERMISSIONS.STOCK_RECEIPTS_CANCEL)"
+                class="text-destructive focus:text-destructive"
+                @select="openDetail(rowData, 'cancel')"
+              >Hủy phiếu</DropdownMenuItem>
+            </template>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </template>
       </DataTable>
   </section>
