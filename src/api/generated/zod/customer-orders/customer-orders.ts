@@ -20,6 +20,7 @@ export const customerOrdersListQueryLimitMax = 5;
 
 
 export const CustomerOrdersListQueryParams = zod.strictObject({
+  "tab": zod.enum(['shipping', 'received']).optional().describe('Ngữ nghĩa tab Customer: shipping chỉ gồm đơn đang giao chưa xác nhận; received gồm đơn đang giao đã xác nhận và đơn hoàn thành.'),
   "status": zod.array(zod.enum(['PENDING_PAYMENT', 'PAYMENT_FAILED', 'PENDING', 'CONFIRMED', 'PACKING', 'SHIPPING', 'COMPLETED', 'CANCELLED', 'RETURNED'])).optional().describe('Lọc theo một hoặc nhiều trạng thái. Hỗ trợ repeated query hoặc comma-separated.'),
   "page": zod.number().min(1).default(customerOrdersListQueryPageDefault),
   "limit": zod.number().min(1).max(customerOrdersListQueryLimitMax).default(customerOrdersListQueryLimitDefault)
@@ -43,5 +44,13 @@ export const CustomerOrderCancelParams = zod.strictObject({
 
 export const CustomerOrderCancelBody = zod.looseObject({
 
+})
+
+/**
+ * Xác nhận khách hàng đã nhận hàng
+ * @summary Xác nhận khách hàng đã nhận hàng
+ */
+export const CustomerOrderConfirmReceivedParams = zod.strictObject({
+  "orderId": zod.string()
 })
 

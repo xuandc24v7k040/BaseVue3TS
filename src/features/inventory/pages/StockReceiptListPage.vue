@@ -27,8 +27,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useBranchStore } from "@/stores/branch.store";
 import { inventoryKeys } from "../api/inventory-query-keys";
+import { INVENTORY_LIST_QUERY_POLICY } from "../api/inventory-query-policy";
 import { listStockReceipts } from "../api/inventory-api";
-import { createReceiptColumns, isReceiptSortBy } from "../components/inventory-columns";
+import {
+  createReceiptColumns,
+  isReceiptSortBy,
+} from "../components/inventory-columns";
 
 const route = useRoute();
 const router = useRouter();
@@ -58,6 +62,7 @@ const params = computed<StockReceiptsListParams>(() => ({
   sortOrder: sortOrder.value,
 }));
 const query = useQuery({
+  ...INVENTORY_LIST_QUERY_POLICY,
   queryKey: computed(() =>
     inventoryKeys.receipts(branchId.value, params.value),
   ),
@@ -94,15 +99,18 @@ function handleQuery(value: DataTableQuery) {
   limit.value = value.pageSize;
   search.value = value.search?.value ?? "";
   const nextStatus = value.filters?.find(({ id }) => id === "status")?.value;
-  status.value = typeof nextStatus === "string" && ["DRAFT", "CONFIRMED", "CANCELLED"].includes(nextStatus)
-    ? nextStatus as StockReceiptsListParams["status"]
-    : undefined;
+  status.value =
+    typeof nextStatus === "string" &&
+    ["DRAFT", "CONFIRMED", "CANCELLED"].includes(nextStatus)
+      ? (nextStatus as StockReceiptsListParams["status"])
+      : undefined;
   const date = value.filters?.find(({ id }) => id === "createdAt")?.value as
     { start?: string; end?: string } | undefined;
   createdFrom.value = date?.start;
   createdTo.value = date?.end;
   const sorting = value.sort?.[0];
-  sortBy.value = sorting && isReceiptSortBy(sorting.id) ? sorting.id : "createdAt";
+  sortBy.value =
+    sorting && isReceiptSortBy(sorting.id) ? sorting.id : "createdAt";
   sortOrder.value = sorting?.desc === false ? "asc" : "desc";
 }
 
@@ -176,11 +184,14 @@ function openDetail(
       @update:query="handleQuery"
       @row-click="openDetail"
       @retry="query.refetch()"
-      >
+    >
       <template #error>
         <div class="space-y-1 text-center">
           <p class="font-medium">Không thể tải danh sách phiếu nhập.</p>
-          <p class="text-sm text-muted-foreground">Bộ lọc hoặc sắp xếp có thể không hợp lệ. Vui lòng đặt lại lựa chọn và thử lại.</p>
+          <p class="text-sm text-muted-foreground">
+            Bộ lọc hoặc sắp xếp có thể không hợp lệ. Vui lòng đặt lại lựa chọn
+            và thử lại.
+          </p>
         </div>
       </template>
       <template #toolbar-right>
@@ -191,35 +202,56 @@ function openDetail(
       <template #row-actions="{ rowData }">
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button size="icon-sm" variant="ghost" title="Thao tác phiếu nhập" aria-label="Mở menu thao tác phiếu nhập" @click.stop>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="Thao tác phiếu nhập"
+              aria-label="Mở menu thao tác phiếu nhập"
+              @click.stop
+            >
               <MoreHorizontal class="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" @click.stop>
-            <DropdownMenuItem @select="openDetail(rowData)">Xem chi tiết</DropdownMenuItem>
-            <template v-if="rowData.status === 'DRAFT' && canAny([
-              ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE,
-              ADMIN_PERMISSIONS.STOCK_RECEIPTS_CONFIRM,
-              ADMIN_PERMISSIONS.STOCK_RECEIPTS_CANCEL,
-            ])">
+            <DropdownMenuItem @select="openDetail(rowData)"
+              >Xem chi tiết</DropdownMenuItem
+            >
+            <template
+              v-if="
+                rowData.status === 'DRAFT' &&
+                canAny([
+                  ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE,
+                  ADMIN_PERMISSIONS.STOCK_RECEIPTS_CONFIRM,
+                  ADMIN_PERMISSIONS.STOCK_RECEIPTS_CANCEL,
+                ])
+              "
+            >
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 v-if="can(ADMIN_PERMISSIONS.STOCK_RECEIPTS_UPDATE)"
-                @select="router.push({ name: `${routePrefix}-stock-receipt-edit`, params: { id: rowData.id } })"
-              >Chỉnh sửa</DropdownMenuItem>
+                @select="
+                  router.push({
+                    name: `${routePrefix}-stock-receipt-edit`,
+                    params: { id: rowData.id },
+                  })
+                "
+                >Chỉnh sửa</DropdownMenuItem
+              >
               <DropdownMenuItem
                 v-if="can(ADMIN_PERMISSIONS.STOCK_RECEIPTS_CONFIRM)"
                 @select="openDetail(rowData, 'confirm')"
-              >Xác nhận nhập kho</DropdownMenuItem>
+                >Xác nhận nhập kho</DropdownMenuItem
+              >
               <DropdownMenuItem
                 v-if="can(ADMIN_PERMISSIONS.STOCK_RECEIPTS_CANCEL)"
                 class="text-destructive focus:text-destructive"
                 @select="openDetail(rowData, 'cancel')"
-              >Hủy phiếu</DropdownMenuItem>
+                >Hủy phiếu</DropdownMenuItem
+              >
             </template>
           </DropdownMenuContent>
         </DropdownMenu>
       </template>
-      </DataTable>
+    </DataTable>
   </section>
 </template>

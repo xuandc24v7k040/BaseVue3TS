@@ -29,8 +29,7 @@ const {
   pushMock: vi.fn().mockResolvedValue(undefined),
   queryData: {
     current: undefined as
-      | { value: MockOrderListResponse | undefined }
-      | undefined,
+      { value: MockOrderListResponse | undefined } | undefined,
   },
   queryOptions: {
     current: undefined as Record<string, unknown> | undefined,
@@ -57,9 +56,7 @@ vi.mock("@tanstack/vue-query", async (importOriginal) => {
   const original = await importOriginal<typeof import("@tanstack/vue-query")>();
   return {
     ...original,
-    useQuery: (
-      options: Record<string, unknown>,
-    ) => {
+    useQuery: (options: Record<string, unknown>) => {
       queryOptions.current = options;
       const data = ref(queryResult.current);
       queryData.current = data;
@@ -93,6 +90,12 @@ function orderFixture(index: number): Record<string, unknown> {
     paymentMethod: "COD",
     paymentStatus: "UNPAID",
     placedAt: "2026-07-25T00:00:00.000Z",
+    customerReceiptConfirmation: { confirmed: false, confirmedAt: null },
+    allowedActions: {
+      cancel: false,
+      confirmReceived: false,
+      retryPayment: false,
+    },
     items: [],
   };
 }
@@ -103,6 +106,10 @@ function mountPage() {
       stubs: {
         Badge: { template: "<span><slot /></span>" },
         Button: { template: "<button><slot /></button>" },
+        CustomerReceiptConfirmationAction: {
+          props: ["orderId"],
+          template: '<button type="button">Đã nhận hàng</button>',
+        },
         RouterLink: { template: "<a><slot /></a>" },
         ScrollArea: { template: "<div><slot /></div>" },
         Skeleton: { template: "<div />" },
@@ -129,27 +136,29 @@ describe("customer orders tabs and pagination contract", () => {
     replaceMock.mockClear();
   });
 
-  it("covers every real order status without an invented status", () => {
+  it("keeps raw status tabs while using semantic shipping and received tabs", () => {
     for (const status of [
       "PENDING_PAYMENT",
       "PAYMENT_FAILED",
       "PENDING",
       "CONFIRMED",
       "PACKING",
-      "SHIPPING",
-      "COMPLETED",
       "CANCELLED",
       "RETURNED",
     ]) {
       expect(source).toContain(status);
     }
+    expect(source).toContain('semanticTab: "shipping"');
+    expect(source).toContain('semanticTab: "received"');
+    expect(source).not.toContain('statuses: ["SHIPPING"]');
+    expect(source).not.toContain('statuses: ["COMPLETED"]');
   });
 
   it("uses server-side page size three and restores tab/page from the URL", () => {
     expect(source).toContain("const ACCOUNT_ORDERS_PAGE_SIZE = 3");
     expect(source).toContain("limit: ACCOUNT_ORDERS_PAGE_SIZE");
-    expect(source).toContain('route.query.tab');
-    expect(source).toContain('route.query.page');
+    expect(source).toContain("route.query.tab");
+    expect(source).toContain("route.query.page");
     expect(source).toContain("customerOrderKeys.list");
     expect(source).not.toContain("slice(0, 3)");
   });
@@ -159,9 +168,7 @@ describe("customer orders tabs and pagination contract", () => {
       "'border-[var(--bookora-green)] text-[var(--bookora-green)]'",
     );
     expect(source).toContain("hover:text-[var(--bookora-green)]");
-    expect(source).toContain(
-      "focus-visible:ring-[var(--bookora-green)]",
-    );
+    expect(source).toContain("focus-visible:ring-[var(--bookora-green)]");
     expect(source).not.toContain("'border-red-600 text-red-600'");
     expect(source).not.toContain("focus-visible:ring-red-500");
   });
@@ -201,10 +208,51 @@ describe("customer orders tabs and pagination contract", () => {
 
     const selectedTab = wrapper.get('[role="tab"][aria-selected="true"]');
     expect(selectedTab.attributes("aria-selected")).toBe("true");
-    expect(wrapper.findAll('[role="tab"]')[1]?.attributes("aria-selected")).toBe(
-      "true",
-    );
+    expect(
+      wrapper.findAll('[role="tab"]')[1]?.attributes("aria-selected"),
+    ).toBe("true");
 
+    wrapper.unmount();
+  });
+
+  it.each([
+    ["shipping", "shipping"],
+    ["received", "received"],
+  ])("sends the semantic %s tab to the backend", (routeTab, apiTab) => {
+    Object.assign(routeQuery, { tab: routeTab, page: "1" });
+    const wrapper = mountPage();
+    const instance = wrapper.vm as unknown as {
+      listParams: CustomerOrdersListParams;
+    };
+
+    expect(instance.listParams).toEqual({ tab: apiTab, page: 1, limit: 3 });
+    wrapper.unmount();
+  });
+
+  it("renders the compact receipt action next to detail only for an eligible card", () => {
+    Object.assign(routeQuery, { tab: "shipping", page: "1" });
+    queryResult.current = {
+      items: [
+        {
+          ...orderFixture(1),
+          status: "SHIPPING",
+          allowedActions: {
+            cancel: false,
+            confirmReceived: true,
+            retryPayment: false,
+          },
+        },
+      ],
+      page: 1,
+      limit: 3,
+      total: 1,
+      totalPages: 1,
+    };
+
+    const wrapper = mountPage();
+    const actions = wrapper.findAll("li button").map((button) => button.text());
+    expect(actions).toEqual(["Đã nhận hàng", "Xem chi tiết"]);
+    expect(source).toContain("flex-wrap items-center justify-end gap-2");
     wrapper.unmount();
   });
 

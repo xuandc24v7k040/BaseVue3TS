@@ -213,7 +213,7 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
           BRANCH: "branch-admin-orders",
         },
         requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ],
-        status: "placeholder",
+        requiresSelectedBranch: true,
       },
     ],
   },

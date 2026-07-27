@@ -648,12 +648,21 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "orders",
         name: "super-admin-orders",
-        component: () => import("@/pages/admin/AdminModulePlaceholderPage.vue"),
+        component: () =>
+          import("@/features/admin-orders/pages/AdminOrderListPage.vue"),
         meta: {
           requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ],
-          pageTitle: "Đơn hàng",
-          pageDescription:
-            "Module đơn hàng chưa có API backend trong contract hiện tại.",
+          requiresSelectedBranch: true,
+        },
+      },
+      {
+        path: `orders/:id(${ULID_ROUTE_PATTERN})`,
+        name: "super-admin-order-detail",
+        component: () =>
+          import("@/features/admin-orders/pages/AdminOrderDetailPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ],
+          requiresSelectedBranch: true,
         },
       },
     ],
@@ -721,7 +730,15 @@ export const routes: RouteRecordRaw[] = [
       {
         path: "orders",
         name: "branch-admin-orders",
-        component: () => import("@/pages/branch-admin/OrdersPage.vue"),
+        component: () =>
+          import("@/features/admin-orders/pages/AdminOrderListPage.vue"),
+        meta: { requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ] },
+      },
+      {
+        path: `orders/:id(${ULID_ROUTE_PATTERN})`,
+        name: "branch-admin-order-detail",
+        component: () =>
+          import("@/features/admin-orders/pages/AdminOrderDetailPage.vue"),
         meta: { requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ] },
       },
       {

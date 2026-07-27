@@ -207,7 +207,7 @@ async function mutate(action: "confirm" | "cancel") {
         ><CardHeader><CardTitle>Chi tiết sản phẩm</CardTitle></CardHeader
         ><CardContent class="min-w-0 p-0"
           ><ScrollArea
-            type="always"
+            type="auto"
             scrollbar-orientation="horizontal"
             class="w-full min-w-0 max-w-full overflow-hidden"
           >
@@ -290,7 +290,13 @@ async function mutate(action: "confirm" | "cancel") {
     </div>
   </section>
 
-  <Dialog :open="confirmOpen" @update:open="(open) => { if (!open) closeRequestedAction() }"
+  <Dialog
+    :open="confirmOpen"
+    @update:open="
+      (open) => {
+        if (!open) closeRequestedAction();
+      }
+    "
     ><DialogContent class="sm:max-w-md"
       ><DialogHeader
         ><DialogTitle>Xác nhận nhập kho?</DialogTitle
@@ -307,7 +313,13 @@ async function mutate(action: "confirm" | "cancel") {
       ></DialogContent
     ></Dialog
   >
-  <Dialog :open="cancelOpen" @update:open="(open) => { if (!open) closeRequestedAction() }"
+  <Dialog
+    :open="cancelOpen"
+    @update:open="
+      (open) => {
+        if (!open) closeRequestedAction();
+      }
+    "
     ><DialogContent class="sm:max-w-md"
       ><DialogHeader
         ><DialogTitle>Hủy phiếu nhập?</DialogTitle

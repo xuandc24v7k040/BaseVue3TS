@@ -12,6 +12,7 @@ import { useRoute, useRouter } from "vue-router";
 import type {
   CustomerOrderResponseDtoStatus,
   CustomerOrdersListParams,
+  CustomerOrdersListTab,
 } from "@/api/generated/models";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,10 @@ import {
   customerOrderKeys,
   listCustomerOrders,
 } from "@/features/orders/api/customer-orders-api";
+import { ORDER_LIST_QUERY_POLICY } from "@/features/orders/api/order-query-policy";
+import CustomerReceiptConfirmationAction from "@/features/orders/components/CustomerReceiptConfirmationAction.vue";
 import {
-  orderStatusLabel,
+  customerOrderStatusLabel,
   paymentStatusLabel,
 } from "@/features/orders/presentation/order-status";
 
@@ -30,6 +33,7 @@ interface CustomerOrderTab {
   key: string;
   label: string;
   statuses: readonly CustomerOrderResponseDtoStatus[] | null;
+  semanticTab?: CustomerOrdersListTab;
 }
 
 const ORDER_TABS = [
@@ -50,8 +54,18 @@ const ORDER_TABS = [
     label: "Đang xử lý",
     statuses: ["CONFIRMED", "PACKING"],
   },
-  { key: "shipping", label: "Đang vận chuyển", statuses: ["SHIPPING"] },
-  { key: "completed", label: "Đã nhận hàng", statuses: ["COMPLETED"] },
+  {
+    key: "shipping",
+    label: "Đang vận chuyển",
+    statuses: null,
+    semanticTab: "shipping",
+  },
+  {
+    key: "received",
+    label: "Đã nhận hàng",
+    statuses: null,
+    semanticTab: "received",
+  },
   { key: "cancelled", label: "Đã hủy", statuses: ["CANCELLED"] },
   { key: "returned", label: "Đã hoàn trả", statuses: ["RETURNED"] },
 ] as const satisfies readonly CustomerOrderTab[];
@@ -72,18 +86,21 @@ function positivePage(value: unknown): number {
 }
 
 const activeTab = computed<CustomerOrderTab>(() => {
-  const key = firstQueryValue(route.query.tab);
+  const routeKey = firstQueryValue(route.query.tab);
+  const key = routeKey === "completed" ? "received" : routeKey;
   return ORDER_TABS.find((tab) => tab.key === key) ?? ORDER_TABS[0];
 });
 const currentPage = computed(() => positivePage(route.query.page));
 const listParams = computed<CustomerOrdersListParams>(() => ({
-  status: activeTab.value.statuses
-    ? [...activeTab.value.statuses]
-    : undefined,
+  ...(activeTab.value.semanticTab ? { tab: activeTab.value.semanticTab } : {}),
+  ...(activeTab.value.statuses
+    ? { status: [...activeTab.value.statuses] }
+    : {}),
   page: currentPage.value,
   limit: ACCOUNT_ORDERS_PAGE_SIZE,
 }));
 const ordersQuery = useQuery({
+  ...ORDER_LIST_QUERY_POLICY,
   queryKey: computed(() => customerOrderKeys.list(listParams.value)),
   queryFn: ({ signal }) => listCustomerOrders(listParams.value, signal),
   placeholderData: keepPreviousData,
@@ -196,7 +213,12 @@ async function changePage(page: number, replace = false): Promise<void> {
     >
       <PackageOpen class="mx-auto size-12 text-slate-300" />
       <p class="mt-3 font-medium">Không thể tải danh sách đơn hàng.</p>
-      <Button type="button" variant="outline" class="mt-4" @click="ordersQuery.refetch()">
+      <Button
+        type="button"
+        variant="outline"
+        class="mt-4"
+        @click="ordersQuery.refetch()"
+      >
         <RefreshCcw class="size-4" /> Thử lại
       </Button>
     </div>
@@ -229,7 +251,12 @@ async function changePage(page: number, replace = false): Promise<void> {
                 Ngày đặt hàng: {{ date.format(new Date(order.placedAt)) }}
               </p>
             </div>
-            <Badge variant="secondary">{{ orderStatusLabel(order.status) }}</Badge>
+            <Badge variant="secondary">{{
+              customerOrderStatusLabel(
+                order.status,
+                order.customerReceiptConfirmation.confirmed,
+              )
+            }}</Badge>
           </div>
 
           <div v-if="order.items[0]" class="mt-4 flex gap-3 border-t pt-4">
@@ -240,34 +267,50 @@ async function changePage(page: number, replace = false): Promise<void> {
               class="h-16 w-12 rounded border object-cover"
             />
             <div class="min-w-0 flex-1">
-              <p class="truncate font-semibold">{{ order.items[0].productName }}</p>
-              <p class="mt-1 text-sm text-slate-500">
-                {{ order.items[0].variantLabel }} · Số lượng {{ order.items[0].quantity }}
+              <p class="truncate font-semibold">
+                {{ order.items[0].productName }}
               </p>
-              <p v-if="order.items.length > 1" class="mt-1 text-xs text-slate-400">
+              <p class="mt-1 text-sm text-slate-500">
+                {{ order.items[0].variantLabel }} · Số lượng
+                {{ order.items[0].quantity }}
+              </p>
+              <p
+                v-if="order.items.length > 1"
+                class="mt-1 text-xs text-slate-400"
+              >
                 Và {{ order.items.length - 1 }} sản phẩm khác
               </p>
             </div>
           </div>
 
-          <div class="mt-4 flex items-end justify-between border-t pt-4">
+          <div
+            class="mt-4 flex flex-wrap items-end justify-between gap-4 border-t pt-4"
+          >
             <div class="text-sm text-slate-500">
-              {{ order.paymentMethod }} · {{ paymentStatusLabel(order.paymentStatus) }}
+              {{ order.paymentMethod }} ·
+              {{ paymentStatusLabel(order.paymentStatus) }}
             </div>
-            <div class="text-right">
+            <div class="min-w-0 text-right">
               <strong class="text-lg text-red-600">
                 {{ money.format(order.totalAmount) }}đ
               </strong>
-              <Button as-child variant="link" class="block h-auto p-0">
-                <RouterLink
-                  :to="{
-                    name: 'customer-account-order-detail',
-                    params: { orderId: order.id },
-                  }"
-                >
-                  Xem chi tiết
-                </RouterLink>
-              </Button>
+              <div class="mt-2 flex flex-wrap items-center justify-end gap-2">
+                <CustomerReceiptConfirmationAction
+                  v-if="order.allowedActions.confirmReceived"
+                  :order-id="order.id"
+                  compact
+                />
+                <Button as-child variant="outline" size="sm">
+                  <RouterLink
+                    :to="{
+                      name: 'customer-account-order-detail',
+                      params: { orderId: order.id },
+                    }"
+                  >
+                    Xem chi tiết
+                  </RouterLink>
+                </Button>
+              </div>
             </div>
           </div>
         </li>

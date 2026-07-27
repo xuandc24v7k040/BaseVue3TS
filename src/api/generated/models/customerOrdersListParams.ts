@@ -6,8 +6,13 @@
  * OpenAPI spec version: 1.0
  */
 import type { CustomerOrdersListStatusItem } from './customerOrdersListStatusItem';
+import type { CustomerOrdersListTab } from './customerOrdersListTab';
 
 export type CustomerOrdersListParams = {
+/**
+ * Ngữ nghĩa tab Customer: shipping chỉ gồm đơn đang giao chưa xác nhận; received gồm đơn đang giao đã xác nhận và đơn hoàn thành.
+ */
+tab?: CustomerOrdersListTab;
 /**
  * Lọc theo một hoặc nhiều trạng thái. Hỗ trợ repeated query hoặc comma-separated.
  */

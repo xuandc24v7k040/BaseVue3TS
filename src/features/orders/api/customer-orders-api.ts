@@ -5,6 +5,7 @@ import type {
 } from "@/api/generated/models";
 import {
   customerOrderCancel,
+  customerOrderConfirmReceived,
   customerOrderDetail,
   customerOrdersList,
 } from "@/api/generated/endpoints/customer-orders/customer-orders";
@@ -27,8 +28,7 @@ export const customerOrderKeys = {
   list: (params: CustomerOrdersListParams) =>
     [...customerOrderKeys.all, "list", params] as const,
   details: ["customer-order"] as const,
-  detail: (orderId: string) =>
-    [...customerOrderKeys.details, orderId] as const,
+  detail: (orderId: string) => [...customerOrderKeys.details, orderId] as const,
 };
 
 export async function getCustomerOrder(
@@ -42,7 +42,12 @@ export async function cancelCustomerOrder(
   orderId: string,
   reason?: string,
 ): Promise<CustomerOrderResponseDto> {
-  return (
-    await customerOrderCancel(orderId, reason?.trim() ? { reason } : {})
-  ).data;
+  return (await customerOrderCancel(orderId, reason?.trim() ? { reason } : {}))
+    .data;
+}
+
+export async function confirmCustomerOrderReceived(
+  orderId: string,
+): Promise<CustomerOrderResponseDto> {
+  return (await customerOrderConfirmReceived(orderId)).data;
 }

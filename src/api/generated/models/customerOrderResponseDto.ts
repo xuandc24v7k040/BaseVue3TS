@@ -5,7 +5,9 @@
  * Contract OpenAPI chính thức cho backend Bookora. Frontend dùng cookie credentials, cookie accessToken/refreshToken và header X-CSRF-Token cho mutation cần CSRF.
  * OpenAPI spec version: 1.0
  */
+import type { CustomerOrderAllowedActionsDto } from './customerOrderAllowedActionsDto';
 import type { CustomerOrderItemResponseDto } from './customerOrderItemResponseDto';
+import type { CustomerOrderReceiptConfirmationDto } from './customerOrderReceiptConfirmationDto';
 import type { CustomerOrderResponseDtoPaymentMethod } from './customerOrderResponseDtoPaymentMethod';
 import type { CustomerOrderResponseDtoPaymentStatus } from './customerOrderResponseDtoPaymentStatus';
 import type { CustomerOrderResponseDtoStatus } from './customerOrderResponseDtoStatus';
@@ -45,5 +47,7 @@ export interface CustomerOrderResponseDto {
   cancelReason?: string | null;
   /** @nullable */
   paymentId?: string | null;
+  customerReceiptConfirmation: CustomerOrderReceiptConfirmationDto;
+  allowedActions: CustomerOrderAllowedActionsDto;
   items: CustomerOrderItemResponseDto[];
 }

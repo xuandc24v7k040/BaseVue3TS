@@ -21,12 +21,15 @@ import {
   customerOrderKeys,
   getCustomerOrder,
 } from "@/features/orders/api/customer-orders-api";
+import CustomerReceiptConfirmationAction from "@/features/orders/components/CustomerReceiptConfirmationAction.vue";
+import { ORDER_DETAIL_QUERY_POLICY } from "@/features/orders/api/order-query-policy";
 import {
-  orderStatusLabel,
+  customerOrderStatusLabel,
   paymentStatusLabel,
 } from "@/features/orders/presentation/order-status";
 import { publishInventoryChanged } from "@/features/storefront/state/inventory-sync-channel";
 import { invalidateInventoryState } from "@/features/storefront/state/inventory-state";
+import { formatDateTime } from "@/lib/date-format";
 
 const route = useRoute();
 const queryClient = useQueryClient();
@@ -34,6 +37,7 @@ const orderId = computed(() => String(route.params.orderId ?? ""));
 const cancelDialogOpen = ref(false);
 const cancelSubmitting = ref(false);
 const orderQuery = useQuery({
+  ...ORDER_DETAIL_QUERY_POLICY,
   queryKey: computed(() => customerOrderKeys.detail(orderId.value)),
   queryFn: ({ signal }) => getCustomerOrder(orderId.value, signal),
 });
@@ -79,10 +83,8 @@ async function confirmCancellation(event: MouseEvent): Promise<void> {
     cancelSubmitting.value = false;
   }
 }
-const cancellable = computed(() =>
-  ["PENDING_PAYMENT", "PAYMENT_FAILED", "PENDING"].includes(
-    orderQuery.data.value?.status ?? "",
-  ),
+const cancellable = computed(
+  () => orderQuery.data.value?.allowedActions.cancel ?? false,
 );
 const money = new Intl.NumberFormat("vi-VN");
 </script>
@@ -103,7 +105,12 @@ const money = new Intl.NumberFormat("vi-VN");
               {{ orderQuery.data.value.orderCode }}
             </h1>
           </div>
-          <Badge>{{ orderStatusLabel(orderQuery.data.value.status) }}</Badge>
+          <Badge>{{
+            customerOrderStatusLabel(
+              orderQuery.data.value.status,
+              orderQuery.data.value.customerReceiptConfirmation.confirmed,
+            )
+          }}</Badge>
         </div>
         <div class="mt-6 grid gap-4 border-t pt-5 sm:grid-cols-3">
           <div>
@@ -184,6 +191,22 @@ const money = new Intl.NumberFormat("vi-VN");
           </p>
         </div>
       </section>
+      <section
+        v-if="orderQuery.data.value.customerReceiptConfirmation.confirmed"
+        class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+      >
+        Bạn đã xác nhận nhận hàng lúc
+        <strong>{{
+          formatDateTime(
+            orderQuery.data.value.customerReceiptConfirmation.confirmedAt,
+          )
+        }}</strong
+        >.
+      </section>
+      <CustomerReceiptConfirmationAction
+        v-if="orderQuery.data.value.allowedActions.confirmReceived"
+        :order-id="orderQuery.data.value.id"
+      />
       <Button
         v-if="cancellable"
         variant="destructive"
@@ -210,10 +233,7 @@ const money = new Intl.NumberFormat("vi-VN");
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel
-            type="button"
-            :disabled="cancelSubmitting"
-          >
+          <AlertDialogCancel type="button" :disabled="cancelSubmitting">
             Không, quay lại
           </AlertDialogCancel>
           <AlertDialogAction
@@ -222,10 +242,7 @@ const money = new Intl.NumberFormat("vi-VN");
             :disabled="cancelSubmitting"
             @click.capture="confirmCancellation"
           >
-            <LoaderCircle
-              v-if="cancelSubmitting"
-              class="size-4 animate-spin"
-            />
+            <LoaderCircle v-if="cancelSubmitting" class="size-4 animate-spin" />
             <Ban v-else class="size-4" />
             Xác nhận hủy
           </AlertDialogAction>

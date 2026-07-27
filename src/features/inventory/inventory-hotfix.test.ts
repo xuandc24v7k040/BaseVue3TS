@@ -115,6 +115,11 @@ describe("inventory hotfix contract", () => {
     );
     expect(formSource).toContain('aria-describedby="receipt-note-error"');
     expect(formSource).toContain('class="ml-auto shrink-0 shadow-sm"');
+    expect(formSource).toContain("<VndMoneyInput");
+    expect(formSource).toContain('placeholder="Không bắt buộc"');
+    expect(formSource).toContain(
+      '!/^\\d{1,13}(\\.\\d{1,2})?$/.test(item.costPrice)',
+    );
     expect(formSource).not.toContain(
       "size-5 shrink-0 border-2 border-primary/70",
     );
@@ -218,7 +223,7 @@ describe("inventory hotfix contract", () => {
     expect(listSource).toContain("<DropdownMenu");
     expect(listSource).toContain("Xem chi tiết");
     expect(detailSource).toContain("Quay lại danh sách");
-    expect(detailSource).toContain('type="always"');
+    expect(detailSource).toContain('type="auto"');
     expect(detailSource).toContain('scrollbar-orientation="horizontal"');
     expect(detailSource).not.toContain('class="overflow-x-auto"');
   });

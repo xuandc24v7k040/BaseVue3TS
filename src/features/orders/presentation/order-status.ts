@@ -31,6 +31,15 @@ export function orderStatusLabel(status: string | null | undefined): string {
     : "Không xác định";
 }
 
+export function customerOrderStatusLabel(
+  status: string | null | undefined,
+  receiptConfirmed: boolean,
+): string {
+  if (status === "SHIPPING" && receiptConfirmed) return "Đã nhận hàng";
+  if (status === "COMPLETED") return "Hoàn thành";
+  return orderStatusLabel(status);
+}
+
 export function paymentStatusLabel(status: string | null | undefined): string {
   return status && status in PAYMENT_STATUS_LABELS
     ? PAYMENT_STATUS_LABELS[status as CustomerOrderResponseDtoPaymentStatus]

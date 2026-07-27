@@ -38,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import AsyncMasterDataCombobox from "@/features/products/components/AsyncMasterDataCombobox.vue";
+import VndMoneyInput from "@/features/products/components/VndMoneyInput.vue";
 import { useBranchStore } from "@/stores/branch.store";
 import { registerBranchChangeGuard } from "@/stores/branch-change-guard";
 import {
@@ -420,7 +421,7 @@ onBeforeUnmount(() => {
         </p>
         <ScrollArea
           v-if="items.length"
-          type="always"
+          type="auto"
           scrollbar-orientation="horizontal"
           class="w-full rounded-lg border pb-2"
         >
@@ -466,18 +467,12 @@ onBeforeUnmount(() => {
                   </p>
                 </td>
                 <td class="p-3">
-                  <Input
+                  <VndMoneyInput
                     v-model="item.costPrice"
-                    inputmode="decimal"
                     placeholder="Không bắt buộc"
-                    @input="delete errors[`cost-${index}`]"
+                    :error="errors[`cost-${index}`]"
+                    @update:model-value="delete errors[`cost-${index}`]"
                   />
-                  <p
-                    v-if="errors[`cost-${index}`]"
-                    class="mt-1 text-xs text-destructive"
-                  >
-                    {{ errors[`cost-${index}`] }}
-                  </p>
                 </td>
                 <td class="p-3">
                   <Button

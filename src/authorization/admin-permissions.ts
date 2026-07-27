@@ -59,6 +59,9 @@ export const ADMIN_PERMISSIONS = {
   STOCK_RECEIPTS_CANCEL: "stock_receipts.cancel",
   STOCK_RECEIPTS_CONFIRM: "stock_receipts.confirm",
   ORDERS_READ: "orders.read",
+  ORDERS_UPDATE_STATUS: "orders.update_status",
+  ORDERS_CANCEL: "orders.cancel",
+  ORDERS_UPDATE_NOTE: "orders.update_note",
   PAYMENTS_CREATE: "payments.create",
 } as const;
 

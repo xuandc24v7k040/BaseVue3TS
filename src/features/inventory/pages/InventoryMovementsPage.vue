@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useBranchStore } from "@/stores/branch.store";
 import { listInventoryMovements } from "../api/inventory-api";
 import { inventoryKeys } from "../api/inventory-query-keys";
+import { INVENTORY_LIST_QUERY_POLICY } from "../api/inventory-query-policy";
 import { createMovementColumns } from "../components/inventory-columns";
 
 const route = useRoute();
@@ -38,7 +39,10 @@ const params = computed<InventoryMovementsListParams>(() => ({
   sortOrder: sortOrder.value,
 }));
 const query = useQuery({
-  queryKey: computed(() => inventoryKeys.movements(branchId.value, params.value)),
+  ...INVENTORY_LIST_QUERY_POLICY,
+  queryKey: computed(() =>
+    inventoryKeys.movements(branchId.value, params.value),
+  ),
   queryFn: ({ signal }) => listInventoryMovements(params.value, signal),
   enabled: computed(() => Boolean(branchId.value)),
   placeholderData: keepPreviousData,
@@ -84,8 +88,7 @@ function handleQuery(value: DataTableQuery) {
       ? (nextType as InventoryMovementsListParams["type"])
       : undefined;
   const date = value.filters?.find(({ id }) => id === "createdAt")?.value as
-    | { start?: string; end?: string }
-    | undefined;
+    { start?: string; end?: string } | undefined;
   dateFrom.value = date?.start;
   dateTo.value = date?.end;
   sortOrder.value = value.sort?.[0]?.desc === false ? "asc" : "desc";
@@ -100,7 +103,9 @@ function handleQuery(value: DataTableQuery) {
       section-label="Nhật ký tồn kho"
     />
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Nhật ký tồn kho</h1>
+      <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">
+        Nhật ký tồn kho
+      </h1>
       <p class="mt-1 text-sm text-muted-foreground">
         Truy vết mọi lần tăng, giảm tồn tại {{ branchStore.scopeLabel }}.
       </p>
@@ -114,7 +119,8 @@ function handleQuery(value: DataTableQuery) {
       :error="query.error.value"
       :global-search="{
         columnIds: ['product', 'source', 'actor'],
-        placeholder: 'Tìm sản phẩm, biến thể, SKU, mã nguồn hoặc người thao tác...',
+        placeholder:
+          'Tìm sản phẩm, biến thể, SKU, mã nguồn hoặc người thao tác...',
       }"
       :filterable-columns="filters"
       :date-columns="dates"
@@ -145,11 +151,15 @@ function handleQuery(value: DataTableQuery) {
       <template #error>
         <div class="space-y-1 text-center">
           <p class="font-medium">Không thể tải nhật ký tồn kho.</p>
-          <p class="text-sm text-muted-foreground">Vui lòng đặt lại bộ lọc hoặc thử lại.</p>
+          <p class="text-sm text-muted-foreground">
+            Vui lòng đặt lại bộ lọc hoặc thử lại.
+          </p>
         </div>
       </template>
       <template #toolbar-right>
-        <Button size="sm" variant="outline" @click="query.refetch()"><RefreshCcw class="mr-2 size-4" />Tải lại</Button>
+        <Button size="sm" variant="outline" @click="query.refetch()"
+          ><RefreshCcw class="mr-2 size-4" />Tải lại</Button
+        >
       </template>
     </DataTable>
   </section>

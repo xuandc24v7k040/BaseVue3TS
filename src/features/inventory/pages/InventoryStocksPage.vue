@@ -42,6 +42,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useBranchStore } from "@/stores/branch.store";
 import { inventoryKeys } from "../api/inventory-query-keys";
+import { INVENTORY_LIST_QUERY_POLICY } from "../api/inventory-query-policy";
 import {
   adjustStockQuantity,
   listGroupedStocks,
@@ -84,6 +85,7 @@ const params = computed<InventoryGroupedStocksListParams>(() => ({
   sortOrder: sortOrder.value,
 }));
 const query = useQuery({
+  ...INVENTORY_LIST_QUERY_POLICY,
   queryKey: computed(() =>
     inventoryKeys.groupedStocks(branchId.value, params.value),
   ),

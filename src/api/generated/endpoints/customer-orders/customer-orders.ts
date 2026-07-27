@@ -32,6 +32,7 @@ import type {
 import type {
   CancelCustomerOrderDto,
   CustomerOrderCancel200,
+  CustomerOrderConfirmReceived200,
   CustomerOrderDetail200,
   CustomerOrdersList200,
   CustomerOrdersListParams,
@@ -254,4 +255,66 @@ export const useCustomerOrderCancel = <TError = ErrorType<ErrorResponseDto>,
         TContext
       > => {
       return useMutation(getCustomerOrderCancelMutationOptions(options), queryClient);
+    }
+    /**
+ * Xác nhận khách hàng đã nhận hàng
+ * @summary Xác nhận khách hàng đã nhận hàng
+ */
+export const customerOrderConfirmReceived = (
+    orderId: MaybeRef<string>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      orderId = unref(orderId);
+
+      return customInstance<CustomerOrderConfirmReceived200>(
+      {url: `/customer/orders/${orderId}/confirm-received`, method: 'POST', signal
+    },
+      options);
+    }
+
+
+
+export const getCustomerOrderConfirmReceivedMutationOptions = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOrderConfirmReceived>>, TError,{orderId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof customerOrderConfirmReceived>>, TError,{orderId: string}, TContext> => {
+
+const mutationKey = ['customerOrderConfirmReceived'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerOrderConfirmReceived>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  customerOrderConfirmReceived(orderId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerOrderConfirmReceivedMutationResult = NonNullable<Awaited<ReturnType<typeof customerOrderConfirmReceived>>>
+
+    export type CustomerOrderConfirmReceivedMutationError = ErrorType<ErrorResponseDto>
+
+    /**
+ * @summary Xác nhận khách hàng đã nhận hàng
+ */
+export const useCustomerOrderConfirmReceived = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOrderConfirmReceived>>, TError,{orderId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof customerOrderConfirmReceived>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+      return useMutation(getCustomerOrderConfirmReceivedMutationOptions(options), queryClient);
     }

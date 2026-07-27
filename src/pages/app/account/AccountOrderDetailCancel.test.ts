@@ -10,21 +10,19 @@ const {
   invalidateQueriesMock,
   mutationOptions,
   setQueryDataMock,
-} = vi.hoisted(
-  () => ({
-    cancelApiMock: vi.fn(),
-    invalidateQueriesMock: vi.fn().mockResolvedValue(undefined),
-    mutationOptions: {
-      current: undefined as
-        | {
-            onError?: () => void;
-            onSuccess?: (order: Record<string, unknown>) => Promise<void>;
-          }
-        | undefined,
-    },
-    setQueryDataMock: vi.fn(),
-  }),
-);
+} = vi.hoisted(() => ({
+  cancelApiMock: vi.fn(),
+  invalidateQueriesMock: vi.fn().mockResolvedValue(undefined),
+  mutationOptions: {
+    current: undefined as
+      | {
+          onError?: () => void;
+          onSuccess?: (order: Record<string, unknown>) => Promise<void>;
+        }
+      | undefined,
+  },
+  setQueryDataMock: vi.fn(),
+}));
 
 vi.mock("@tanstack/vue-query", async (importOriginal) => {
   const original = await importOriginal<typeof import("@tanstack/vue-query")>();
@@ -33,18 +31,18 @@ vi.mock("@tanstack/vue-query", async (importOriginal) => {
     useMutation: (options: typeof mutationOptions.current) => {
       mutationOptions.current = options;
       return {
-      isPending: ref(false),
-      mutateAsync: async () => {
-        try {
-          const order = await cancelApiMock();
-          await options?.onSuccess?.(order);
-          return order;
-        } catch (error) {
-          options?.onError?.();
-          throw error;
-        }
-      },
-    };
+        isPending: ref(false),
+        mutateAsync: async () => {
+          try {
+            const order = await cancelApiMock();
+            await options?.onSuccess?.(order);
+            return order;
+          } catch (error) {
+            options?.onError?.();
+            throw error;
+          }
+        },
+      };
     },
     useQuery: () => ({
       data: ref({
@@ -63,6 +61,15 @@ vi.mock("@tanstack/vue-query", async (importOriginal) => {
         shippingServiceName: "Nội bộ",
         paymentMethod: "COD",
         paymentStatus: "UNPAID",
+        customerReceiptConfirmation: {
+          confirmed: false,
+          confirmedAt: null,
+        },
+        allowedActions: {
+          cancel: true,
+          confirmReceived: false,
+          retryPayment: false,
+        },
         placedAt: new Date().toISOString(),
         items: [],
       }),
@@ -104,9 +111,9 @@ describe("customer order cancellation confirmation", () => {
     await nextTick();
     expect(cancelApiMock).not.toHaveBeenCalled();
 
-    const keepButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Không, quay lại"),
-    );
+    const keepButton = Array.from(
+      document.body.querySelectorAll("button"),
+    ).find((button) => button.textContent?.includes("Không, quay lại"));
     expect(keepButton).toBeTruthy();
     expect(keepButton?.querySelector("button")).toBeNull();
     expect(keepButton?.disabled).toBe(false);

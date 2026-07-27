@@ -1,16 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CustomerOrdersListParams } from "@/api/generated/models";
 import {
+  confirmCustomerOrderReceived,
   customerOrderKeys,
   listCustomerOrders,
 } from "./customer-orders-api";
 
-const { customerOrdersListMock } = vi.hoisted(() => ({
-  customerOrdersListMock: vi.fn(),
-}));
+const { customerOrderConfirmReceivedMock, customerOrdersListMock } = vi.hoisted(
+  () => ({
+    customerOrderConfirmReceivedMock: vi.fn(),
+    customerOrdersListMock: vi.fn(),
+  }),
+);
 
 vi.mock("@/api/generated/endpoints/customer-orders/customer-orders", () => ({
   customerOrderCancel: vi.fn(),
+  customerOrderConfirmReceived: customerOrderConfirmReceivedMock,
   customerOrderDetail: vi.fn(),
   customerOrdersList: customerOrdersListMock,
 }));
@@ -45,5 +50,16 @@ describe("customer orders API adapter", () => {
       "list",
       params,
     ]);
+  });
+
+  it("uses the dedicated confirm-received command", async () => {
+    customerOrderConfirmReceivedMock.mockResolvedValue({
+      data: { id: "order-1", status: "SHIPPING" },
+    });
+
+    const result = await confirmCustomerOrderReceived("order-1");
+
+    expect(customerOrderConfirmReceivedMock).toHaveBeenCalledWith("order-1");
+    expect(result).toMatchObject({ id: "order-1", status: "SHIPPING" });
   });
 });
