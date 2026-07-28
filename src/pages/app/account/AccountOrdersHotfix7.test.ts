@@ -96,6 +96,7 @@ function orderFixture(index: number): Record<string, unknown> {
       confirmReceived: false,
       retryPayment: false,
     },
+    reviewAction: { type: "NONE", count: 0 },
     items: [],
   };
 }
@@ -252,7 +253,41 @@ describe("customer orders tabs and pagination contract", () => {
     const wrapper = mountPage();
     const actions = wrapper.findAll("li button").map((button) => button.text());
     expect(actions).toEqual(["Đã nhận hàng", "Xem chi tiết"]);
-    expect(source).toContain("flex-wrap items-center justify-end gap-2");
+    expect(source).toContain("flex min-w-0 flex-wrap");
+    expect(source).toContain("w-full shrink-0 sm:w-auto");
+    wrapper.unmount();
+  });
+
+  it("renders WRITE, VIEW, and NONE review actions from the backend projection", () => {
+    queryResult.current = {
+      items: [
+        {
+          ...orderFixture(1),
+          status: "COMPLETED",
+          reviewAction: { type: "WRITE", count: 2 },
+        },
+        {
+          ...orderFixture(2),
+          status: "COMPLETED",
+          reviewAction: { type: "VIEW", count: 1 },
+        },
+        orderFixture(3),
+      ],
+      page: 1,
+      limit: 3,
+      total: 3,
+      totalPages: 1,
+    };
+
+    const wrapper = mountPage();
+    const cardActions = wrapper.findAll("li").map((card) => card.text());
+
+    expect(cardActions[0]).toContain("Đánh giá (2)");
+    expect(cardActions[1]).toContain("Xem đánh giá");
+    expect(cardActions[2]).not.toContain("Đánh giá");
+    expect(source).toContain("tab: 'pending'");
+    expect(source).toContain("tab: 'written'");
+    expect(source).toContain("orderId: order.id");
     wrapper.unmount();
   });
 

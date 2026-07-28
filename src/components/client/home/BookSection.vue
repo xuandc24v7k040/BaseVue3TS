@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ArrowRight, ChevronLeft, ChevronRight } from '@lucide/vue'
-import { ref } from 'vue'
+import { ref, type ComponentPublicInstance } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { PublicProductListItemDto } from '@/api/generated/models'
 import ProductCard from '@/features/storefront/components/ProductCard.vue'
 
@@ -18,10 +19,15 @@ withDefaults(
   },
 )
 
-const track = ref<HTMLElement | null>(null)
+const track = ref<ComponentPublicInstance | null>(null)
 
 function scroll(direction: 'previous' | 'next'): void {
-  track.value?.scrollBy({
+  const root = track.value?.$el
+  if (!(root instanceof HTMLElement)) return
+  const viewport = root.querySelector<HTMLElement>(
+    '[data-slot="scroll-area-viewport"]',
+  )
+  viewport?.scrollBy({
     left: direction === 'next' ? 420 : -420,
     behavior: 'smooth',
   })
@@ -29,22 +35,42 @@ function scroll(direction: 'previous' | 'next'): void {
 </script>
 
 <template>
-  <section class="relative w-full min-w-0 max-w-full rounded-xl border border-[var(--bookora-border)] bg-background px-4 py-4 sm:px-5">
+  <section
+    class="relative w-full min-w-0 max-w-full rounded-xl border border-[var(--bookora-border)] bg-background px-4 py-4 sm:px-5"
+  >
     <div class="mb-3 flex min-w-0 items-center justify-between gap-3">
-      <h2 class="min-w-0 text-xl font-bold tracking-tight text-[var(--bookora-ink)]">{{ title }}</h2>
-      <RouterLink :to="viewAllHref" class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-[var(--bookora-green)] hover:underline">
+      <h2
+        class="min-w-0 text-xl font-bold tracking-tight text-[var(--bookora-ink)]"
+      >
+        {{ title }}
+      </h2>
+      <RouterLink
+        :to="viewAllHref"
+        class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-[var(--bookora-green)] hover:underline"
+      >
         Xem tất cả
         <ArrowRight aria-hidden="true" class="size-4" />
       </RouterLink>
     </div>
 
-    <div
+    <ScrollArea
       ref="track"
-      class="grid w-full min-w-0 max-w-full auto-cols-[145px] grid-flow-col gap-2 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 [scrollbar-width:none] lg:auto-cols-auto lg:grid-flow-row"
-      :class="books.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
+      type="auto"
+      scrollbar-orientation="horizontal"
+      class="w-full min-w-0 max-w-full overflow-hidden pb-2"
     >
-      <ProductCard v-for="book in books" :key="book.id" :product="book" :show-rank="showControls" />
-    </div>
+      <div
+        class="grid w-max auto-cols-[145px] grid-flow-col gap-2 px-0.5 pt-1 lg:w-full lg:auto-cols-auto lg:grid-flow-row"
+        :class="books.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
+      >
+        <ProductCard
+          v-for="book in books"
+          :key="book.id"
+          :product="book"
+          :show-rank="showControls"
+        />
+      </div>
+    </ScrollArea>
 
     <template v-if="showControls">
       <Button

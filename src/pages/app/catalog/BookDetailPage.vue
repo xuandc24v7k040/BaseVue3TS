@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { BookOpen, Minus, Plus, ShoppingCart, Zap } from "@lucide/vue";
+import { BookOpen, Minus, Plus, ShoppingCart, Star, Zap } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useStorefrontAvailabilityQuery,
@@ -13,6 +14,8 @@ import ProductAvailability from "@/features/storefront/components/ProductAvailab
 import ProductCard from "@/features/storefront/components/ProductCard.vue";
 import ProductGallery from "@/features/storefront/components/ProductGallery.vue";
 import ProductVariantSelector from "@/features/storefront/components/ProductVariantSelector.vue";
+import PublicReviewSection from "@/features/engagement/components/PublicReviewSection.vue";
+import WishlistButton from "@/features/engagement/components/WishlistButton.vue";
 import { formatProductDate } from "@/features/products/utils/product-date";
 import { useProductSeo } from "@/features/storefront/composables/use-product-seo";
 import { useVariantSelection } from "@/features/storefront/composables/use-variant-selection";
@@ -57,12 +60,8 @@ const availabilityState = computed<"loading" | "error" | "success">(() =>
       ? "success"
       : "loading",
 );
-const {
-  selectedVariantId,
-  selectedVariant,
-  displayedVariant,
-  selectVariant,
-} = useVariantSelection(product, variantQuantities);
+const { selectedVariantId, selectedVariant, displayedVariant, selectVariant } =
+  useVariantSelection(product, variantQuantities);
 const selectedAvailability = computed(() =>
   availabilityQuery.data.value?.variants.find(
     (variant) => variant.variantId === selectedVariantId.value,
@@ -79,7 +78,7 @@ const canOrder = computed(
 );
 const quantity = ref(1);
 const cartPending = ref(false);
-const activeTab = ref<"description" | "details">("description");
+const activeTab = ref<"description" | "details" | "reviews">("description");
 const priceFormatter = new Intl.NumberFormat("vi-VN");
 const gallery = computed(() =>
   displayedVariant.value?.media.length
@@ -88,8 +87,7 @@ const gallery = computed(() =>
 );
 const isSimpleProduct = computed(
   () =>
-    product.value?.options.length === 0 &&
-    product.value.variants.length === 1,
+    product.value?.options.length === 0 && product.value.variants.length === 1,
 );
 
 watch(availableQuantity, (nextQuantity) => {
@@ -184,17 +182,17 @@ async function addToCart(buyNow = false): Promise<void> {
       <nav
         aria-label="Breadcrumb"
         class="flex flex-wrap items-center gap-2 text-sm text-[var(--bookora-muted)]"
-        >
-          <RouterLink to="/">Trang chủ</RouterLink><span>/</span
-          ><RouterLink to="/books">Sách</RouterLink
-          ><template
-            v-for="category in categoryBreadcrumbItems"
-            :key="category.id"
-            ><span>/</span
-            ><RouterLink :to="category.to">{{
-              category.label
-            }}</RouterLink></template
+      >
+        <RouterLink to="/">Trang chủ</RouterLink><span>/</span
+        ><RouterLink to="/books">Sách</RouterLink
+        ><template
+          v-for="category in categoryBreadcrumbItems"
+          :key="category.id"
           ><span>/</span
+          ><RouterLink :to="category.to">{{
+            category.label
+          }}</RouterLink></template
+        ><span>/</span
         ><span aria-current="page" class="text-[var(--bookora-ink)]">{{
           product.name
         }}</span>
@@ -205,7 +203,17 @@ async function addToCart(buyNow = false): Promise<void> {
       >
         <ProductGallery :media="gallery" :product-name="product.name" />
         <section class="min-w-0 rounded-xl bg-background p-1 sm:p-5 xl:p-1">
-          <h1 class="text-3xl font-bold tracking-tight">{{ product.name }}</h1>
+          <div class="flex min-w-0 items-start gap-3">
+            <h1
+              class="min-w-0 flex-1 break-words text-3xl font-bold tracking-tight [overflow-wrap:anywhere]"
+            >
+              {{ product.name }}
+            </h1>
+            <WishlistButton
+              :product-id="product.id"
+              class="mt-0.5 size-10 shrink-0 rounded-full border border-[var(--bookora-border)] bg-background text-[var(--bookora-green)] shadow-sm"
+            />
+          </div>
           <dl
             class="mt-5 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-3 text-sm"
           >
@@ -225,8 +233,14 @@ async function addToCart(buyNow = false): Promise<void> {
               }}
             </dd>
           </dl>
-          <p class="mt-4 text-sm text-[var(--bookora-muted)]">
-            Chưa có đánh giá
+          <p
+            class="mt-4 flex items-center gap-1 text-sm text-[var(--bookora-muted)]"
+          >
+            <Star class="size-4 fill-amber-400 text-amber-400" />{{
+              product.averageRating?.toFixed(1) ?? "Chưa có đánh giá"
+            }}<span v-if="product.reviewCount"
+              >({{ product.reviewCount }})</span
+            >
           </p>
           <div class="mt-5 flex flex-wrap items-baseline gap-3">
             <strong class="text-3xl text-red-600">{{
@@ -319,7 +333,9 @@ async function addToCart(buyNow = false): Promise<void> {
         />
       </div>
 
-      <div class="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+      <div
+        class="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"
+      >
         <section
           class="min-w-0 rounded-xl border border-[var(--bookora-border)] bg-background p-5 sm:p-6"
         >
@@ -345,7 +361,18 @@ async function addToCart(buyNow = false): Promise<void> {
               "
               @click="activeTab = 'details'"
             >
-              Thông tin chi tiết
+              Thông tin chi tiết</button
+            ><button
+              type="button"
+              class="border-b-2 px-2 pb-3 text-sm font-semibold"
+              :class="
+                activeTab === 'reviews'
+                  ? 'border-[var(--bookora-green)] text-[var(--bookora-green)]'
+                  : 'border-transparent'
+              "
+              @click="activeTab = 'reviews'"
+            >
+              Đánh giá
             </button>
           </div>
           <div
@@ -356,6 +383,10 @@ async function addToCart(buyNow = false): Promise<void> {
               product.shortDescription ||
               'Thông tin mô tả đang được cập nhật.'
             "
+          />
+          <PublicReviewSection
+            v-else-if="activeTab === 'reviews'"
+            :product-id="product.id"
           />
           <dl v-else class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
             <div
@@ -402,16 +433,22 @@ async function addToCart(buyNow = false): Promise<void> {
               >Xem tất cả →</RouterLink
             >
           </div>
-          <div
+          <ScrollArea
             v-if="product.relatedProducts.length"
-            class="grid auto-cols-[155px] grid-flow-col gap-3 overflow-x-auto pb-2 sm:grid-cols-2 sm:grid-flow-row"
+            type="auto"
+            scrollbar-orientation="horizontal"
+            class="w-full min-w-0 max-w-full overflow-hidden pb-3"
           >
-            <ProductCard
-              v-for="related in product.relatedProducts"
-              :key="related.id"
-              :product="related"
-            />
-          </div>
+            <div
+              class="grid w-max auto-cols-[155px] grid-flow-col gap-3 pb-1 sm:w-full sm:grid-cols-2 sm:grid-flow-row"
+            >
+              <ProductCard
+                v-for="related in product.relatedProducts"
+                :key="related.id"
+                :product="related"
+              />
+            </div>
+          </ScrollArea>
           <p
             v-else
             class="py-8 text-center text-sm text-[var(--bookora-muted)]"

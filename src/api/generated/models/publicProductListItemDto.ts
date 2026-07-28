@@ -30,4 +30,12 @@ export interface PublicProductListItemDto {
      * @nullable
      */
   rank?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  averageRating?: number | null;
+  /** @minimum 0 */
+  reviewCount: number;
 }

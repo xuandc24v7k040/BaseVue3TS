@@ -2,7 +2,6 @@
 import { computed, ref } from "vue";
 import { RouterLink } from "vue-router";
 import {
-  Bell,
   ClipboardList,
   Eye,
   Heart,
@@ -49,10 +48,9 @@ const items = [
   { label: "Tổng quan", to: "/account", icon: Home },
   { label: "Đơn hàng của tôi", to: "/account/orders", icon: ClipboardList },
   { label: "Địa chỉ của tôi", to: "/account/addresses", icon: MapPin },
-  { label: "Sách yêu thích", to: "/account/favorites", icon: Heart },
+  { label: "Sách yêu thích", to: "/account/wishlist", icon: Heart },
   { label: "Đánh giá của tôi", to: "/account/reviews", icon: Star },
   { label: "Thông tin tài khoản", to: "/account/profile", icon: UserRound },
-  { label: "Thông báo", to: "/account/notifications", icon: Bell },
 ];
 </script>
 

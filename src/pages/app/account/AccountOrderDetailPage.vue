@@ -30,6 +30,12 @@ import {
 import { publishInventoryChanged } from "@/features/storefront/state/inventory-sync-channel";
 import { invalidateInventoryState } from "@/features/storefront/state/inventory-state";
 import { formatDateTime } from "@/lib/date-format";
+import type { PendingReviewOpportunityDto } from "@/api/generated/models";
+import ReviewFormDialog from "@/features/engagement/components/ReviewFormDialog.vue";
+import {
+  engagementKeys,
+  listPendingReviews,
+} from "@/features/engagement/api/engagement-api";
 
 const route = useRoute();
 const queryClient = useQueryClient();
@@ -86,6 +92,23 @@ async function confirmCancellation(event: MouseEvent): Promise<void> {
 const cancellable = computed(
   () => orderQuery.data.value?.allowedActions.cancel ?? false,
 );
+const reviewDialogOpen = ref(false);
+const selectedOpportunity = ref<PendingReviewOpportunityDto | null>(null);
+const pendingReviewParams = computed(() => ({
+  page: 1,
+  limit: 50,
+  orderId: orderId.value,
+}));
+const pendingReviews = useQuery({
+  queryKey: computed(() => engagementKeys.pending(pendingReviewParams.value)),
+  queryFn: ({ signal }) =>
+    listPendingReviews(pendingReviewParams.value, signal),
+  enabled: computed(() => orderQuery.data.value?.status === "COMPLETED"),
+});
+function reviewProduct(item: PendingReviewOpportunityDto): void {
+  selectedOpportunity.value = item;
+  reviewDialogOpen.value = true;
+}
 const money = new Intl.NumberFormat("vi-VN");
 </script>
 
@@ -133,6 +156,27 @@ const money = new Intl.NumberFormat("vi-VN");
             <p class="mt-1 text-lg font-bold text-green-700">
               {{ money.format(orderQuery.data.value.totalAmount) }}đ
             </p>
+          </div>
+        </div>
+      </section>
+      <section
+        v-if="pendingReviews.data.value?.items.length"
+        class="rounded-xl border bg-white p-5"
+      >
+        <h2 class="font-bold">Sản phẩm chờ đánh giá</h2>
+        <div class="mt-3 space-y-3">
+          <div
+            v-for="item in pendingReviews.data.value.items"
+            :key="item.product.id"
+            class="flex items-center justify-between gap-4 border-t pt-3 first:border-0"
+          >
+            <div>
+              <p class="font-medium">{{ item.product.name }}</p>
+              <p class="text-xs text-muted-foreground">Đơn hàng đã hoàn tất</p>
+            </div>
+            <Button size="sm" @click="reviewProduct(item)"
+              >Đánh giá ngay</Button
+            >
           </div>
         </div>
       </section>
@@ -206,6 +250,10 @@ const money = new Intl.NumberFormat("vi-VN");
       <CustomerReceiptConfirmationAction
         v-if="orderQuery.data.value.allowedActions.confirmReceived"
         :order-id="orderQuery.data.value.id"
+      />
+      <ReviewFormDialog
+        v-model:open="reviewDialogOpen"
+        :opportunity="selectedOpportunity"
       />
       <Button
         v-if="cancellable"

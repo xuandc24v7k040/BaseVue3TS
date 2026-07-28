@@ -62,6 +62,8 @@ export const ADMIN_PERMISSIONS = {
   ORDERS_UPDATE_STATUS: "orders.update_status",
   ORDERS_CANCEL: "orders.cancel",
   ORDERS_UPDATE_NOTE: "orders.update_note",
+  REVIEWS_READ: "reviews.read",
+  REVIEWS_MODERATE: "reviews.moderate",
   PAYMENTS_CREATE: "payments.create",
 } as const;
 

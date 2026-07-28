@@ -32,6 +32,8 @@ function product(variants: PublicVariantDto[]): PublicProductDetailDto {
     shortDescription: null,
     description: null,
     releaseDate: null,
+    averageRating: null,
+    reviewCount: 0,
     categories: [],
     authors: [],
     publisher: null,

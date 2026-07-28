@@ -284,23 +284,72 @@ async function changePage(page: number, replace = false): Promise<void> {
           </div>
 
           <div
-            class="mt-4 flex flex-wrap items-end justify-between gap-4 border-t pt-4"
+            class="mt-4 flex min-w-0 flex-wrap items-end justify-between gap-4 border-t pt-4 sm:flex-nowrap"
           >
-            <div class="text-sm text-slate-500">
+            <div class="min-w-0 text-sm text-slate-500">
               {{ order.paymentMethod }} ·
               {{ paymentStatusLabel(order.paymentStatus) }}
             </div>
-            <div class="min-w-0 text-right">
-              <strong class="text-lg text-red-600">
+            <div class="w-full min-w-0 text-left sm:w-auto sm:text-right">
+              <strong class="break-words text-lg text-red-600">
                 {{ money.format(order.totalAmount) }}đ
               </strong>
-              <div class="mt-2 flex flex-wrap items-center justify-end gap-2">
+              <div
+                class="mt-2 flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end"
+              >
                 <CustomerReceiptConfirmationAction
                   v-if="order.allowedActions.confirmReceived"
                   :order-id="order.id"
                   compact
                 />
-                <Button as-child variant="outline" size="sm">
+                <Button
+                  v-if="
+                    order.status === 'COMPLETED' &&
+                    order.reviewAction.type === 'WRITE'
+                  "
+                  as-child
+                  size="sm"
+                  class="w-full shrink-0 bg-[var(--bookora-green)] text-white hover:bg-[var(--bookora-green-hover)] sm:w-auto"
+                >
+                  <RouterLink
+                    :to="{
+                      path: '/account/reviews',
+                      query: {
+                        tab: 'pending',
+                        orderId: order.id,
+                      },
+                    }"
+                  >
+                    Đánh giá ({{ order.reviewAction.count }})
+                  </RouterLink>
+                </Button>
+                <Button
+                  v-else-if="
+                    order.status === 'COMPLETED' &&
+                    order.reviewAction.type === 'VIEW'
+                  "
+                  as-child
+                  size="sm"
+                  class="w-full shrink-0 bg-[var(--bookora-green)] text-white hover:bg-[var(--bookora-green-hover)] sm:w-auto"
+                >
+                  <RouterLink
+                    :to="{
+                      path: '/account/reviews',
+                      query: {
+                        tab: 'written',
+                        orderId: order.id,
+                      },
+                    }"
+                  >
+                    Xem đánh giá
+                  </RouterLink>
+                </Button>
+                <Button
+                  as-child
+                  variant="outline"
+                  size="sm"
+                  class="w-full shrink-0 sm:w-auto"
+                >
                   <RouterLink
                     :to="{
                       name: 'customer-account-order-detail',

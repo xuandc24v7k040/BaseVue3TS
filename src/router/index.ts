@@ -665,6 +665,16 @@ export const routes: RouteRecordRaw[] = [
           requiresSelectedBranch: true,
         },
       },
+      {
+        path: "reviews",
+        name: "super-admin-reviews",
+        component: () =>
+          import("@/features/engagement/pages/AdminReviewListPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.REVIEWS_READ],
+          requiresSelectedBranch: false,
+        },
+      },
     ],
   },
   {

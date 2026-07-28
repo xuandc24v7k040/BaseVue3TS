@@ -76,10 +76,8 @@ function submitSearch(): void {
   void router.push({ path: "/books", query: { search: query } });
 }
 
-function deferredWishlist(): void {
-  toast.info("Tính năng yêu thích sẽ được hoàn thiện ở giai đoạn tiếp theo", {
-    id: "storefront-wishlist-deferred",
-  });
+function openWishlist(): void {
+  void router.push("/account/wishlist");
 }
 
 async function openCart(): Promise<void> {
@@ -149,7 +147,7 @@ async function openCart(): Promise<void> {
           <button
             type="button"
             class="flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
-            @click="deferredWishlist"
+            @click="openWishlist"
           >
             <Heart aria-hidden="true" class="size-6" :stroke-width="1.6" />
             <span class="hidden flex-col items-start text-left xl:flex">
@@ -195,7 +193,7 @@ async function openCart(): Promise<void> {
             type="button"
             aria-label="Yêu thích"
             class="grid size-11 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
-            @click="deferredWishlist"
+            @click="openWishlist"
           >
             <Heart aria-hidden="true" class="size-5.5" />
           </button>

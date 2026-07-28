@@ -11,6 +11,7 @@ import type { CustomerOrderReceiptConfirmationDto } from './customerOrderReceipt
 import type { CustomerOrderResponseDtoPaymentMethod } from './customerOrderResponseDtoPaymentMethod';
 import type { CustomerOrderResponseDtoPaymentStatus } from './customerOrderResponseDtoPaymentStatus';
 import type { CustomerOrderResponseDtoStatus } from './customerOrderResponseDtoStatus';
+import type { CustomerOrderReviewActionDto } from './customerOrderReviewActionDto';
 
 export interface CustomerOrderResponseDto {
   /**
@@ -49,5 +50,6 @@ export interface CustomerOrderResponseDto {
   paymentId?: string | null;
   customerReceiptConfirmation: CustomerOrderReceiptConfirmationDto;
   allowedActions: CustomerOrderAllowedActionsDto;
+  reviewAction: CustomerOrderReviewActionDto;
   items: CustomerOrderItemResponseDto[];
 }

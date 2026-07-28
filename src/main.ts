@@ -4,6 +4,7 @@ import App from "./App.vue";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import { createPinia } from "pinia";
 import { queryClient } from "@/lib/query-client";
+import { installEngagementSync } from "@/features/engagement/state/engagement-sync";
 import { router } from "@/router";
 import { useThemeStore } from "@/stores/theme.store";
 import { setupApiInterceptors } from "@/services/api.service";
@@ -24,6 +25,7 @@ app.use(router);
 app.use(VueQueryPlugin, { queryClient });
 
 setupApiInterceptors(pinia, { queryClient, router });
+installEngagementSync(queryClient);
 const stopInventorySync = setupInventorySync();
 const stopCartSync = setupCartSync(() => useCartActions().refresh());
 const stopOrderSync = setupOrderSync((orderId) => {
@@ -39,10 +41,7 @@ const stopOrderSync = setupOrderSync((orderId) => {
         queryKey: adminOrderKeys.lists(branchStore.selectedBranchId),
       }),
       queryClient.invalidateQueries({
-        queryKey: adminOrderKeys.detail(
-          branchStore.selectedBranchId,
-          orderId,
-        ),
+        queryKey: adminOrderKeys.detail(branchStore.selectedBranchId, orderId),
       }),
     );
   }

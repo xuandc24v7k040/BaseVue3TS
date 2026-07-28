@@ -12,6 +12,7 @@ import AccountProfilePage from "./AccountProfilePage.vue";
 import { customerAccountKeys } from "@/features/customer-account/api/customer-account-query-keys";
 import { vietnamAdministrativeKeys } from "@/features/branches/composables/use-vietnam-administrative-units";
 import { useAuthStore } from "@/stores/auth.store";
+import { engagementKeys } from "@/features/engagement/api/engagement-api";
 
 const router = createRouter({
   history: createMemoryHistory(),
@@ -85,6 +86,29 @@ function mountAccount(
     defaultAddress: addresses[0],
     createdAt: "2026-07-22T00:00:00.000Z",
     updatedAt: "2026-07-22T00:00:00.000Z",
+  });
+  queryClient.setQueryData(engagementKeys.dashboard, {
+    totalOrders: 12,
+    totalSpent: 2_560_000,
+    writtenReviewCount: 14,
+    shippingOrderCount: 2,
+    pendingReviewCount: 3,
+    latestOrder: null,
+    latestWishlistItems: Array.from({ length: 4 }, (_, index) => ({
+      id: `wishlist-${index + 1}`,
+      createdAt: "2026-07-22T00:00:00.000Z",
+      product: {
+        id: `product-${index + 1}`,
+        name: `Sách ${index + 1}`,
+        slug: `sach-${index + 1}`,
+        authors: ["Tác giả"],
+        imageUrl: null,
+        price: { current: 119_000, original: 119_000, onSale: false, discountPercent: 0 },
+        isAvailable: true,
+        averageRating: null,
+        reviewCount: 0,
+      },
+    })),
   });
 
   return mount(component, {

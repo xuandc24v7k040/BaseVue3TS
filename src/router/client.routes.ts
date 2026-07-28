@@ -115,9 +115,13 @@ export const clientRoutes: RouteRecordRaw[] = [
         component: () => import("@/pages/app/account/AccountAddressesPage.vue"),
       },
       {
-        path: "favorites",
-        name: "customer-account-favorites",
+        path: "wishlist",
+        name: "customer-account-wishlist",
         component: () => import("@/pages/app/account/AccountFavoritesPage.vue"),
+      },
+      {
+        path: "favorites",
+        redirect: { name: "customer-account-wishlist" },
       },
       {
         path: "reviews",

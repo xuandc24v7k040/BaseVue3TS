@@ -11,7 +11,6 @@ import {
   Truck,
   WalletCards,
 } from "@lucide/vue";
-import { useDebounceFn } from "@vueuse/core";
 import axios from "axios";
 import {
   computed,
@@ -120,7 +119,6 @@ const currentInputFingerprint = computed(() =>
     selectedCartItemIds: [...selectedCartItemIds.value].sort(),
     address: addressInput.value,
     paymentMethod: paymentMethod.value,
-    note: note.value.trim() || null,
   }),
 );
 const committedInputFingerprint = ref("");
@@ -596,19 +594,6 @@ watch(
     }
   },
 );
-
-const refreshNotePreview = useDebounceFn(async () => {
-  if (!draft.value || !addressInput.value) return;
-  try {
-    await refreshPreview();
-  } catch (error: unknown) {
-    if (!isCanceledRequest(error)) toast.error(checkoutErrorMessage(error));
-  }
-}, 350);
-
-watch(note, () => {
-  void refreshNotePreview();
-});
 
 async function handleRemoteInventoryInvalidation(
   context: InventoryInvalidationContext,

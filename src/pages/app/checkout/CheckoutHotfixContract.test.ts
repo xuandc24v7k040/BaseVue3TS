@@ -114,6 +114,25 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     );
   });
 
+  it("keeps note out of preview refresh while sending its latest value on Place Order", () => {
+    const fingerprintSource = checkoutSource.slice(
+      checkoutSource.indexOf("const currentInputFingerprint"),
+      checkoutSource.indexOf("const committedInputFingerprint"),
+    );
+    const requestPayloadSource = checkoutSource.slice(
+      checkoutSource.indexOf("function requestPayload"),
+      checkoutSource.indexOf("function isCanceledRequest"),
+    );
+
+    expect(fingerprintSource).not.toContain("note:");
+    expect(checkoutSource).not.toContain("watch(note");
+    expect(checkoutSource).not.toContain("refreshNotePreview");
+    expect(requestPayloadSource).toContain(
+      '...(note.value.trim() ? { note: note.value.trim() } : {})',
+    );
+    expect(checkoutSource).toContain("...requestPayload()");
+  });
+
   it("uses the active request branch for all-invalid feedback", () => {
     expect(checkoutSource).toContain(
       "async function redirectAllInvalid(branchName: string)",

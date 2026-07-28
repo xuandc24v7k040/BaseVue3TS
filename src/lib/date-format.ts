@@ -70,3 +70,31 @@ export function formatDateOnly(value: DateFormatValue): string {
 
   return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${String(date.getFullYear()).padStart(4, '0')}`
 }
+
+export function formatRelativeTime(
+  value: DateFormatValue,
+  now = new Date(),
+): string {
+  const date = validDate(value)
+  if (!date) return 'Không rõ thời gian'
+
+  const seconds = Math.max(
+    0,
+    Math.floor((now.getTime() - date.getTime()) / 1000),
+  )
+  if (seconds < 60) return 'Vừa xong'
+
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} phút trước`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} giờ trước`
+
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days} ngày trước`
+
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months} tháng trước`
+
+  return `${Math.floor(months / 12)} năm trước`
+}

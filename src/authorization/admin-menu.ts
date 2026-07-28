@@ -215,6 +215,12 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
         requiredPermissions: [ADMIN_PERMISSIONS.ORDERS_READ],
         requiresSelectedBranch: true,
       },
+      {
+        id: "reviews",
+        label: "Đánh giá",
+        routeNames: { SYSTEM: "super-admin-reviews" },
+        requiredPermissions: [ADMIN_PERMISSIONS.REVIEWS_READ],
+      },
     ],
   },
 ] as const;

@@ -31,6 +31,7 @@ import type {
 import type {
   ChangeCustomerPasswordDto,
   CustomerAccountChangePassword200,
+  CustomerAccountDashboard200,
   CustomerAccountProfile200,
   CustomerAccountRemoveAvatar200,
   CustomerAccountUpdateProfile200,
@@ -375,3 +376,74 @@ export const useCustomerAccountChangePassword = <TError = ErrorType<ErrorRespons
       > => {
       return useMutation(getCustomerAccountChangePasswordMutationOptions(options), queryClient);
     }
+    /**
+ * Tổng quan tài khoản bằng dữ liệu Order, Review và Wishlist thật
+ * @summary Tổng quan tài khoản bằng dữ liệu Order, Review và Wishlist thật
+ */
+export const customerAccountDashboard = (
+
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+
+
+      return customInstance<CustomerAccountDashboard200>(
+      {url: `/account/dashboard`, method: 'GET', signal
+    },
+      options);
+    }
+
+
+
+
+export const getCustomerAccountDashboardQueryKey = () => {
+    return [
+    'account','dashboard'
+    ] as const;
+    }
+
+
+export const getCustomerAccountDashboardQueryOptions = <TData = Awaited<ReturnType<typeof customerAccountDashboard>>, TError = ErrorType<ErrorResponseDto>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerAccountDashboard>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getCustomerAccountDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerAccountDashboard>>> = ({ signal }) => customerAccountDashboard(requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerAccountDashboard>>, TError, TData>
+}
+
+export type CustomerAccountDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof customerAccountDashboard>>>
+export type CustomerAccountDashboardQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary Tổng quan tài khoản bằng dữ liệu Order, Review và Wishlist thật
+ */
+
+export function useCustomerAccountDashboard<TData = Awaited<ReturnType<typeof customerAccountDashboard>>, TError = ErrorType<ErrorResponseDto>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerAccountDashboard>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerAccountDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+

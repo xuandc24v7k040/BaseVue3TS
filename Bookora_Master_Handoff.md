@@ -2,17 +2,18 @@
 
 ## Current status
 
-Latest implemented phase: **Phase 16 — Customer Receipt List UX Hotfix**
+Latest implemented phase: **Phase 17 — Wishlist, Reviews & Account Dashboard**
 
 Overall status: `PENDING`
 
-Phase 16 and its Customer Receipt/List UX/Focus Refetch hotfix source implementation and automated gates are complete. Overall status
-remains pending because Phase 15 manual browser/runtime acceptance was skipped
-by user instruction and a true VNPAY Sandbox IPN E2E needs an approved public
-HTTPS callback endpoint.
+Phase 17 source, forward migration, generated OpenAPI/Orval/Zod and automated
+gates are implemented. Overall status remains pending because Phase 17 manual
+browser F5/cross-tab/six-viewport acceptance was skipped by user instruction.
+The earlier Phase 15 VNPAY Sandbox IPN public-HTTPS evidence also remains open.
 
 ## Canonical handoffs
 
+- Phase 17: `Bookora_Phase17_Wishlist_Reviews_Account_Dashboard_Handoff.md`
 - Phase 16 Customer Receipt List UX hotfix:
   `Bookora_Phase16_Customer_Receipt_List_UX_Hotfix_Handoff.md`
 - Phase 16 Customer Receipt/Focus Refetch hotfix:
@@ -44,6 +45,6 @@ HTTPS callback endpoint.
 
 ## Next action
 
-Phase 16 needs no further source work. Follow the Phase 15 resume checklist and
-do not mark the overall Bookora program `DONE` until manual runtime and true
-VNPAY Sandbox IPN evidence are available.
+Run the Phase 17 manual matrix in its handoff, then follow the Phase 15 VNPAY
+resume checklist. Do not mark the overall Bookora program `DONE` until both
+manual runtime evidence and true VNPAY Sandbox IPN evidence are available.

@@ -31,7 +31,7 @@ function createTestRouter() {
       { path: '/login', component: {} },
       { path: '/register', component: {} },
       { path: '/cart', component: {} },
-      { path: '/account/favorites', component: {} },
+      { path: '/account/wishlist', component: {} },
     ],
   })
 }
@@ -86,6 +86,22 @@ describe('ClientHeader', () => {
     expect(wishlist?.find('span.hidden').classes()).toEqual(
       expect.arrayContaining(['flex-col', 'items-start', 'text-left', 'xl:flex']),
     )
+  })
+
+  it('navigates desktop and mobile wishlist actions to the canonical route', async () => {
+    const { router, wrapper } = await mountHeader()
+    const desktopWishlist = wrapper
+      .findAll('button')
+      .find(button => button.text().includes('Danh sách yêu thích'))
+
+    await desktopWishlist?.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/account/wishlist')
+
+    await router.push('/')
+    await wrapper.get('button[aria-label="Yêu thích"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/account/wishlist')
   })
 
   it('does not navigate when the search query is empty', async () => {

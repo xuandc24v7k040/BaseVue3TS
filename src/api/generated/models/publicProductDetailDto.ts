@@ -30,6 +30,14 @@ export interface PublicProductDetailDto {
   description?: string | null;
   /** @nullable */
   releaseDate?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  averageRating?: number | null;
+  /** @minimum 0 */
+  reviewCount: number;
   categories: PublicCategoryResponseDto[];
   /** @nullable */
   primaryCategory?: PublicProductPrimaryCategoryDto | null;

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { BookOpen, Heart } from "@lucide/vue";
+import { BookOpen, Star } from "@lucide/vue";
 import { ref } from "vue";
 import { RouterLink } from "vue-router";
-import { toast } from "vue-sonner";
 import type { PublicProductListItemDto } from "@/api/generated/models";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import WishlistButton from "@/features/engagement/components/WishlistButton.vue";
 import { formatProductDate } from "@/features/products/utils/product-date";
 
 withDefaults(
@@ -26,17 +25,11 @@ const priceFormatter = new Intl.NumberFormat("vi-VN");
 function formatPrice(price: number): string {
   return `${priceFormatter.format(price)}đ`;
 }
-
-function deferredWishlist(): void {
-  toast.info("Tính năng yêu thích sẽ được hoàn thiện ở giai đoạn tiếp theo", {
-    id: "storefront-wishlist-deferred",
-  });
-}
 </script>
 
 <template>
   <Card
-    class="group relative min-w-0 gap-0 overflow-hidden border border-[var(--bookora-border)] bg-background p-3 shadow-none transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-[var(--bookora-green)]/40 hover:shadow-sm"
+    class="group relative min-w-0 gap-0 border border-[var(--bookora-border)] bg-background p-3 shadow-none transition-[box-shadow,border-color] hover:border-[var(--bookora-green)]/50 hover:shadow-md focus-within:border-[var(--bookora-green)]/60 focus-within:shadow-sm"
     :class="
       view === 'list'
         ? 'grid grid-cols-[110px_minmax(0,1fr)] gap-4 sm:grid-cols-[150px_minmax(0,1fr)]'
@@ -48,16 +41,10 @@ function deferredWishlist(): void {
       class="absolute left-2 top-2 z-10 grid size-6 place-items-center rounded bg-[var(--bookora-green)] text-xs font-bold text-white"
       >{{ product.rank }}</span
     >
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
+    <WishlistButton
+      :product-id="product.id"
       class="absolute right-2 top-2 z-10 size-9 rounded-full bg-background/85 text-[var(--bookora-muted)] shadow-sm hover:text-[var(--bookora-green)]"
-      aria-label="Thêm vào danh sách yêu thích"
-      @click="deferredWishlist"
-    >
-      <Heart aria-hidden="true" class="size-4.5" />
-    </Button>
+    />
 
     <RouterLink
       :to="`/books/${product.slug}`"
@@ -102,6 +89,13 @@ function deferredWishlist(): void {
           "Đang cập nhật tác giả"
         }}
       </p>
+      <div class="mt-1 flex items-center gap-1 text-xs text-amber-600">
+        <Star aria-hidden="true" class="size-3.5 fill-current" />
+        <span>{{ product.averageRating?.toFixed(1) ?? "Chưa có" }}</span>
+        <span class="text-[var(--bookora-muted)]"
+          >({{ product.reviewCount }})</span
+        >
+      </div>
       <div class="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <strong class="text-sm text-red-600">{{
           formatPrice(product.price.current)
