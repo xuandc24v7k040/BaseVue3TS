@@ -1,6 +1,7 @@
 let csrfToken: string | null = null
 let csrfTokenRequest: Promise<string> | null = null
 let fetchCsrfToken: (() => Promise<string>) | null = null
+let csrfGeneration = 0
 
 export function configureCsrfTokenFetcher(fetcher: () => Promise<string>): void {
   fetchCsrfToken = fetcher
@@ -16,20 +17,27 @@ export async function getCsrfToken(): Promise<string> {
       throw new Error('CSRF token fetcher has not been configured.')
     }
 
-    csrfTokenRequest = fetchCsrfToken()
+    const generationAtStart = csrfGeneration
+    const request = fetchCsrfToken()
       .then((nextToken) => {
-        csrfToken = nextToken
+        if (generationAtStart === csrfGeneration) {
+          csrfToken = nextToken
+        }
         return nextToken
       })
       .finally(() => {
-        csrfTokenRequest = null
+        if (csrfTokenRequest === request) {
+          csrfTokenRequest = null
+        }
       })
+    csrfTokenRequest = request
   }
 
   return csrfTokenRequest
 }
 
 export function clearCsrfToken(): void {
+  csrfGeneration += 1
   csrfToken = null
   csrfTokenRequest = null
 }
@@ -37,4 +45,3 @@ export function clearCsrfToken(): void {
 export function getCachedCsrfTokenForTest(): string | null {
   return csrfToken
 }
-

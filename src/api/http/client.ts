@@ -25,6 +25,9 @@ const AUTH_REFRESH_EXCLUDED_PATHS = new Set([
   '/auth/logout',
   '/auth/refresh',
   '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/reset-password/validate',
 ])
 const REFRESH_TOKEN_REUSE_CODES = new Set([
   'REFRESH_TOKEN_ALREADY_ROTATED',

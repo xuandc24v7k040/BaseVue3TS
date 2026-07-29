@@ -51,3 +51,52 @@ export const AuthGoogleCallbackQueryParams = zod.strictObject({
   "state": zod.string()
 })
 
+/**
+ * Public CUSTOMER flow. Email chưa đăng ký và GOOGLE provider trả machine code riêng theo quyết định sản phẩm.
+ * @summary Yêu cầu liên kết đặt lại mật khẩu
+ */
+export const authForgotPasswordBodyEmailMax = 254;
+
+
+
+export const AuthForgotPasswordBody = zod.strictObject({
+  "email": zod.email().max(authForgotPasswordBodyEmailMax),
+  "turnstileToken": zod.string().optional().describe('Token Turnstile, bắt buộc khi Turnstile được bật trên server.')
+})
+
+/**
+ * Không consume token và không trả thông tin nhận dạng tài khoản.
+ * @summary Xác minh trạng thái liên kết đặt lại mật khẩu
+ */
+export const authValidateResetPasswordTokenBodyTokenMin = 43;
+export const authValidateResetPasswordTokenBodyTokenMax = 43;
+
+
+export const authValidateResetPasswordTokenBodyTokenRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+
+
+export const AuthValidateResetPasswordTokenBody = zod.strictObject({
+  "token": zod.string().min(authValidateResetPasswordTokenBodyTokenMin).max(authValidateResetPasswordTokenBodyTokenMax).regex(authValidateResetPasswordTokenBodyTokenRegExp)
+})
+
+/**
+ * Consume token, đổi mật khẩu, revoke toàn bộ AuthSession và clear cookie; không tự đăng nhập.
+ * @summary Đặt lại mật khẩu bằng token một lần
+ */
+export const authResetPasswordBodyTokenMin = 43;
+export const authResetPasswordBodyTokenMax = 43;
+
+
+export const authResetPasswordBodyTokenRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+export const authResetPasswordBodyNewPasswordRegExp = new RegExp('^(?=.*[A-Za-z])(?=.*\\d).+$');
+
+export const authResetPasswordBodyNewPasswordMin = 8;
+export const authResetPasswordBodyNewPasswordMax = 128;
+
+
+
+export const AuthResetPasswordBody = zod.strictObject({
+  "token": zod.string().min(authResetPasswordBodyTokenMin).max(authResetPasswordBodyTokenMax).regex(authResetPasswordBodyTokenRegExp),
+  "newPassword": zod.stringFormat('password', authResetPasswordBodyNewPasswordRegExp).min(authResetPasswordBodyNewPasswordMin).max(authResetPasswordBodyNewPasswordMax)
+})
+

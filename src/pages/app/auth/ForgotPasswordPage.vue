@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import PagePlaceholder from '@/components/client/common/PagePlaceholder.vue'
+import AuthVisualPanel from "@/components/client/auth/AuthVisualPanel.vue";
+import ForgotPasswordForm from "@/features/password-recovery/components/ForgotPasswordForm.vue";
 </script>
 
 <template>
-  <PagePlaceholder
-    title="Quên mật khẩu"
-    description="Trang bắt đầu quy trình khôi phục mật khẩu khách hàng."
-    section="Auth khách hàng"
-    layout="ClientAuthLayout"
-  />
+  <div
+    class="grid w-full md:min-h-[clamp(650px,calc(100dvh-48px),720px)] md:grid-cols-[42fr_58fr]"
+  >
+    <AuthVisualPanel variant="login" />
+    <ForgotPasswordForm />
+  </div>
 </template>

@@ -336,9 +336,74 @@ describe('CSRF infrastructure', () => {
     expect(getHeader(seenRequests[2], 'X-CSRF-Token')).toBe('token-1')
     expect(getHeader(seenRequests[4], 'X-CSRF-Token')).toBe('token-2')
   })
+
+  it('fetches a fresh CSRF token before the first login after reset invalidation', async () => {
+    const seenRequests: InternalAxiosRequestConfig[] = []
+    const csrfTokens = ['before-reset', 'after-reset']
+    let csrfCount = 0
+    const adapter: AxiosAdapter = async (config) => {
+      seenRequests.push(config)
+
+      if (config.url === '/auth/csrf-token') {
+        const token = csrfTokens[csrfCount] ?? CSRF_TOKEN
+        csrfCount += 1
+        return csrfSuccessResponse(config, token)
+      }
+
+      return successResponse(config, {})
+    }
+
+    resetHttpClientForTest(adapter)
+    setupHttpClient()
+
+    await apiClient.post('/before-reset')
+    clearCsrfToken()
+    await apiClient.post('/auth/login', {
+      email: 'reader@bookora.vn',
+      password: 'Password1',
+    })
+
+    expect(seenRequests.map((request) => request.url)).toEqual([
+      '/auth/csrf-token',
+      '/before-reset',
+      '/auth/csrf-token',
+      '/auth/login',
+    ])
+    expect(getHeader(seenRequests[1]!, 'X-CSRF-Token')).toBe('before-reset')
+    expect(getHeader(seenRequests[3]!, 'X-CSRF-Token')).toBe('after-reset')
+  })
 })
 
 describe('refresh infrastructure', () => {
+  it.each([
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/auth/reset-password/validate',
+  ])('never refreshes password-recovery request %s after 401', async (url) => {
+    let refreshCount = 0
+    const adapter: AxiosAdapter = async (config) => {
+      if (config.url === '/auth/csrf-token') {
+        return csrfSuccessResponse(config)
+      }
+
+      if (config.url === '/auth/refresh') {
+        refreshCount += 1
+        return successResponse(config, {})
+      }
+
+      return rejectResponse(config, 401, {
+        statusCode: 401,
+        message: 'password recovery rejected',
+      })
+    }
+
+    resetHttpClientForTest(adapter)
+    setupHttpClient()
+
+    await expect(apiClient.post(url, {})).rejects.toBeInstanceOf(AxiosError)
+    expect(refreshCount).toBe(0)
+  })
+
   it('does not refresh a silent login-page /auth/me check', async () => {
     let meCount = 0
     let refreshCount = 0

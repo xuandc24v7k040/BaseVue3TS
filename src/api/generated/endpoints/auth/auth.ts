@@ -30,15 +30,21 @@ import type {
 
 import type {
   AuthCsrfToken200,
+  AuthForgotPassword200,
   AuthGoogleCallbackParams,
   AuthLogin200,
   AuthLogout200,
   AuthMe200,
   AuthRefresh200,
   AuthRegister201,
+  AuthResetPassword200,
+  AuthValidateResetPasswordToken200,
   ErrorResponseDto,
+  ForgotPasswordDto,
   LoginDto,
-  RegisterDto
+  RegisterDto,
+  ResetPasswordDto,
+  ValidateResetTokenDto
 } from '../../models';
 
 import { customInstance } from '../../../mutator';
@@ -586,3 +592,195 @@ export function useAuthGoogleCallback<TData = Awaited<ReturnType<typeof authGoog
 
 
 
+/**
+ * Public CUSTOMER flow. Email chưa đăng ký và GOOGLE provider trả machine code riêng theo quyết định sản phẩm.
+ * @summary Yêu cầu liên kết đặt lại mật khẩu
+ */
+export const authForgotPassword = (
+    forgotPasswordDto: MaybeRef<ForgotPasswordDto>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      forgotPasswordDto = unref(forgotPasswordDto);
+
+      return customInstance<AuthForgotPassword200>(
+      {url: `/auth/forgot-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: forgotPasswordDto, signal
+    },
+      options);
+    }
+
+
+
+export const getAuthForgotPasswordMutationOptions = <TError = ErrorType<unknown | ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authForgotPassword>>, TError,{data: BodyType<ForgotPasswordDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof authForgotPassword>>, TError,{data: BodyType<ForgotPasswordDto>}, TContext> => {
+
+const mutationKey = ['authForgotPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authForgotPassword>>, {data: BodyType<ForgotPasswordDto>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authForgotPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthForgotPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authForgotPassword>>>
+    export type AuthForgotPasswordMutationBody = BodyType<ForgotPasswordDto>
+    export type AuthForgotPasswordMutationError = ErrorType<unknown | ErrorResponseDto>
+
+    /**
+ * @summary Yêu cầu liên kết đặt lại mật khẩu
+ */
+export const useAuthForgotPassword = <TError = ErrorType<unknown | ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authForgotPassword>>, TError,{data: BodyType<ForgotPasswordDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof authForgotPassword>>,
+        TError,
+        {data: BodyType<ForgotPasswordDto>},
+        TContext
+      > => {
+      return useMutation(getAuthForgotPasswordMutationOptions(options), queryClient);
+    }
+    /**
+ * Không consume token và không trả thông tin nhận dạng tài khoản.
+ * @summary Xác minh trạng thái liên kết đặt lại mật khẩu
+ */
+export const authValidateResetPasswordToken = (
+    validateResetTokenDto: MaybeRef<ValidateResetTokenDto>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      validateResetTokenDto = unref(validateResetTokenDto);
+
+      return customInstance<AuthValidateResetPasswordToken200>(
+      {url: `/auth/reset-password/validate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: validateResetTokenDto, signal
+    },
+      options);
+    }
+
+
+
+export const getAuthValidateResetPasswordTokenMutationOptions = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authValidateResetPasswordToken>>, TError,{data: BodyType<ValidateResetTokenDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof authValidateResetPasswordToken>>, TError,{data: BodyType<ValidateResetTokenDto>}, TContext> => {
+
+const mutationKey = ['authValidateResetPasswordToken'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authValidateResetPasswordToken>>, {data: BodyType<ValidateResetTokenDto>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authValidateResetPasswordToken(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthValidateResetPasswordTokenMutationResult = NonNullable<Awaited<ReturnType<typeof authValidateResetPasswordToken>>>
+    export type AuthValidateResetPasswordTokenMutationBody = BodyType<ValidateResetTokenDto>
+    export type AuthValidateResetPasswordTokenMutationError = ErrorType<ErrorResponseDto>
+
+    /**
+ * @summary Xác minh trạng thái liên kết đặt lại mật khẩu
+ */
+export const useAuthValidateResetPasswordToken = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authValidateResetPasswordToken>>, TError,{data: BodyType<ValidateResetTokenDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof authValidateResetPasswordToken>>,
+        TError,
+        {data: BodyType<ValidateResetTokenDto>},
+        TContext
+      > => {
+      return useMutation(getAuthValidateResetPasswordTokenMutationOptions(options), queryClient);
+    }
+    /**
+ * Consume token, đổi mật khẩu, revoke toàn bộ AuthSession và clear cookie; không tự đăng nhập.
+ * @summary Đặt lại mật khẩu bằng token một lần
+ */
+export const authResetPassword = (
+    resetPasswordDto: MaybeRef<ResetPasswordDto>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      resetPasswordDto = unref(resetPasswordDto);
+
+      return customInstance<AuthResetPassword200>(
+      {url: `/auth/reset-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resetPasswordDto, signal
+    },
+      options);
+    }
+
+
+
+export const getAuthResetPasswordMutationOptions = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authResetPassword>>, TError,{data: BodyType<ResetPasswordDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof authResetPassword>>, TError,{data: BodyType<ResetPasswordDto>}, TContext> => {
+
+const mutationKey = ['authResetPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authResetPassword>>, {data: BodyType<ResetPasswordDto>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authResetPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthResetPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authResetPassword>>>
+    export type AuthResetPasswordMutationBody = BodyType<ResetPasswordDto>
+    export type AuthResetPasswordMutationError = ErrorType<ErrorResponseDto>
+
+    /**
+ * @summary Đặt lại mật khẩu bằng token một lần
+ */
+export const useAuthResetPassword = <TError = ErrorType<ErrorResponseDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authResetPassword>>, TError,{data: BodyType<ResetPasswordDto>}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof authResetPassword>>,
+        TError,
+        {data: BodyType<ResetPasswordDto>},
+        TContext
+      > => {
+      return useMutation(getAuthResetPasswordMutationOptions(options), queryClient);
+    }

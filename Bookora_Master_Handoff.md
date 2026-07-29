@@ -2,17 +2,25 @@
 
 ## Current status
 
-Latest implemented phase: **Phase 17 — Wishlist, Reviews & Account Dashboard**
+Latest implemented phase: **Phase 17.5 — TTL Audit & E2E Baseline Hotfix**
 
 Overall status: `PENDING`
 
-Phase 17 source, forward migration, generated OpenAPI/Orval/Zod and automated
-gates are implemented. Overall status remains pending because Phase 17 manual
-browser F5/cross-tab/six-viewport acceptance was skipped by user instruction.
-The earlier Phase 15 VNPAY Sandbox IPN public-HTTPS evidence also remains open.
+Phase 17.5 and its CSRF/email-status/TTL/E2E baseline hotfixes are `DONE`.
+Password-reset TTL is configurable by a positive-integer env value, and full
+backend E2E now passes 9/9 suites, 55/55 tests while preserving SUPER_ADMIN
+Order read-only policy. Overall status remains pending because manual
+browser/live Resend acceptance was intentionally not run and the earlier
+Phase 15 VNPAY Sandbox IPN public-HTTPS evidence remains open.
 
 ## Canonical handoffs
 
+- Phase 17.5 TTL/E2E baseline hotfix:
+  `Bookora_Phase17_5_TTL_And_E2E_Baseline_Hotfix_Handoff.md`
+- Phase 17.5 CSRF/email-status hotfix:
+  `Bookora_Phase17_5_CSRF_After_Reset_And_Email_Status_Hotfix_Handoff.md`
+- Mini Phase 17.5:
+  `Bookora_Phase17_5_Customer_Mail_Forgot_Password_Handoff.md`
 - Phase 17: `Bookora_Phase17_Wishlist_Reviews_Account_Dashboard_Handoff.md`
 - Phase 16 Customer Receipt List UX hotfix:
   `Bookora_Phase16_Customer_Receipt_List_UX_Hotfix_Handoff.md`
@@ -45,6 +53,6 @@ The earlier Phase 15 VNPAY Sandbox IPN public-HTTPS evidence also remains open.
 
 ## Next action
 
-Run the Phase 17 manual matrix in its handoff, then follow the Phase 15 VNPAY
-resume checklist. Do not mark the overall Bookora program `DONE` until both
-manual runtime evidence and true VNPAY Sandbox IPN evidence are available.
+Product Owner can separately run local Resend/browser acceptance. Continue to
+follow the Phase 15 VNPAY resume checklist; do not mark the overall Bookora
+program `DONE` without true VNPAY Sandbox IPN evidence.

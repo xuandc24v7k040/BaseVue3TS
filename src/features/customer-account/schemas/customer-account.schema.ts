@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { newPasswordSchema } from "@/features/auth/password.schema";
 
 const vietnamPhone = /^(?:0\d{9}|\+84\d{9})$/;
 const requiredAdministrativeCode = (message: string) =>
@@ -45,10 +46,7 @@ export const customerAddressSchema = z.object({
 export const customerPasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại."),
-    newPassword: z
-      .string()
-      .min(8, "Mật khẩu mới cần ít nhất 8 ký tự.")
-      .regex(/^(?=.*[A-Za-z])(?=.*\d).+$/, "Mật khẩu mới phải gồm chữ và số."),
+    newPassword: newPasswordSchema,
     confirmPassword: z.string(),
   })
   .refine((value) => value.newPassword === value.confirmPassword, {
