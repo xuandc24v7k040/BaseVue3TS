@@ -18,10 +18,15 @@ describe("customer receipt and focus refetch hotfix", () => {
     });
     expect(ORDER_LIST_QUERY_POLICY).toEqual({
       staleTime: 45_000,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: "always",
+      refetchOnReconnect: "always",
+    });
+    expect(INVENTORY_LIST_QUERY_POLICY).toEqual({
+      staleTime: 45_000,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
     });
-    expect(INVENTORY_LIST_QUERY_POLICY).toEqual(ORDER_LIST_QUERY_POLICY);
     expect(ORDER_DETAIL_QUERY_POLICY).not.toHaveProperty("refetchInterval");
     expect(ORDER_LIST_QUERY_POLICY).not.toHaveProperty("refetchInterval");
     expect(INVENTORY_LIST_QUERY_POLICY).not.toHaveProperty("refetchInterval");
@@ -45,6 +50,7 @@ describe("customer receipt and focus refetch hotfix", () => {
   });
 
   it("invalidates both customer and selected-branch admin order caches cross-tab", () => {
+    expect(mainSource).toContain("customerOrderKeys.all");
     expect(mainSource).toContain("customerOrderKeys.detail(orderId)");
     expect(mainSource).toContain("adminOrderKeys.lists");
     expect(mainSource).toContain("adminOrderKeys.detail");

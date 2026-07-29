@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import alertDialogContentSource from "@/components/ui/alert-dialog/AlertDialogContent.vue?raw";
+import branchSelectorSource from "@/components/client/layout/BranchSelector.vue?raw";
 import headerSource from "@/components/client/layout/ClientHeader.vue?raw";
 import bookSectionSource from "@/components/client/home/BookSection.vue?raw";
 import cardSource from "@/features/storefront/components/ProductCard.vue?raw";
@@ -12,10 +13,23 @@ import dialogSource from "./components/ReviewFormDialog.vue?raw";
 import wishlistButtonSource from "./components/WishlistButton.vue?raw";
 
 describe("Phase 17 UI/UX hotfix contracts", () => {
+  it("shows only the selected branch name while preserving the empty placeholder", () => {
+    expect(branchSelectorSource).toContain(
+      'branchStore.selectedBranch?.name ??',
+    );
+    expect(branchSelectorSource).toContain('"Chọn chi nhánh")');
+    expect(branchSelectorSource).not.toContain(
+      '<span class="hidden xl:inline">Chọn chi nhánh: </span>',
+    );
+    expect(branchSelectorSource).toContain("max-w-48 truncate text-sm");
+    expect(branchSelectorSource).toContain('@click="openSelector"');
+  });
+
   it("routes both header wishlist actions without a deferred placeholder", () => {
     expect(headerSource).toContain('router.push("/account/wishlist")');
     expect(headerSource).not.toContain("storefront-wishlist-deferred");
     expect(headerSource).not.toContain("Tính năng yêu thích sẽ");
+    expect(headerSource.match(/cursor-pointer/g)).toHaveLength(4);
   });
 
   it("keeps ProductCard borders stable inside an automatic ScrollArea", () => {
@@ -55,6 +69,12 @@ describe("Phase 17 UI/UX hotfix contracts", () => {
     expect(publicReviewsSource).not.toContain("min-h-48 rounded-xl");
     expect(publicReviewsSource).toContain("verifiedPurchase");
     expect(publicReviewsSource).toContain("placeholderData");
+    expect(publicReviewsSource).toContain(
+      "const PUBLIC_REVIEW_PAGE_SIZE = 4",
+    );
+    expect(publicReviewsSource).toContain("limit: PUBLIC_REVIEW_PAGE_SIZE");
+    expect(publicReviewsSource).toContain("page.value = 1");
+    expect(publicReviewsSource).toContain('aria-label="Phân trang đánh giá"');
     expect(publicReviewsSource).toContain("formatRelativeTime");
     expect(publicReviewsSource).toContain('"Không có nội dung đánh giá."');
     expect(publicReviewsSource).toContain("[overflow-wrap:anywhere]");
@@ -64,6 +84,17 @@ describe("Phase 17 UI/UX hotfix contracts", () => {
   it("keeps review dialog actions fixed, accessible and single-submit", () => {
     expect(dialogSource).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
     expect(dialogSource).toContain('<ScrollArea type="auto"');
+    expect(dialogSource.match(/<ScrollArea\b/g)).toHaveLength(1);
+    expect(dialogSource).toContain("<Textarea");
+    expect(dialogSource).toContain("max-h-56 resize-y overflow-y-auto");
+    expect(dialogSource).toContain(
+      "focus-visible:border-[var(--bookora-green)]/35",
+    );
+    expect(dialogSource).toContain("focus-visible:ring-1");
+    expect(dialogSource).toContain(
+      "focus-visible:ring-[var(--bookora-green)]/15",
+    );
+    expect(dialogSource).not.toContain("[field-sizing:content]");
     expect(dialogSource).toContain('@submit.prevent="submit"');
     expect(dialogSource).toContain('type="submit"');
     expect(dialogSource).toContain("mutation.isPending.value");
@@ -121,5 +152,10 @@ describe("Phase 17 UI/UX hotfix contracts", () => {
     expect(dashboardSource).toContain("latestOrder.itemCount");
     expect(dashboardSource).toContain('type="auto"');
     expect(dashboardSource).toContain("line-clamp-2 min-h-10 break-words");
+    expect(dashboardSource).toContain("/account/reviews?tab=written");
+    expect(dashboardSource).toContain("/account/reviews?tab=pending");
+    expect(reviewsSource).toContain(
+      'firstQueryValue(route.query.tab) === "written" ? "written" : "pending"',
+    );
   });
 });

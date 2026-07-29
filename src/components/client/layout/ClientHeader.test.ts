@@ -65,6 +65,7 @@ describe('ClientHeader', () => {
     expect(wrapper.text()).toContain('Yêu thích')
     expect(wrapper.text()).toContain('Giỏ hàng')
     expect(wrapper.text()).toContain('Cần Thơ')
+    expect(wrapper.get('[data-testid="branch-selector-trigger"]').text().trim()).toBe('Cần Thơ')
   })
 
   it('navigates to the search route with a trimmed query', async () => {
@@ -86,6 +87,21 @@ describe('ClientHeader', () => {
     expect(wishlist?.find('span.hidden').classes()).toEqual(
       expect.arrayContaining(['flex-col', 'items-start', 'text-left', 'xl:flex']),
     )
+  })
+
+  it('uses a pointer cursor on every wishlist and cart click target', async () => {
+    const { wrapper } = await mountHeader()
+    const desktopWishlist = wrapper
+      .findAll('button')
+      .find(button => button.text().includes('Danh sách yêu thích'))
+    const desktopCart = wrapper
+      .findAll('button')
+      .find(button => button.text().includes('Giỏ hàng'))
+
+    expect(desktopWishlist?.classes()).toContain('cursor-pointer')
+    expect(desktopCart?.classes()).toContain('cursor-pointer')
+    expect(wrapper.get('button[aria-label="Yêu thích"]').classes()).toContain('cursor-pointer')
+    expect(wrapper.get('button[aria-label="Giỏ hàng"]').classes()).toContain('cursor-pointer')
   })
 
   it('navigates desktop and mobile wishlist actions to the canonical route', async () => {

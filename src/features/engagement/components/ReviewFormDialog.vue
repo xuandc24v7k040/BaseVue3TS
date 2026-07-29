@@ -174,7 +174,7 @@ function updateOpen(value: boolean): void {
               v-model="content"
               maxlength="2000"
               placeholder="Nội dung sách, chất lượng in ấn hoặc trải nghiệm nhận hàng..."
-              class="mt-2 min-h-36 resize-y"
+              class="mt-2 min-h-36 max-h-56 resize-y overflow-y-auto [scrollbar-color:var(--bookora-green)_transparent] [scrollbar-width:thin] focus-visible:border-[var(--bookora-green)]/35 focus-visible:ring-1 focus-visible:ring-[var(--bookora-green)]/15"
             />
             <p class="mt-1 text-right text-xs text-muted-foreground">
               {{ content.length }}/2000

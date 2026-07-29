@@ -146,7 +146,7 @@ async function openCart(): Promise<void> {
           </RouterLink>
           <button
             type="button"
-            class="flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            class="flex min-h-11 cursor-pointer items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
             @click="openWishlist"
           >
             <Heart aria-hidden="true" class="size-6" :stroke-width="1.6" />
@@ -159,7 +159,7 @@ async function openCart(): Promise<void> {
           </button>
           <button
             type="button"
-            class="relative flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            class="relative flex min-h-11 cursor-pointer items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
             @click="openCart"
           >
             <ShoppingCart
@@ -192,7 +192,7 @@ async function openCart(): Promise<void> {
           <button
             type="button"
             aria-label="Yêu thích"
-            class="grid size-11 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            class="grid size-11 cursor-pointer place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
             @click="openWishlist"
           >
             <Heart aria-hidden="true" class="size-5.5" />
@@ -200,7 +200,7 @@ async function openCart(): Promise<void> {
           <button
             type="button"
             aria-label="Giỏ hàng"
-            class="relative grid size-11 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+            class="relative grid size-11 cursor-pointer place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
             @click="openCart"
           >
             <ShoppingCart aria-hidden="true" class="size-6" />

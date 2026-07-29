@@ -6,6 +6,7 @@ export const ORDER_DETAIL_QUERY_POLICY = {
 
 export const ORDER_LIST_QUERY_POLICY = {
   staleTime: 45_000,
-  refetchOnWindowFocus: true,
-  refetchOnReconnect: true,
+  refetchOnMount: "always",
+  refetchOnWindowFocus: "always",
+  refetchOnReconnect: "always",
 } as const;

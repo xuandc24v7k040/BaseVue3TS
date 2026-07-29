@@ -49,7 +49,7 @@ const stats = computed(() => [
     value: dashboard.data.value?.writtenReviewCount ?? 0,
     label: "Sản phẩm đã đánh giá",
     icon: Star,
-    to: "/account/reviews",
+    to: "/account/reviews?tab=written",
   },
 ]);
 const attention = computed(() => [
@@ -67,7 +67,7 @@ const attention = computed(() => [
     detail: "Sản phẩm chờ bạn đánh giá",
     action: "Đánh giá ngay",
     icon: ClipboardCheck,
-    to: "/account/reviews",
+    to: "/account/reviews?tab=pending",
   },
 ]);
 </script>

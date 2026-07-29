@@ -13,6 +13,11 @@ export type StorefrontProductReviewsListParams = {
 page?: number;
 /**
  * @minimum 1
+ * @maximum 20
+ */
+limit?: number;
+/**
+ * @minimum 1
  * @maximum 5
  */
 rating?: number;

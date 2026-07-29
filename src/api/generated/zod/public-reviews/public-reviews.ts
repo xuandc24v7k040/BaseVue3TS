@@ -18,12 +18,16 @@ export const StorefrontProductReviewsListParams = zod.strictObject({
 
 export const storefrontProductReviewsListQueryPageDefault = 1;
 
+export const storefrontProductReviewsListQueryLimitDefault = 5;
+export const storefrontProductReviewsListQueryLimitMax = 20;
+
 export const storefrontProductReviewsListQueryRatingMax = 5;
 
 
 
 export const StorefrontProductReviewsListQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(storefrontProductReviewsListQueryPageDefault),
+  "limit": zod.number().min(1).max(storefrontProductReviewsListQueryLimitMax).default(storefrontProductReviewsListQueryLimitDefault),
   "rating": zod.number().min(1).max(storefrontProductReviewsListQueryRatingMax).optional(),
   "verifiedPurchase": zod.boolean().optional().describe('Chỉ lấy đánh giá từ lượt mua đã được xác minh')
 })

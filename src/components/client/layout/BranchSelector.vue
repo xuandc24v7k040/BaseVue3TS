@@ -144,9 +144,9 @@ function selectDraft(branch: StorefrontBranchResponseDto): void {
           class="size-4.5 text-[var(--bookora-green)]"
         />
         <span class="max-w-48 truncate text-sm">
-          <span class="hidden xl:inline">Chọn chi nhánh: </span>
           <strong class="font-semibold">{{
-            branchStore.selectedBranch?.name ?? "Đang tải..."
+            branchStore.selectedBranch?.name ??
+            (branchesQuery.isPending.value ? "Đang tải..." : "Chọn chi nhánh")
           }}</strong>
         </span>
       </Button>

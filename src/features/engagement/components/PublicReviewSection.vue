@@ -20,6 +20,7 @@ import { formatRelativeTime } from "@/lib/date-format";
 import { engagementKeys, listPublicReviews } from "../api/engagement-api";
 
 type ReviewFilter = "all" | "verified" | "5" | "4" | "3" | "2" | "1";
+const PUBLIC_REVIEW_PAGE_SIZE = 4;
 
 const props = defineProps<{ productId: string }>();
 const page = ref(1);
@@ -36,6 +37,7 @@ const filters: Array<{ value: ReviewFilter; label: string }> = [
 ];
 const params = computed<StorefrontProductReviewsListParams>(() => ({
   page: page.value,
+  limit: PUBLIC_REVIEW_PAGE_SIZE,
   rating: /^[1-5]$/.test(filter.value) ? Number(filter.value) : undefined,
   verifiedPurchase: filter.value === "verified" ? true : undefined,
 }));
