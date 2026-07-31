@@ -40,8 +40,16 @@ describe("admin menu and safe landing", () => {
       ADMIN_PERMISSIONS.PRODUCTS_READ,
       ADMIN_PERMISSIONS.INVENTORY_READ,
       ADMIN_PERMISSIONS.ORDERS_READ,
+      ADMIN_PERMISSIONS.REPORTS_REVENUE_READ,
     ]);
-    expect(ids).toEqual(["dashboard", "staff", "product-list", "inventory-list", "orders"]);
+    expect(ids).toEqual([
+      "dashboard",
+      "revenue-report",
+      "staff",
+      "product-list",
+      "inventory-list",
+      "orders",
+    ]);
     expect(ids).not.toContain("stock-movements");
     expect(ids).not.toContain("branch-admins");
   });
@@ -105,7 +113,7 @@ describe("admin menu and safe landing", () => {
     ).toEqual({ name: "super-admin-roles" });
   });
 
-  it("hides empty groups and has no fake category, payment, or report item", () => {
+  it("hides empty groups and does not expose reports without permission", () => {
     const items = resolveVisibleAdminMenu(
       "BRANCH",
       policy("BRANCH", [ADMIN_PERMISSIONS.ORDERS_READ]),

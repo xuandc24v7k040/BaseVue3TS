@@ -360,6 +360,15 @@ export const routes: RouteRecordRaw[] = [
         meta: { requiredPermissions: [ADMIN_PERMISSIONS.DASHBOARD_READ] },
       },
       {
+        path: "reports/revenue",
+        name: "super-admin-revenue-report",
+        component: () => import("@/features/analytics/RevenueReportPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.REPORTS_REVENUE_READ],
+          requiresSelectedBranch: false,
+        },
+      },
+      {
         path: "users",
         name: "super-admin-users",
         component: () => import("@/features/users/pages/UserListPage.vue"),
@@ -692,6 +701,14 @@ export const routes: RouteRecordRaw[] = [
         name: "branch-admin-dashboard",
         component: () => import("@/pages/branch-admin/DashboardPage.vue"),
         meta: { requiredPermissions: [ADMIN_PERMISSIONS.DASHBOARD_READ] },
+      },
+      {
+        path: "reports/revenue",
+        name: "branch-admin-revenue-report",
+        component: () => import("@/features/analytics/RevenueReportPage.vue"),
+        meta: {
+          requiredPermissions: [ADMIN_PERMISSIONS.REPORTS_REVENUE_READ],
+        },
       },
       {
         path: "staff",

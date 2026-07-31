@@ -1,6 +1,7 @@
 import type { Component } from "vue";
 import {
   Boxes,
+  BarChart3,
   Building2,
   ClipboardList,
   Gauge,
@@ -57,6 +58,22 @@ export const ADMIN_MENU: readonly AdminMenuItem[] = [
       BRANCH: "branch-admin-dashboard",
     },
     requiredPermissions: [ADMIN_PERMISSIONS.DASHBOARD_READ],
+  },
+  {
+    id: "reports",
+    label: "Báo cáo",
+    icon: BarChart3,
+    children: [
+      {
+        id: "revenue-report",
+        label: "Báo cáo doanh thu",
+        routeNames: {
+          SYSTEM: "super-admin-revenue-report",
+          BRANCH: "branch-admin-revenue-report",
+        },
+        requiredPermissions: [ADMIN_PERMISSIONS.REPORTS_REVENUE_READ],
+      },
+    ],
   },
   {
     id: "organization",

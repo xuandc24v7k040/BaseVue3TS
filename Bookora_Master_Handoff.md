@@ -2,19 +2,23 @@
 
 ## Current status
 
-Latest implemented phase: **Phase 17.5 — TTL Audit & E2E Baseline Hotfix**
+Latest implemented phase: **Phase 18 — Dashboard & Báo cáo doanh thu**
 
 Overall status: `PENDING`
 
-Phase 17.5 and its CSRF/email-status/TTL/E2E baseline hotfixes are `DONE`.
-Password-reset TTL is configurable by a positive-integer env value, and full
-backend E2E now passes 9/9 suites, 55/55 tests while preserving SUPER_ADMIN
-Order read-only policy. Overall status remains pending because manual
-browser/live Resend acceptance was intentionally not run and the earlier
-Phase 15 VNPAY Sandbox IPN public-HTTPS evidence remains open.
+Phase 18 implementation and automated verification are complete. Dashboard,
+Revenue Report, scoped analytics permissions, CSV export, OpenAPI/Orval/Zod and
+full regression gates pass. Phase 18 remains `PENDING` because Product Owner
+explicitly postponed manual browser/runtime/responsive acceptance. Earlier
+manual/live Resend acceptance and Phase 15 VNPAY Sandbox IPN public-HTTPS
+evidence also remain open at program level.
 
 ## Canonical handoffs
 
+- Phase 18:
+  `Bookora_Phase18_Dashboard_Revenue_Report_Handoff.md`
+- Phase 18 Super Admin Dashboard Visual Hotfix (`DONE`):
+  `Bookora_Phase18_Super_Admin_Dashboard_Visual_Hotfix_Handoff.md`
 - Phase 17.5 TTL/E2E baseline hotfix:
   `Bookora_Phase17_5_TTL_And_E2E_Baseline_Hotfix_Handoff.md`
 - Phase 17.5 CSRF/email-status hotfix:
@@ -53,6 +57,7 @@ Phase 15 VNPAY Sandbox IPN public-HTTPS evidence remains open.
 
 ## Next action
 
-Product Owner can separately run local Resend/browser acceptance. Continue to
-follow the Phase 15 VNPAY resume checklist; do not mark the overall Bookora
-program `DONE` without true VNPAY Sandbox IPN evidence.
+Product Owner can separately run the postponed Phase 18 dashboard/report
+browser, responsive and CSV acceptance, plus local Resend acceptance. Continue
+to follow the Phase 15 VNPAY resume checklist; do not mark Phase 18 or the
+overall Bookora program `DONE` without their remaining evidence.

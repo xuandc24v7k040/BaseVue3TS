@@ -2,7 +2,6 @@
 import {
   Check,
   Home,
-  LocateFixed,
   LoaderCircle,
   LockKeyhole,
   MapPin,
@@ -699,7 +698,7 @@ onBeforeUnmount(() => {
                 @click="locateMe"
               >
                 <LoaderCircle v-if="isLocating" class="size-4 animate-spin" />
-                <LocateFixed v-else class="size-4" />
+                <MapPin v-else class="size-4" />
                 Dùng vị trí hiện tại
               </Button>
             </div>

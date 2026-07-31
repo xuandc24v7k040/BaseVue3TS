@@ -1,5 +1,7 @@
 export const ADMIN_PERMISSIONS = {
   DASHBOARD_READ: "dashboard.read",
+  REPORTS_REVENUE_READ: "reports.revenue.read",
+  REPORTS_EXPORT: "reports.export",
   USERS_READ: "users.read",
   USERS_CREATE: "users.create",
   USERS_UPDATE: "users.update",

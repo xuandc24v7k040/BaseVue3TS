@@ -9,6 +9,7 @@ import type {
   AuthMeResponseDto,
 } from "@/api/generated/models";
 import DashboardLayout from "@/layouts/DashboardLayout.vue";
+import dashboardLayoutSource from "@/layouts/DashboardLayout.vue?raw";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBranchStore } from "@/stores/branch.store";
 
@@ -84,6 +85,19 @@ afterEach(() => {
 });
 
 describe("admin branch selector", () => {
+  it("lets SidebarInset size the sticky header and content", () => {
+    expect(dashboardLayoutSource).toContain("<SidebarProvider");
+    expect(dashboardLayoutSource).toContain("<SidebarInset");
+    expect(dashboardLayoutSource).toContain("sticky top-0");
+    expect(dashboardLayoutSource).toContain("w-full min-w-0 shrink-0");
+    expect(dashboardLayoutSource).toContain("hidden min-w-0 flex-1 justify-center lg:flex");
+    expect(dashboardLayoutSource).toContain("hidden min-w-0 max-w-56 xl:block");
+    expect(dashboardLayoutSource).not.toContain("fixed left-0 right-0");
+    expect(dashboardLayoutSource).not.toContain("md:left-(--sidebar-width)");
+    expect(dashboardLayoutSource).not.toContain("peer-data-[state=collapsed]");
+    expect(dashboardLayoutSource).not.toContain("--admin-header-height");
+  });
+
   it("shows system scope and real active branches for SYSTEM users", async () => {
     const principal = user("SYSTEM", [
       branch(BRANCH_A, "Cần Thơ"),

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import {
-  Building2,
-  ChartNoAxesCombined,
   CheckCircle2,
-  ClipboardList,
 } from "@lucide/vue";
 import axios from "axios";
 import { onMounted, ref } from "vue";
@@ -69,15 +66,9 @@ onMounted(() => {
 });
 
 const highlights = [
-  "Quản lý chi nhánh Cần Thơ và Hậu Giang",
-  "Theo dõi đơn hàng và tồn kho theo thời gian thực",
-  "Báo cáo doanh thu và hiệu quả bán hàng",
-];
-
-const demoStats = [
-  { label: "2 chi nhánh", icon: Building2 },
-  { label: "316 đơn hàng mới", icon: ClipboardList },
-  { label: "128M doanh thu", icon: ChartNoAxesCombined },
+  "Quản lý vận hành đa chi nhánh",
+  "Theo dõi đơn hàng và tồn kho tập trung",
+  "Phân tích doanh thu theo phạm vi được cấp quyền",
 ];
 </script>
 
@@ -162,24 +153,6 @@ const demoStats = [
           </div>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-3">
-          <Card
-            v-for="stat in demoStats"
-            :key="stat.label"
-            class="rounded-2xl border-white/80 bg-white/75 shadow-sm"
-          >
-            <CardContent class="space-y-3 p-3">
-              <div
-                class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700"
-              >
-                <component :is="stat.icon" class="h-5 w-5" />
-              </div>
-              <p class="text-sm font-semibold text-slate-900">
-                {{ stat.label }}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </section>
   </div>

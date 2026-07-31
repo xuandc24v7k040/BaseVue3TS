@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 import type { AuthMeResponseDto } from "@/api/generated/models";
 import LoginPage from "@/pages/auth/LoginPage.vue";
+import loginPageSource from "@/pages/auth/LoginPage.vue?raw";
 import { useAuthStore } from "@/stores/auth.store";
 
 vi.mock("@/api/modules/auth.api", () => ({
@@ -104,6 +105,20 @@ beforeEach(() => {
 });
 
 describe("login page best-effort session check", () => {
+  it("uses neutral admin capabilities without hard-coded operational data", () => {
+    expect(loginPageSource).toContain("Quản lý vận hành đa chi nhánh");
+    expect(loginPageSource).toContain("Theo dõi đơn hàng và tồn kho tập trung");
+    expect(loginPageSource).toContain(
+      "Phân tích doanh thu theo phạm vi được cấp quyền",
+    );
+    expect(loginPageSource).not.toContain("demoStats");
+    expect(loginPageSource).not.toContain("2 chi nhánh");
+    expect(loginPageSource).not.toContain("316 đơn hàng mới");
+    expect(loginPageSource).not.toContain("128M doanh thu");
+    expect(loginPageSource).not.toContain("Cần Thơ và Hậu Giang");
+    expect(loginPageSource).not.toContain("analytics");
+  });
+
   it("renders the form immediately and skips /auth/me without a session hint", async () => {
     const context = await setup();
     const refreshCurrentUser = vi.spyOn(context.store, "refreshCurrentUser");

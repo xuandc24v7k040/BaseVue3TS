@@ -39,7 +39,8 @@ describe("Phase 15 checkout UI hotfix contract", () => {
   });
 
   it("reviews current location before Apply and preserves one toast lifecycle", () => {
-    expect(checkoutSource).toContain("LocateFixed");
+    expect(checkoutSource).toContain('<MapPin v-else class="size-4" />');
+    expect(checkoutSource).not.toContain("LocateFixed");
     expect(checkoutSource).toContain("animate-spin");
     expect(checkoutSource).toContain(
       'const LOCATION_TOAST_ID = "checkout-current-location"',
