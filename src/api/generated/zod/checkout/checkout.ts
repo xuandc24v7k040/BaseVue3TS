@@ -35,6 +35,9 @@ export const checkoutPreviewBodyAddressTwoLocationAccuracyMetersMax = 100000;
 
 export const checkoutPreviewBodyAddressTwoLocationPlaceIdMax = 2048;
 
+export const checkoutPreviewBodyAddressTwoLocationProofMin = 20;
+export const checkoutPreviewBodyAddressTwoLocationProofMax = 4096;
+
 export const checkoutPreviewBodyNoteMax = 200;
 
 
@@ -56,7 +59,8 @@ export const CheckoutPreviewBody = zod.strictObject({
   "longitude": zod.number().min(checkoutPreviewBodyAddressTwoLongitudeMin).max(checkoutPreviewBodyAddressTwoLongitudeMax),
   "locationAccuracyMeters": zod.number().min(checkoutPreviewBodyAddressTwoLocationAccuracyMetersMin).max(checkoutPreviewBodyAddressTwoLocationAccuracyMetersMax).optional(),
   "locationProvider": zod.enum(['VIETMAP']).optional(),
-  "locationPlaceId": zod.string().max(checkoutPreviewBodyAddressTwoLocationPlaceIdMax).optional()
+  "locationPlaceId": zod.string().max(checkoutPreviewBodyAddressTwoLocationPlaceIdMax).optional(),
+  "locationProof": zod.string().min(checkoutPreviewBodyAddressTwoLocationProofMin).max(checkoutPreviewBodyAddressTwoLocationProofMax)
 })]).optional(),
   "paymentMethod": zod.enum(['COD', 'VNPAY']).optional(),
   "note": zod.string().max(checkoutPreviewBodyNoteMax).optional()
@@ -127,6 +131,9 @@ export const checkoutPlaceOrderCodBodyAddressTwoLocationAccuracyMetersMax = 1000
 
 export const checkoutPlaceOrderCodBodyAddressTwoLocationPlaceIdMax = 2048;
 
+export const checkoutPlaceOrderCodBodyAddressTwoLocationProofMin = 20;
+export const checkoutPlaceOrderCodBodyAddressTwoLocationProofMax = 4096;
+
 export const checkoutPlaceOrderCodBodyNoteMax = 200;
 
 export const checkoutPlaceOrderCodBodyIdempotencyKeyMin = 8;
@@ -154,7 +161,8 @@ export const CheckoutPlaceOrderCodBody = zod.strictObject({
   "longitude": zod.number().min(checkoutPlaceOrderCodBodyAddressTwoLongitudeMin).max(checkoutPlaceOrderCodBodyAddressTwoLongitudeMax),
   "locationAccuracyMeters": zod.number().min(checkoutPlaceOrderCodBodyAddressTwoLocationAccuracyMetersMin).max(checkoutPlaceOrderCodBodyAddressTwoLocationAccuracyMetersMax).optional(),
   "locationProvider": zod.enum(['VIETMAP']).optional(),
-  "locationPlaceId": zod.string().max(checkoutPlaceOrderCodBodyAddressTwoLocationPlaceIdMax).optional()
+  "locationPlaceId": zod.string().max(checkoutPlaceOrderCodBodyAddressTwoLocationPlaceIdMax).optional(),
+  "locationProof": zod.string().min(checkoutPlaceOrderCodBodyAddressTwoLocationProofMin).max(checkoutPlaceOrderCodBodyAddressTwoLocationProofMax)
 })]).optional(),
   "paymentMethod": zod.enum(['COD', 'VNPAY']).optional(),
   "note": zod.string().max(checkoutPlaceOrderCodBodyNoteMax).optional(),
@@ -189,6 +197,9 @@ export const checkoutPlaceOrderVnpayBodyAddressTwoLocationAccuracyMetersMax = 10
 
 export const checkoutPlaceOrderVnpayBodyAddressTwoLocationPlaceIdMax = 2048;
 
+export const checkoutPlaceOrderVnpayBodyAddressTwoLocationProofMin = 20;
+export const checkoutPlaceOrderVnpayBodyAddressTwoLocationProofMax = 4096;
+
 export const checkoutPlaceOrderVnpayBodyNoteMax = 200;
 
 export const checkoutPlaceOrderVnpayBodyIdempotencyKeyMin = 8;
@@ -216,7 +227,8 @@ export const CheckoutPlaceOrderVnpayBody = zod.strictObject({
   "longitude": zod.number().min(checkoutPlaceOrderVnpayBodyAddressTwoLongitudeMin).max(checkoutPlaceOrderVnpayBodyAddressTwoLongitudeMax),
   "locationAccuracyMeters": zod.number().min(checkoutPlaceOrderVnpayBodyAddressTwoLocationAccuracyMetersMin).max(checkoutPlaceOrderVnpayBodyAddressTwoLocationAccuracyMetersMax).optional(),
   "locationProvider": zod.enum(['VIETMAP']).optional(),
-  "locationPlaceId": zod.string().max(checkoutPlaceOrderVnpayBodyAddressTwoLocationPlaceIdMax).optional()
+  "locationPlaceId": zod.string().max(checkoutPlaceOrderVnpayBodyAddressTwoLocationPlaceIdMax).optional(),
+  "locationProof": zod.string().min(checkoutPlaceOrderVnpayBodyAddressTwoLocationProofMin).max(checkoutPlaceOrderVnpayBodyAddressTwoLocationProofMax)
 })]).optional(),
   "paymentMethod": zod.enum(['COD', 'VNPAY']).optional(),
   "note": zod.string().max(checkoutPlaceOrderVnpayBodyNoteMax).optional(),

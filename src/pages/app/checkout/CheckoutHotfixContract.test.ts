@@ -54,6 +54,11 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     expect(checkoutApiSource).toContain("AbortSignal");
     expect(checkoutApiSource).toContain("checkoutReverseCurrentLocation");
     expect(checkoutApiSource).not.toContain("vietMapReverse");
+    expect(checkoutSource).toContain("locationProof: suggestion.locationProof");
+    expect(checkoutSource).toContain('locationForm.locationProof = ""');
+    expect(checkoutSource).toContain("CHECKOUT_LOCATION_PROOF_EXPIRED");
+    expect(checkoutSource).toContain("CHECKOUT_LOCATION_PROOF_INVALID");
+    expect(checkoutSource).toContain("CHECKOUT_LOCATION_PROOF_MISMATCH");
     expect(checkoutSource).not.toContain("Quận/Huyện");
     expect(checkoutSource).not.toContain("locationForm.districtName");
     expect(checkoutSource).not.toContain("suggestion.ghnDistrictId");
@@ -129,7 +134,7 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     expect(checkoutSource).not.toContain("watch(note");
     expect(checkoutSource).not.toContain("refreshNotePreview");
     expect(requestPayloadSource).toContain(
-      '...(note.value.trim() ? { note: note.value.trim() } : {})',
+      "...(note.value.trim() ? { note: note.value.trim() } : {})",
     );
     expect(checkoutSource).toContain("...requestPayload()");
   });

@@ -86,6 +86,7 @@ let previewController: AbortController | null = null;
 let previewSequence = 0;
 let locationController: AbortController | null = null;
 let lastAvailabilitySignature = "";
+let isApplyingVerifiedLocation = false;
 const locationForm = reactive<CurrentLocationAddressDto>({
   source: CurrentLocationAddressDtoSource.CURRENT_LOCATION,
   latitude: 0,
@@ -96,6 +97,7 @@ const locationForm = reactive<CurrentLocationAddressDto>({
   provinceName: "",
   provinceCode: 0,
   wardName: "",
+  locationProof: "",
   locationProvider: "VIETMAP",
 });
 const money = new Intl.NumberFormat("vi-VN");
@@ -191,6 +193,12 @@ function checkoutErrorMessage(error: unknown): string {
     CHECKOUT_VARIANT_INACTIVE: "Phiên bản sản phẩm không còn khả dụng.",
     CHECKOUT_CURRENT_LOCATION_INCOMPLETE:
       "Vị trí chưa có đủ tỉnh/thành phố và phường/xã.",
+    CHECKOUT_LOCATION_PROOF_INVALID:
+      "Xác nhận vị trí không hợp lệ. Vui lòng lấy lại vị trí hiện tại.",
+    CHECKOUT_LOCATION_PROOF_EXPIRED:
+      "Xác nhận vị trí đã hết hạn. Vui lòng lấy lại vị trí hiện tại.",
+    CHECKOUT_LOCATION_PROOF_MISMATCH:
+      "Thông tin vị trí đã thay đổi. Vui lòng lấy lại vị trí hiện tại.",
   };
   return code
     ? (messages[code] ?? "Không thể cập nhật thông tin thanh toán.")
@@ -335,6 +343,7 @@ async function chooseSavedAddress(addressId: string): Promise<void> {
     id: SAVED_ADDRESS_TOAST_ID,
   });
   try {
+    locationForm.locationProof = "";
     addressInput.value = {
       source: SavedAddressInputDtoSource.SAVED_ADDRESS,
       customerAddressId: addressId,
@@ -389,6 +398,7 @@ async function locateMe(): Promise<void> {
     return;
   }
   locationController?.abort();
+  locationForm.locationProof = "";
   const controller = new AbortController();
   locationController = controller;
   isLocating.value = true;
@@ -420,16 +430,22 @@ async function locateMe(): Promise<void> {
       controller.signal,
     );
     if (controller.signal.aborted) return;
-    Object.assign(locationForm, coordinate, {
-      receiverName: draft.value?.address.receiverName ?? "",
-      receiverPhone: draft.value?.address.receiverPhone ?? "",
-      addressLine: suggestion.address,
-      provinceName: suggestion.province ?? "",
-      provinceCode: suggestion.provinceCode ?? 0,
-      wardName: suggestion.ward ?? "",
-      locationAccuracyMeters: accuracyMeters,
-      locationPlaceId: suggestion.placeId ?? undefined,
-    });
+    isApplyingVerifiedLocation = true;
+    try {
+      Object.assign(locationForm, coordinate, {
+        receiverName: draft.value?.address.receiverName ?? "",
+        receiverPhone: draft.value?.address.receiverPhone ?? "",
+        addressLine: suggestion.address,
+        provinceName: suggestion.province ?? "",
+        provinceCode: suggestion.provinceCode ?? 0,
+        wardName: suggestion.ward ?? "",
+        locationAccuracyMeters: accuracyMeters,
+        locationPlaceId: suggestion.placeId ?? undefined,
+        locationProof: suggestion.locationProof,
+      });
+    } finally {
+      isApplyingVerifiedLocation = false;
+    }
     detectedDisplayAddress.value = suggestion.displayAddress;
     showCurrentLocation.value = true;
     pendingSavedAddressId.value = "";
@@ -457,7 +473,8 @@ async function confirmLocation(): Promise<void> {
     !locationForm.provinceName.trim() ||
     !Number.isInteger(locationForm.provinceCode) ||
     locationForm.provinceCode <= 0 ||
-    !locationForm.wardName.trim()
+    !locationForm.wardName.trim() ||
+    !locationForm.locationProof
   ) {
     locationError.value =
       "Vui lòng kiểm tra người nhận, số điện thoại và đầy đủ địa chỉ hành chính.";
@@ -481,6 +498,9 @@ async function confirmLocation(): Promise<void> {
   } catch (error: unknown) {
     if (controller.signal.aborted || isCanceledRequest(error)) return;
     const message = checkoutErrorMessage(error);
+    if (checkoutErrorCode(error)?.startsWith("CHECKOUT_LOCATION_PROOF_")) {
+      locationForm.locationProof = "";
+    }
     locationError.value = message;
     toast.error(message, { id: LOCATION_TOAST_ID });
   } finally {
@@ -493,6 +513,7 @@ function cancelDetectedLocation(): void {
   showCurrentLocation.value = false;
   detectedDisplayAddress.value = "";
   locationError.value = null;
+  locationForm.locationProof = "";
 }
 
 async function changePaymentMethod(value: string): Promise<void> {
@@ -556,6 +577,11 @@ async function placeOrder(): Promise<void> {
       await refreshPreview();
       return;
     }
+    if (checkoutErrorCode(error)?.startsWith("CHECKOUT_LOCATION_PROOF_")) {
+      locationForm.locationProof = "";
+      addressInput.value = null;
+      showCurrentLocation.value = true;
+    }
     toast.error(
       checkoutErrorMessage(error) ||
         "Không thể đặt hàng. Giá, phí vận chuyển hoặc tồn kho có thể vừa thay đổi.",
@@ -565,6 +591,20 @@ async function placeOrder(): Promise<void> {
     isMutating.value = false;
   }
 }
+
+watch(
+  () => [
+    locationForm.provinceCode,
+    locationForm.provinceName,
+    locationForm.wardName,
+    locationForm.latitude,
+    locationForm.longitude,
+  ],
+  () => {
+    if (!isApplyingVerifiedLocation) locationForm.locationProof = "";
+  },
+  { flush: "sync" },
+);
 
 watch(
   () => branchStore.selectedBranchId,

@@ -42,4 +42,9 @@ export interface CurrentLocationAddressDto {
   locationProvider?: CurrentLocationAddressDtoLocationProvider;
   /** @maxLength 2048 */
   locationPlaceId?: string;
+  /**
+     * @minLength 20
+     * @maxLength 4096
+     */
+  locationProof: string;
 }

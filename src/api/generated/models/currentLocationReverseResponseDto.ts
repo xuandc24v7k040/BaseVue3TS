@@ -16,4 +16,5 @@ export interface CurrentLocationReverseResponseDto {
   displayAddress: string;
   /** @nullable */
   placeId: string | null;
+  locationProof: string;
 }
