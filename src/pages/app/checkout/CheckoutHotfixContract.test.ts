@@ -61,7 +61,6 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     expect(checkoutSource).toContain("CHECKOUT_LOCATION_PROOF_MISMATCH");
     expect(checkoutSource).not.toContain("Quận/Huyện");
     expect(checkoutSource).not.toContain("locationForm.districtName");
-    expect(checkoutSource).not.toContain("suggestion.ghnDistrictId");
     expect(checkoutSource.indexOf("reverseCheckoutLocation")).toBeLessThan(
       checkoutSource.indexOf("async function confirmLocation"),
     );
@@ -80,7 +79,6 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     expect(checkoutSource).toContain("CHECKOUT_SHIPPING_PROVINCE_REQUIRED");
     expect(checkoutSource).toContain("CHECKOUT_SHIPPING_PROVINCE_UNSUPPORTED");
     expect(checkoutSource).not.toContain("CHECKOUT_ORIGIN_GEOCODE");
-    expect(checkoutSource).not.toContain("GHN_PROVIDER_UNAVAILABLE");
     expect(checkoutSource).not.toContain("fromDistrictId");
     expect(checkoutSource).not.toContain("fromWardCode");
   });
@@ -208,14 +206,13 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     expect(checkoutSource).not.toContain("ChevronRight");
   });
 
-  it("uses shadcn RadioGroup and local payment/shipping assets", () => {
+  it("uses shadcn RadioGroup, the local payment asset, and neutral shipping wording", () => {
     expect(checkoutSource).not.toMatch(/<input[^>]+type="radio"/);
     expect(checkoutSource).toContain("<RadioGroup");
     expect(checkoutSource).toContain("<RadioGroupItem");
     expect(checkoutSource).toContain('alt="VNPAY"');
-    expect(checkoutSource).toContain('alt="GHN Express"');
     expect(checkoutSource).toContain("/Icon-VNPAY-QR.webp");
-    expect(checkoutSource).toContain("/Logo-GHN-Slogan-En.webp");
+    expect(checkoutSource).toContain("Giao hàng tiêu chuẩn");
     expect(checkoutSource).toContain(
       "Phí vận chuyển cố định theo khu vực giao hàng",
     );

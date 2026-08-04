@@ -36,7 +36,6 @@ const shippingOrder = {
   shippingAddress: "Cần Thơ",
   branchName: "Chi nhánh Cần Thơ",
   branchId: "branch-1",
-  shippingServiceName: "Nội bộ",
   paymentMethod: "COD",
   paymentStatus: "UNPAID",
   placedAt: "2026-07-27T08:00:00.000Z",

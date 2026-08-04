@@ -167,7 +167,6 @@ export * from './checkoutPreviewResponseDto';
 export * from './checkoutPreviewResponseDtoPaymentMethod';
 export * from './checkoutPreviewResponseDtoShippingFeeRule';
 export * from './checkoutPreviewResponseDtoShippingMethodCode';
-export * from './checkoutPreviewResponseDtoShippingProviderCode';
 export * from './checkoutResolveCurrentLocation200';
 export * from './checkoutReverseCurrentLocation200';
 export * from './checkoutReverseCurrentLocationParams';

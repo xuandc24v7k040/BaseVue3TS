@@ -231,6 +231,7 @@ async function submit(): Promise<void> {
                 :aria-invalid="Boolean(errors.phone)"
                 :disabled="submitting"
                 @update:model-value="(value) => updateText('phone', value)"
+                @blur="validateField('phone')"
               />
               <p v-if="errors.phone" class="text-sm text-destructive">
                 {{ errors.phone }}

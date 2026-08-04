@@ -27,7 +27,7 @@ describe("Branch Admin create form", () => {
     const result = branchAdminCreateSchema.parse({
       fullName: " Admin ",
       email: " admin@example.com ",
-      phone: " 0909 ",
+      phone: " 0909123456 ",
       password: "password@123",
       confirmPassword: "password@123",
       branchIds: ["branch-id"],
@@ -35,12 +35,46 @@ describe("Branch Admin create form", () => {
     expect(toCreateBranchAdminPayload(result)).toEqual({
       fullName: "Admin",
       email: "admin@example.com",
-      phone: "0909",
+      phone: "0909123456",
       password: "password@123",
       branchIds: ["branch-id"],
     });
     expect(toCreateBranchAdminPayload(result)).not.toHaveProperty(
       "confirmPassword",
     );
+  });
+
+  it("allows an empty phone but validates its format when provided", () => {
+    const validForm = {
+      fullName: "Admin",
+      email: "admin@example.com",
+      password: "password@123",
+      confirmPassword: "password@123",
+      branchIds: ["branch-id"],
+    };
+
+    expect(
+      branchAdminCreateSchema.safeParse({ ...validForm, phone: "" }).success,
+    ).toBe(true);
+    expect(
+      branchAdminCreateSchema.safeParse({
+        ...validForm,
+        phone: "+84909123456",
+      }).success,
+    ).toBe(true);
+
+    const invalid = branchAdminCreateSchema.safeParse({
+      ...validForm,
+      phone: "0909abc",
+    });
+    expect(invalid.success).toBe(false);
+    if (!invalid.success) {
+      expect(invalid.error.issues).toContainEqual(
+        expect.objectContaining({
+          path: ["phone"],
+          message: "Số điện thoại không đúng định dạng.",
+        }),
+      );
+    }
   });
 });

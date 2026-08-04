@@ -67,8 +67,8 @@ export const CheckoutPreviewBody = zod.strictObject({
 })
 
 /**
- * Resolve vị trí Checkout qua Vietmap hybrid và GHN
- * @summary Resolve vị trí Checkout qua Vietmap hybrid và GHN
+ * Resolve vị trí Checkout qua VietMap và danh mục hành chính
+ * @summary Resolve vị trí Checkout qua VietMap và danh mục hành chính
  */
 export const checkoutResolveCurrentLocationBodyLatitudeMin = -90;
 export const checkoutResolveCurrentLocationBodyLatitudeMax = 90;

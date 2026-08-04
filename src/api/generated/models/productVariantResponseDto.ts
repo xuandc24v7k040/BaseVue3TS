@@ -31,8 +31,8 @@ export interface ProductVariantResponseDto {
   publicationYear?: number | null;
   /** @nullable */
   pageCount?: number | null;
-  /** @nullable */
-  weightGram?: number | null;
+  /** @minimum 1 */
+  weightGram: number;
   /** @nullable */
   packageSize?: string | null;
   originalPrice: string;

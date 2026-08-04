@@ -228,7 +228,7 @@ const money = new Intl.NumberFormat("vi-VN");
           <h2 class="font-bold">Vận chuyển</h2>
           <p class="mt-2 text-sm">{{ orderQuery.data.value.branchName }}</p>
           <p class="text-sm text-slate-500">
-            {{ orderQuery.data.value.shippingServiceName }}
+            Giao hàng tiêu chuẩn
           </p>
           <p class="mt-1 text-sm">
             Phí: {{ money.format(orderQuery.data.value.shippingFee) }}đ

@@ -8,10 +8,6 @@
 import type { ShippingQuoteResponseDtoShippingFeeRule } from './shippingQuoteResponseDtoShippingFeeRule';
 
 export interface ShippingQuoteResponseDto {
-  provider: string;
-  serviceId: number;
-  serviceTypeId: number;
-  serviceName: string;
   shippingFee: number;
   serviceFee: number;
   insuranceFee: number;

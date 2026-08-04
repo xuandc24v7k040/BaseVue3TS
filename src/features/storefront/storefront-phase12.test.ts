@@ -142,7 +142,7 @@ describe("variant and gallery UI", () => {
       isbn: null,
       publicationYear: null,
       pageCount: null,
-      weightGram: null,
+      weightGram: 350,
       packageSize: null,
       optionValues: [{ optionId: "option-cover", optionValueId: "hard" }],
       media: [],
@@ -155,7 +155,7 @@ describe("variant and gallery UI", () => {
       isbn: null,
       publicationYear: null,
       pageCount: null,
-      weightGram: null,
+      weightGram: 350,
       packageSize: null,
       optionValues: [{ optionId: "option-cover", optionValueId: "soft" }],
       media: [],
@@ -200,12 +200,12 @@ describe("variant and gallery UI", () => {
         availabilityState: "success",
       },
     });
-    const hard = wrapper.findAll("button").find((button) =>
-      button.text().includes("Bìa cứng"),
-    );
-    const soft = wrapper.findAll("button").find((button) =>
-      button.text().includes("Bìa mềm"),
-    );
+    const hard = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Bìa cứng"));
+    const soft = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Bìa mềm"));
 
     expect(hard?.attributes("disabled")).toBeUndefined();
     expect(soft?.attributes("disabled")).toBeDefined();
@@ -276,25 +276,31 @@ describe("variant and gallery UI", () => {
 
     await wrapper.findAll('button[aria-label^="Xem ảnh"]')[1]?.trigger("click");
     expect(
-      wrapper.find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+      wrapper
+        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/two.webp");
     expect(wrapper.find('[data-testid="easy-lightbox"]').exists()).toBe(false);
 
     await wrapper.find('button[aria-label^="Phóng to ảnh"]').trigger("click");
-    expect(wrapper.get('[data-testid="easy-lightbox"]').attributes("data-index"))
-      .toBe("1");
+    expect(
+      wrapper.get('[data-testid="easy-lightbox"]').attributes("data-index"),
+    ).toBe("1");
     await wrapper.get('button[aria-label="Đóng lightbox"]').trigger("click");
 
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("Phóng to"))
       ?.trigger("click");
-    expect(wrapper.get('[data-testid="easy-lightbox"]').attributes("data-index"))
-      .toBe("1");
-    await wrapper.get('button[aria-label="Lightbox tiếp theo"]').trigger("click");
     expect(
-      wrapper.find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+      wrapper.get('[data-testid="easy-lightbox"]').attributes("data-index"),
+    ).toBe("1");
+    await wrapper
+      .get('button[aria-label="Lightbox tiếp theo"]')
+      .trigger("click");
+    expect(
+      wrapper
+        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/one.webp");
   });
@@ -304,31 +310,34 @@ describe("variant and gallery UI", () => {
     [5, "+2"],
     [8, "+5"],
     [12, "+9"],
-  ])("caps a %i-image gallery at four thumbnail slots", (count, overflowLabel) => {
-    const media = Array.from({ length: count }, (_, index) => ({
-      id: `image-${index}`,
-      url: `/image-${index}.webp`,
-      altText: `Ảnh ${index + 1}`,
-      sortOrder: index,
-      isPrimary: index === 0,
-    }));
-    const wrapper = mount(ProductGallery, {
-      props: { media, productName: "Sách" },
-      global: galleryGlobal,
-    });
+  ])(
+    "caps a %i-image gallery at four thumbnail slots",
+    (count, overflowLabel) => {
+      const media = Array.from({ length: count }, (_, index) => ({
+        id: `image-${index}`,
+        url: `/image-${index}.webp`,
+        altText: `Ảnh ${index + 1}`,
+        sortOrder: index,
+        isPrimary: index === 0,
+      }));
+      const wrapper = mount(ProductGallery, {
+        props: { media, productName: "Sách" },
+        global: galleryGlobal,
+      });
 
-    expect(wrapper.findAll('button[aria-label^="Xem ảnh "]')).toHaveLength(
-      count > 4 ? 3 : count,
-    );
-    expect(wrapper.findAll('button[aria-label^="Xem thêm "]')).toHaveLength(
-      count > 4 ? 1 : 0,
-    );
-    if (overflowLabel) {
-      expect(wrapper.get('button[aria-label^="Xem thêm "]').text()).toContain(
-        overflowLabel,
+      expect(wrapper.findAll('button[aria-label^="Xem ảnh "]')).toHaveLength(
+        count > 4 ? 3 : count,
       );
-    }
-  });
+      expect(wrapper.findAll('button[aria-label^="Xem thêm "]')).toHaveLength(
+        count > 4 ? 1 : 0,
+      );
+      if (overflowLabel) {
+        expect(wrapper.get('button[aria-label^="Xem thêm "]').text()).toContain(
+          overflowLabel,
+        );
+      }
+    },
+  );
 
   it("opens the complete gallery from +N without changing the active image", async () => {
     const media = Array.from({ length: 8 }, (_, index) => ({
@@ -343,9 +352,12 @@ describe("variant and gallery UI", () => {
       global: galleryGlobal,
     });
 
-    await wrapper.findAll('button[aria-label^="Xem ảnh "]')[2]?.trigger("click");
+    await wrapper
+      .findAll('button[aria-label^="Xem ảnh "]')[2]
+      ?.trigger("click");
     expect(
-      wrapper.find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+      wrapper
+        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/image-2.webp");
 
@@ -354,9 +366,12 @@ describe("variant and gallery UI", () => {
     expect(lightbox.attributes("data-index")).toBe("2");
     expect(lightbox.attributes("data-count")).toBe("8");
 
-    await wrapper.get('button[aria-label="Lightbox tiếp theo"]').trigger("click");
+    await wrapper
+      .get('button[aria-label="Lightbox tiếp theo"]')
+      .trigger("click");
     expect(
-      wrapper.find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+      wrapper
+        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/image-3.webp");
   });
@@ -364,19 +379,23 @@ describe("variant and gallery UI", () => {
   it("hides main-gallery navigation when there is only one image", () => {
     const wrapper = mount(ProductGallery, {
       props: {
-        media: [{
-          id: "one",
-          url: "/one.webp",
-          altText: "Một",
-          sortOrder: 0,
-          isPrimary: true,
-        }],
+        media: [
+          {
+            id: "one",
+            url: "/one.webp",
+            altText: "Một",
+            sortOrder: 0,
+            isPrimary: true,
+          },
+        ],
         productName: "Sách",
       },
       global: galleryGlobal,
     });
 
     expect(wrapper.find('button[aria-label="Ảnh trước"]').exists()).toBe(false);
-    expect(wrapper.find('button[aria-label="Ảnh tiếp theo"]').exists()).toBe(false);
+    expect(wrapper.find('button[aria-label="Ảnh tiếp theo"]').exists()).toBe(
+      false,
+    );
   });
 });

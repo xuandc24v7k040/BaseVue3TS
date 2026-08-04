@@ -26,10 +26,10 @@ export interface CreateProductVariantDto {
      */
   pageCount?: number | null;
   /**
-     * @minimum 0
-     * @nullable
+     * @minimum 1
+     * @maximum 100000
      */
-  weightGram?: number | null;
+  weightGram: number;
   /** @nullable */
   packageSize?: string | null;
   /** @pattern ^(0|[1-9]\d{0,12})$ */

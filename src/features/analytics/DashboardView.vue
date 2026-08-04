@@ -573,7 +573,9 @@ function viewAllStock(): void {
           <CardContent
             class="grid min-w-0 gap-4 sm:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[150px_minmax(0,1fr)]"
           >
-            <div class="relative min-w-0 [&_path]:cursor-pointer">
+            <div
+              class="relative h-40 min-w-0 self-center [&_path]:cursor-pointer"
+            >
               <VisSingleContainer :data="statusBuckets" :height="160">
                 <VisDonut
                   :value="statusValue"

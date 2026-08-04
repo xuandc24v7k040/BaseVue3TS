@@ -114,8 +114,8 @@ export const useCheckoutPreview = <TError = ErrorType<ErrorResponseDto>,
       return useMutation(getCheckoutPreviewMutationOptions(options), queryClient);
     }
     /**
- * Resolve vị trí Checkout qua Vietmap hybrid và GHN
- * @summary Resolve vị trí Checkout qua Vietmap hybrid và GHN
+ * Resolve vị trí Checkout qua VietMap và danh mục hành chính
+ * @summary Resolve vị trí Checkout qua VietMap và danh mục hành chính
  */
 export const checkoutResolveCurrentLocation = (
     currentLocationResolveDto: MaybeRef<CurrentLocationResolveDto>,
@@ -165,7 +165,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CheckoutResolveCurrentLocationMutationError = ErrorType<ErrorResponseDto>
 
     /**
- * @summary Resolve vị trí Checkout qua Vietmap hybrid và GHN
+ * @summary Resolve vị trí Checkout qua VietMap và danh mục hành chính
  */
 export const useCheckoutResolveCurrentLocation = <TError = ErrorType<ErrorResponseDto>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkoutResolveCurrentLocation>>, TError,{data: BodyType<CurrentLocationResolveDto>}, TContext>, request?: SecondParameter<typeof customInstance>}

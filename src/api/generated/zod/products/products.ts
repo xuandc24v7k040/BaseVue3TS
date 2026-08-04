@@ -323,7 +323,7 @@ export const productVariantsCreateBodyPublicationYearMin = 0;
 
 export const productVariantsCreateBodyPageCountMin = 0;
 
-export const productVariantsCreateBodyWeightGramMin = 0;
+export const productVariantsCreateBodyWeightGramMax = 100000;
 
 export const productVariantsCreateBodyOriginalPriceRegExp = new RegExp('^(0|[1-9]\\d{0,12})$');
 export const productVariantsCreateBodySalePriceRegExp = new RegExp('^(0|[1-9]\\d{0,12})$');
@@ -338,7 +338,7 @@ export const ProductVariantsCreateBody = zod.strictObject({
   "isbn": zod.string().nullish(),
   "publicationYear": zod.number().min(productVariantsCreateBodyPublicationYearMin).nullish(),
   "pageCount": zod.number().min(productVariantsCreateBodyPageCountMin).nullish(),
-  "weightGram": zod.number().min(productVariantsCreateBodyWeightGramMin).nullish(),
+  "weightGram": zod.number().min(1).max(productVariantsCreateBodyWeightGramMax),
   "packageSize": zod.string().nullish(),
   "originalPrice": zod.string().regex(productVariantsCreateBodyOriginalPriceRegExp),
   "salePrice": zod.string().regex(productVariantsCreateBodySalePriceRegExp).nullish(),
@@ -380,7 +380,7 @@ export const productVariantsBulkCreateBodyVariantsItemPublicationYearMin = 0;
 
 export const productVariantsBulkCreateBodyVariantsItemPageCountMin = 0;
 
-export const productVariantsBulkCreateBodyVariantsItemWeightGramMin = 0;
+export const productVariantsBulkCreateBodyVariantsItemWeightGramMax = 100000;
 
 export const productVariantsBulkCreateBodyVariantsItemOriginalPriceRegExp = new RegExp('^(0|[1-9]\\d{0,12})$');
 export const productVariantsBulkCreateBodyVariantsItemSalePriceRegExp = new RegExp('^(0|[1-9]\\d{0,12})$');
@@ -399,7 +399,7 @@ export const ProductVariantsBulkCreateBody = zod.strictObject({
   "isbn": zod.string().nullish(),
   "publicationYear": zod.number().min(productVariantsBulkCreateBodyVariantsItemPublicationYearMin).nullish(),
   "pageCount": zod.number().min(productVariantsBulkCreateBodyVariantsItemPageCountMin).nullish(),
-  "weightGram": zod.number().min(productVariantsBulkCreateBodyVariantsItemWeightGramMin).nullish(),
+  "weightGram": zod.number().min(1).max(productVariantsBulkCreateBodyVariantsItemWeightGramMax),
   "packageSize": zod.string().nullish(),
   "originalPrice": zod.string().regex(productVariantsBulkCreateBodyVariantsItemOriginalPriceRegExp),
   "salePrice": zod.string().regex(productVariantsBulkCreateBodyVariantsItemSalePriceRegExp).nullish(),
@@ -444,13 +444,14 @@ export const productVariantsUpdateBodyPublicationYearMin = 0;
 
 export const productVariantsUpdateBodyPageCountMin = 0;
 
-export const productVariantsUpdateBodyWeightGramMin = 0;
-
 export const productVariantsUpdateBodyOriginalPriceRegExp = new RegExp('^(0|[1-9]\\d{0,12})$');
 export const productVariantsUpdateBodySalePriceRegExp = new RegExp('^(0|[1-9]\\d{0,12})$');
 export const productVariantsUpdateBodyIsDefaultDefault = false;
 export const productVariantsUpdateBodyIsActiveDefault = true;
 export const productVariantsUpdateBodyOptionValueIdsDefault = [];
+export const productVariantsUpdateBodyWeightGramMax = 100000;
+
+
 
 export const ProductVariantsUpdateBody = zod.strictObject({
   "name": zod.string().max(productVariantsUpdateBodyNameMax).optional(),
@@ -459,7 +460,6 @@ export const ProductVariantsUpdateBody = zod.strictObject({
   "isbn": zod.string().nullish(),
   "publicationYear": zod.number().min(productVariantsUpdateBodyPublicationYearMin).nullish(),
   "pageCount": zod.number().min(productVariantsUpdateBodyPageCountMin).nullish(),
-  "weightGram": zod.number().min(productVariantsUpdateBodyWeightGramMin).nullish(),
   "packageSize": zod.string().nullish(),
   "originalPrice": zod.string().regex(productVariantsUpdateBodyOriginalPriceRegExp).optional(),
   "salePrice": zod.string().regex(productVariantsUpdateBodySalePriceRegExp).nullish(),
@@ -467,7 +467,8 @@ export const ProductVariantsUpdateBody = zod.strictObject({
   "saleEndAt": zod.iso.datetime({"offset":true}).nullish(),
   "isDefault": zod.boolean().default(productVariantsUpdateBodyIsDefaultDefault),
   "isActive": zod.boolean().default(productVariantsUpdateBodyIsActiveDefault),
-  "optionValueIds": zod.array(zod.ulid()).default(productVariantsUpdateBodyOptionValueIdsDefault)
+  "optionValueIds": zod.array(zod.ulid()).default(productVariantsUpdateBodyOptionValueIdsDefault),
+  "weightGram": zod.number().min(1).max(productVariantsUpdateBodyWeightGramMax).optional()
 })
 
 /**

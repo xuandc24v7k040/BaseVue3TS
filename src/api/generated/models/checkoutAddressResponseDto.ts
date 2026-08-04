@@ -22,5 +22,4 @@ export interface CheckoutAddressResponseDto {
   latitude: number | null;
   /** @nullable */
   longitude: number | null;
-  isGhnMapped: boolean;
 }

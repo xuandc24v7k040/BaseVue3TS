@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const phonePattern = /^(?:\+?84|0)(?:\d[\s.-]?){8,10}$/;
+
 export const branchAdminCreateSchema = z
   .object({
     fullName: z.string().trim().min(1, "Họ và tên là bắt buộc."),
@@ -8,7 +10,13 @@ export const branchAdminCreateSchema = z
       .trim()
       .min(1, "Email là bắt buộc.")
       .email("Email không đúng định dạng."),
-    phone: z.string().trim(),
+    phone: z
+      .string()
+      .trim()
+      .refine(
+        (value) => value.length === 0 || phonePattern.test(value),
+        "Số điện thoại không đúng định dạng.",
+      ),
     password: z
       .string()
       .min(1, "Mật khẩu là bắt buộc.")

@@ -17,6 +17,11 @@ describe("Phase 8C lifecycle and UX contract", () => {
     }
   });
 
+  it("validates the optional phone when the user leaves the field", () => {
+    expect(createDialog).toContain('@blur="validateField(\'phone\')"');
+    expect(createDialog).toContain(':aria-invalid="Boolean(errors.phone)"');
+  });
+
   it("exposes lifecycle actions without exposing CUSTOMER conversion", () => {
     const feature = [
       listPage,

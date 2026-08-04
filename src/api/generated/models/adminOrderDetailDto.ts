@@ -39,8 +39,6 @@ export interface AdminOrderDetailDto {
   receiverName: string;
   receiverPhone: string;
   shippingAddress: string;
-  shippingServiceName: string;
-  shippingProvider: string;
   /** @nullable */
   estimatedDeliveryAt?: string | null;
   subtotalAmount: number;

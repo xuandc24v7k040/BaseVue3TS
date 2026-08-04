@@ -22,11 +22,13 @@ export interface PublicVariantDto {
   /** @nullable */
   isbn?: string | null;
   /** @nullable */
+  barcode?: string | null;
+  /** @nullable */
   publicationYear?: number | null;
   /** @nullable */
   pageCount?: number | null;
-  /** @nullable */
-  weightGram?: number | null;
+  /** @minimum 1 */
+  weightGram: number;
   /** @nullable */
   packageSize?: string | null;
   optionValues: PublicVariantOptionValueDto[];

@@ -26,6 +26,7 @@ import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartActions } from "@/features/cart/api/cart-api";
 import { cartErrorMessage } from "@/features/cart/utils/cart-error";
+import { resolveProductMetadata } from "@/features/storefront/utils/resolved-product-metadata";
 
 const route = useRoute();
 const router = useRouter();
@@ -89,6 +90,11 @@ const isSimpleProduct = computed(
   () =>
     product.value?.options.length === 0 && product.value.variants.length === 1,
 );
+const resolvedMetadata = computed(() =>
+  product.value && displayedVariant.value
+    ? resolveProductMetadata(product.value.attributes, displayedVariant.value)
+    : [],
+);
 
 watch(availableQuantity, (nextQuantity) => {
   quantity.value =
@@ -99,15 +105,6 @@ useProductSeo(computed(() => product.value?.seo ?? null));
 
 function formatPrice(value: number): string {
   return `${priceFormatter.format(value)} đ`;
-}
-
-function formatAttributeValue(attribute: {
-  code: string;
-  value: string;
-}): string {
-  return attribute.code === "PUBLICATION_DATE"
-    ? formatProductDate(attribute.value)
-    : attribute.value;
 }
 
 async function addToCart(buyNow = false): Promise<void> {
@@ -390,35 +387,14 @@ async function addToCart(buyNow = false): Promise<void> {
           />
           <dl v-else class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
             <div
-              v-for="attribute in product.attributes"
-              :key="attribute.code"
+              v-for="attribute in resolvedMetadata"
+              :key="attribute.key"
               class="rounded-lg bg-[var(--bookora-cream)] p-3"
             >
-              <dt class="text-[var(--bookora-muted)]">{{ attribute.name }}</dt>
+              <dt class="text-[var(--bookora-muted)]">{{ attribute.label }}</dt>
               <dd class="mt-1 font-semibold">
-                {{ formatAttributeValue(attribute) }}
+                {{ attribute.value }}
               </dd>
-            </div>
-            <div
-              v-if="displayedVariant.isbn"
-              class="rounded-lg bg-[var(--bookora-cream)] p-3"
-            >
-              <dt>ISBN</dt>
-              <dd class="font-semibold">{{ displayedVariant.isbn }}</dd>
-            </div>
-            <div
-              v-if="displayedVariant.pageCount"
-              class="rounded-lg bg-[var(--bookora-cream)] p-3"
-            >
-              <dt>Số trang</dt>
-              <dd class="font-semibold">{{ displayedVariant.pageCount }}</dd>
-            </div>
-            <div
-              v-if="displayedVariant.packageSize"
-              class="rounded-lg bg-[var(--bookora-cream)] p-3"
-            >
-              <dt>Kích thước</dt>
-              <dd class="font-semibold">{{ displayedVariant.packageSize }}</dd>
             </div>
           </dl>
         </section>

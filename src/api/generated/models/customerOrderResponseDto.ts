@@ -36,7 +36,6 @@ export interface CustomerOrderResponseDto {
      * @pattern ^[0-7][0-9A-HJKMNP-TV-Z]{25}$
      */
   branchId: string;
-  shippingServiceName: string;
   /** @nullable */
   note?: string | null;
   paymentMethod: CustomerOrderResponseDtoPaymentMethod;

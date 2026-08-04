@@ -11,7 +11,6 @@ import type { CheckoutItemResponseDto } from './checkoutItemResponseDto';
 import type { CheckoutPreviewResponseDtoPaymentMethod } from './checkoutPreviewResponseDtoPaymentMethod';
 import type { CheckoutPreviewResponseDtoShippingFeeRule } from './checkoutPreviewResponseDtoShippingFeeRule';
 import type { CheckoutPreviewResponseDtoShippingMethodCode } from './checkoutPreviewResponseDtoShippingMethodCode';
-import type { CheckoutPreviewResponseDtoShippingProviderCode } from './checkoutPreviewResponseDtoShippingProviderCode';
 import type { ShippingQuoteResponseDto } from './shippingQuoteResponseDto';
 
 export interface CheckoutPreviewResponseDto {
@@ -29,12 +28,13 @@ export interface CheckoutPreviewResponseDto {
   paymentMethod: CheckoutPreviewResponseDtoPaymentMethod;
   subtotalAmount: number;
   discountAmount: number;
+  /** @minimum 1 */
+  totalProductWeightGram: number;
   /** @nullable */
   shippingFee: number | null;
   /** @nullable */
   shippingFeeRule: CheckoutPreviewResponseDtoShippingFeeRule;
   shippingMethodCode: CheckoutPreviewResponseDtoShippingMethodCode;
-  shippingProviderCode: CheckoutPreviewResponseDtoShippingProviderCode;
   totalAmount: number;
   /** @nullable */
   note: string | null;

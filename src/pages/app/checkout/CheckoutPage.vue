@@ -882,14 +882,9 @@ onBeforeUnmount(() => {
               Phương thức vận chuyển
             </h2>
             <div class="mt-5 rounded-xl border p-4">
-              <div class="flex items-center gap-3 border-b pb-4">
-                <img
-                  src="/Logo-GHN-Slogan-En.webp"
-                  alt="GHN Express"
-                  class="h-7 w-20 object-contain object-left"
-                />
-                <span class="text-sm">Giao hàng bởi GHN Express</span>
-              </div>
+              <p class="border-b pb-4 text-sm font-semibold">
+                Giao hàng tiêu chuẩn
+              </p>
               <div class="grid gap-4 py-4 text-sm sm:grid-cols-[1fr_auto_1fr]">
                 <div>
                   <strong>Địa chỉ gửi (Từ)</strong>
@@ -914,9 +909,7 @@ onBeforeUnmount(() => {
                     ><span class="size-2.5 rounded-full bg-green-600"
                   /></span>
                   <span>
-                    <strong class="block">{{
-                      draft.shippingQuote?.serviceName || "GHN Tiêu chuẩn"
-                    }}</strong>
+                    <strong class="block">Giao hàng tiêu chuẩn</strong>
                     <small class="text-slate-500">
                       Phí vận chuyển cố định theo khu vực giao hàng
                     </small>

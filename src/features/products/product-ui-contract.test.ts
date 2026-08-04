@@ -3,6 +3,7 @@ import formSource from './pages/ProductFormPage.vue?raw'
 import detailSource from './pages/ProductDetailPage.vue?raw'
 import optionSource from './components/ProductOptionBuilder.vue?raw'
 import variantSource from './components/ProductVariantManager.vue?raw'
+import promotionWeightSource from './components/VariantPromotionWeightFields.vue?raw'
 
 describe('Phase 10B UI anti-regression contract', () => {
   it('does not use native master-data selects or the native short-description textarea', () => {
@@ -39,5 +40,17 @@ describe('Phase 10B UI anti-regression contract', () => {
     expect(optionSource).not.toMatch(/<Trash2[^>]+@click/)
     expect(optionSource).not.toContain('@select=')
     expect(variantSource).not.toContain('@select=')
+  })
+
+  it('uses one responsive promotion and weight layout in single, bulk and edit flows', () => {
+    expect(promotionWeightSource).toContain('md:grid-cols-2 xl:grid-cols-3')
+    expect(promotionWeightSource.indexOf('saleStartAt')).toBeLessThan(
+      promotionWeightSource.indexOf('saleEndAt'),
+    )
+    expect(promotionWeightSource.indexOf('saleEndAt')).toBeLessThan(
+      promotionWeightSource.indexOf('weightGram'),
+    )
+    expect(variantSource.match(/<VariantPromotionWeightFields/g)).toHaveLength(4)
+    expect(variantSource).not.toContain('<VariantWeightField')
   })
 })

@@ -1,16 +1,29 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
-import { Check, Plus, RefreshCcw, RotateCcw, Save, Star, Trash2, X } from '@lucide/vue'
-import { toast } from 'vue-sonner'
-import type { CreateProductVariantDto, ProductVariantResponseDto, VariantPreviewItemResponseDto } from '@/api/generated/models'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import MasterDataDeleteDialog from '@/features/product-master-data/components/MasterDataDeleteDialog.vue'
+import { computed, nextTick, reactive, ref, watch } from "vue";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+  Check,
+  Plus,
+  RefreshCcw,
+  RotateCcw,
+  Save,
+  Star,
+  Trash2,
+  X,
+} from "@lucide/vue";
+import { toast } from "vue-sonner";
+import type {
+  CreateProductVariantDto,
+  ProductVariantResponseDto,
+  VariantPreviewItemResponseDto,
+} from "@/api/generated/models";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import MasterDataDeleteDialog from "@/features/product-master-data/components/MasterDataDeleteDialog.vue";
 import {
   productOptionsList,
   productVariantsBulkCreate,
@@ -20,308 +33,484 @@ import {
   productVariantsList,
   productVariantsSetDefault,
   productVariantsUpdate,
-} from '../api/product-api'
-import { productKeys } from '../api/product-query-keys'
-import { productErrorMessage } from '../utils/product-errors'
-import { formatVnd } from '../utils/product-money'
+} from "../api/product-api";
+import { productKeys } from "../api/product-query-keys";
+import { productErrorMessage } from "../utils/product-errors";
+import { formatVnd } from "../utils/product-money";
 import {
   selectedVariantMetadata,
   validateVariantMetadata,
+  validateVariantWeight,
   variantMetadataPayload,
   type VariantMetadataDraft,
   type VariantMetadataKey,
-} from '../utils/variant-metadata'
-import VndMoneyInput from './VndMoneyInput.vue'
-import VariantMetadataFields from './VariantMetadataFields.vue'
+} from "../utils/variant-metadata";
+import VndMoneyInput from "./VndMoneyInput.vue";
+import VariantMetadataFields from "./VariantMetadataFields.vue";
+import VariantPromotionWeightFields from "./VariantPromotionWeightFields.vue";
 
-const props = defineProps<{ productId: string }>()
-const client = useQueryClient()
-const pending = ref(false)
-const generatingPreview = ref(false)
-const previewState = ref<'CLOSED' | 'LOADING' | 'READY' | 'ERROR'>('CLOSED')
-const previewError = ref('')
-const preview = ref<VariantPreviewItemResponseDto[]>([])
-const selectedKeys = ref<string[]>([])
-const deleteTarget = ref<ProductVariantResponseDto | null>(null)
-const deleteOpen = ref(false)
+const props = defineProps<{ productId: string }>();
+const client = useQueryClient();
+const pending = ref(false);
+const generatingPreview = ref(false);
+const previewState = ref<"CLOSED" | "LOADING" | "READY" | "ERROR">("CLOSED");
+const previewError = ref("");
+const preview = ref<VariantPreviewItemResponseDto[]>([]);
+const selectedKeys = ref<string[]>([]);
+const deleteTarget = ref<ProductVariantResponseDto | null>(null);
+const deleteOpen = ref(false);
 
 type VariantDraft = VariantMetadataDraft & {
-  name: string
-  sku: string
-  barcode: string
-  isbn: string
-  publicationYear: string
-  pageCount: string
-  weightGram: string
-  packageSize: string
-  originalPrice: string
-  salePrice: string
-  saleStartAt: string
-  saleEndAt: string
-  isDefault: boolean
-  isActive: boolean
-}
+  name: string;
+  sku: string;
+  barcode: string;
+  isbn: string;
+  publicationYear: string;
+  pageCount: string;
+  weightGram: string;
+  packageSize: string;
+  originalPrice: string;
+  salePrice: string;
+  saleStartAt: string;
+  saleEndAt: string;
+  isDefault: boolean;
+  isActive: boolean;
+};
 
-const emptyDraft = (name = '', sku = ''): VariantDraft => ({
-  name, sku, barcode: '', isbn: '', publicationYear: '', pageCount: '', weightGram: '', packageSize: '',
-  originalPrice: '', salePrice: '', saleStartAt: '', saleEndAt: '', isDefault: false, isActive: true,
-})
-const singleDraft = reactive<VariantDraft>({ ...emptyDraft('Mặc định'), isDefault: true })
-const bulkDefaults = reactive({ skuPrefix: 'BOOK', originalPrice: '', salePrice: '', isActive: true })
-const bulkDrafts = reactive<Record<string, VariantDraft>>({})
-const editDrafts = reactive<Record<string, VariantDraft>>({})
-const singleMetadata = ref<VariantMetadataKey[]>([])
-const editMetadata = reactive<Record<string, VariantMetadataKey[]>>({})
+const emptyDraft = (name = "", sku = ""): VariantDraft => ({
+  name,
+  sku,
+  barcode: "",
+  isbn: "",
+  publicationYear: "",
+  pageCount: "",
+  weightGram: "",
+  packageSize: "",
+  originalPrice: "",
+  salePrice: "",
+  saleStartAt: "",
+  saleEndAt: "",
+  isDefault: false,
+  isActive: true,
+});
+const singleDraft = reactive<VariantDraft>({
+  ...emptyDraft("Mặc định"),
+  isDefault: true,
+});
+const bulkDefaults = reactive({
+  skuPrefix: "BOOK",
+  originalPrice: "",
+  salePrice: "",
+  isActive: true,
+});
+const bulkDrafts = reactive<Record<string, VariantDraft>>({});
+const editDrafts = reactive<Record<string, VariantDraft>>({});
+const singleMetadata = ref<VariantMetadataKey[]>([]);
+const editMetadata = reactive<Record<string, VariantMetadataKey[]>>({});
+const weightErrors = reactive<Record<string, string>>({});
 
 const optionsQuery = useQuery({
   queryKey: computed(() => productKeys.options(props.productId)),
-  queryFn: ({ signal }) => productOptionsList(props.productId, undefined, signal),
-})
+  queryFn: ({ signal }) =>
+    productOptionsList(props.productId, undefined, signal),
+});
 const variantsQuery = useQuery({
   queryKey: computed(() => productKeys.variants(props.productId)),
-  queryFn: ({ signal }) => productVariantsList(props.productId, undefined, signal),
-})
-const options = computed(() => optionsQuery.data.value?.data ?? [])
-const variants = computed(() => variantsQuery.data.value?.data ?? [])
-const hasOptions = computed(() => options.value.length > 0)
-const creatablePreview = computed(() => preview.value.filter((item) => !item.exists))
-const selectedPreview = computed(() => creatablePreview.value.filter((item) => selectedKeys.value.includes(item.combinationKey)))
-const deleteBlockedReason = computed(() => deleteTarget.value?.isDefault ? 'Không thể xóa biến thể mặc định. Hãy đặt một biến thể khác làm mặc định trước.' : undefined)
+  queryFn: ({ signal }) =>
+    productVariantsList(props.productId, undefined, signal),
+});
+const options = computed(() => optionsQuery.data.value?.data ?? []);
+const variants = computed(() => variantsQuery.data.value?.data ?? []);
+const hasOptions = computed(() => options.value.length > 0);
+const creatablePreview = computed(() =>
+  preview.value.filter((item) => !item.exists),
+);
+const selectedPreview = computed(() =>
+  creatablePreview.value.filter((item) =>
+    selectedKeys.value.includes(item.combinationKey),
+  ),
+);
+const deleteBlockedReason = computed(() =>
+  deleteTarget.value?.isDefault
+    ? "Không thể xóa biến thể mặc định. Hãy đặt một biến thể khác làm mặc định trước."
+    : undefined,
+);
 
-watch(variants, (items) => {
-  items.forEach((variant) => {
-    hydrateVariant(variant)
-  })
-}, { immediate: true })
+watch(
+  variants,
+  (items) => {
+    items.forEach((variant) => {
+      hydrateVariant(variant);
+    });
+  },
+  { immediate: true },
+);
 
 function hydrateVariant(variant: ProductVariantResponseDto): void {
   editDrafts[variant.id] = {
     name: variant.name,
     sku: variant.sku,
-    barcode: variant.barcode ?? '',
-    isbn: variant.isbn ?? '',
-    publicationYear: variant.publicationYear === null || variant.publicationYear === undefined ? '' : String(variant.publicationYear),
-    pageCount: variant.pageCount === null || variant.pageCount === undefined ? '' : String(variant.pageCount),
-    weightGram: variant.weightGram === null || variant.weightGram === undefined ? '' : String(variant.weightGram),
-    packageSize: variant.packageSize ?? '',
+    barcode: variant.barcode ?? "",
+    isbn: variant.isbn ?? "",
+    publicationYear:
+      variant.publicationYear === null || variant.publicationYear === undefined
+        ? ""
+        : String(variant.publicationYear),
+    pageCount:
+      variant.pageCount === null || variant.pageCount === undefined
+        ? ""
+        : String(variant.pageCount),
+    weightGram:
+      variant.weightGram === null || variant.weightGram === undefined
+        ? ""
+        : String(variant.weightGram),
+    packageSize: variant.packageSize ?? "",
     originalPrice: variant.originalPrice,
-    salePrice: variant.salePrice ?? '',
-    saleStartAt: variant.saleStartAt?.slice(0, 16) ?? '',
-    saleEndAt: variant.saleEndAt?.slice(0, 16) ?? '',
+    salePrice: variant.salePrice ?? "",
+    saleStartAt: variant.saleStartAt?.slice(0, 16) ?? "",
+    saleEndAt: variant.saleEndAt?.slice(0, 16) ?? "",
     isDefault: variant.isDefault,
     isActive: variant.isActive,
-  }
-  editMetadata[variant.id] = selectedVariantMetadata(variant)
+  };
+  editMetadata[variant.id] = selectedVariantMetadata(variant);
+  delete weightErrors[`edit:${variant.id}`];
 }
 
 watch(creatablePreview, (items) => {
-  const allowed = new Set(items.map((item) => item.combinationKey))
-  selectedKeys.value = selectedKeys.value.filter((key) => allowed.has(key))
+  const allowed = new Set(items.map((item) => item.combinationKey));
+  selectedKeys.value = selectedKeys.value.filter((key) => allowed.has(key));
   items.forEach((item, index) => {
     bulkDrafts[item.combinationKey] ??= {
-      ...emptyDraft(item.label, `${bulkDefaults.skuPrefix}-${String(index + 1).padStart(3, '0')}`),
-      originalPrice: bulkDefaults.originalPrice, salePrice: bulkDefaults.salePrice, isActive: bulkDefaults.isActive,
-    }
-  })
-})
+      ...emptyDraft(
+        item.label,
+        `${bulkDefaults.skuPrefix}-${String(index + 1).padStart(3, "0")}`,
+      ),
+      originalPrice: bulkDefaults.originalPrice,
+      salePrice: bulkDefaults.salePrice,
+      isActive: bulkDefaults.isActive,
+    };
+  });
+});
 
 function normalizeSku(value: string) {
-  return value.trim().toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9._/-]/g, '')
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^A-Z0-9._/-]/g, "");
 }
 
-function togglePreview(item: VariantPreviewItemResponseDto, checked: boolean | 'indeterminate') {
-  const index = selectedKeys.value.indexOf(item.combinationKey)
-  if (checked === true && index < 0) selectedKeys.value.push(item.combinationKey)
-  if (checked !== true && index >= 0) selectedKeys.value.splice(index, 1)
+function togglePreview(
+  item: VariantPreviewItemResponseDto,
+  checked: boolean | "indeterminate",
+) {
+  const index = selectedKeys.value.indexOf(item.combinationKey);
+  if (checked === true && index < 0)
+    selectedKeys.value.push(item.combinationKey);
+  if (checked !== true && index >= 0) selectedKeys.value.splice(index, 1);
 }
 
-function setBulkDefault(combinationKey: string, checked: boolean | 'indeterminate') {
-  Object.values(bulkDrafts).forEach((draft) => { draft.isDefault = false })
-  const selected = bulkDrafts[combinationKey]
-  if (selected) selected.isDefault = checked === true
+function setBulkDefault(
+  combinationKey: string,
+  checked: boolean | "indeterminate",
+) {
+  Object.values(bulkDrafts).forEach((draft) => {
+    draft.isDefault = false;
+  });
+  const selected = bulkDrafts[combinationKey];
+  if (selected) selected.isDefault = checked === true;
 }
 
 async function refresh() {
   await Promise.all([
-    client.invalidateQueries({ queryKey: productKeys.variants(props.productId) }),
-    client.invalidateQueries({ queryKey: productKeys.options(props.productId) }),
+    client.invalidateQueries({
+      queryKey: productKeys.variants(props.productId),
+    }),
+    client.invalidateQueries({
+      queryKey: productKeys.options(props.productId),
+    }),
     client.invalidateQueries({ queryKey: productKeys.detail(props.productId) }),
     client.invalidateQueries({ queryKey: productKeys.lists() }),
-  ])
+  ]);
 }
 
-function toPayload(draft: VariantDraft, optionValueIds: string[], selected: VariantMetadataKey[] = []): CreateProductVariantDto {
-  const timestamp = (value: string) => value ? new Date(value).toISOString() : null
-  const hasSalePrice = draft.salePrice !== ''
+function toPayload(
+  draft: VariantDraft,
+  optionValueIds: string[],
+  selected: VariantMetadataKey[] = [],
+): CreateProductVariantDto {
+  const timestamp = (value: string) =>
+    value ? new Date(value).toISOString() : null;
+  const hasSalePrice = draft.salePrice !== "";
   return {
     name: draft.name.trim(),
     sku: normalizeSku(draft.sku),
     ...variantMetadataPayload(draft, selected),
-    originalPrice: draft.originalPrice || '0',
+    originalPrice: draft.originalPrice || "0",
     salePrice: hasSalePrice ? draft.salePrice : null,
     saleStartAt: hasSalePrice ? timestamp(draft.saleStartAt) : null,
     saleEndAt: hasSalePrice ? timestamp(draft.saleEndAt) : null,
     isDefault: draft.isDefault,
     isActive: draft.isActive,
     optionValueIds,
-  }
+  };
 }
 
-function validateDraft(draft: VariantDraft, selected: VariantMetadataKey[] = []): string | null {
-  if (!draft.name.trim() || !draft.sku.trim()) return 'Vui lòng nhập tên và SKU biến thể.'
-  if (!draft.originalPrice) return 'Vui lòng nhập giá bán gốc.'
-  if (draft.salePrice && BigInt(draft.salePrice) > BigInt(draft.originalPrice)) return 'Giá khuyến mãi không được lớn hơn giá bán gốc.'
-  if (!draft.salePrice && (draft.saleStartAt || draft.saleEndAt)) return 'Chỉ đặt lịch khi có giá khuyến mãi.'
-  if (Boolean(draft.saleStartAt) !== Boolean(draft.saleEndAt)) return 'Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc khuyến mãi.'
-  if (draft.saleStartAt && draft.saleEndAt && new Date(draft.saleStartAt) >= new Date(draft.saleEndAt)) return 'Thời gian kết thúc khuyến mãi phải sau thời gian bắt đầu.'
-  return validateVariantMetadata(draft, selected)
+function validateDraft(
+  draft: VariantDraft,
+  selected: VariantMetadataKey[],
+  weightErrorKey: string,
+): string | null {
+  const weightError = validateVariantWeight(draft.weightGram);
+  if (weightError) weightErrors[weightErrorKey] = weightError;
+  else delete weightErrors[weightErrorKey];
+  if (weightError) return weightError;
+  if (!draft.name.trim() || !draft.sku.trim())
+    return "Vui lòng nhập tên và SKU biến thể.";
+  if (!draft.originalPrice) return "Vui lòng nhập giá bán gốc.";
+  if (draft.salePrice && BigInt(draft.salePrice) > BigInt(draft.originalPrice))
+    return "Giá khuyến mãi không được lớn hơn giá bán gốc.";
+  if (!draft.salePrice && (draft.saleStartAt || draft.saleEndAt))
+    return "Chỉ đặt lịch khi có giá khuyến mãi.";
+  if (Boolean(draft.saleStartAt) !== Boolean(draft.saleEndAt))
+    return "Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc khuyến mãi.";
+  if (
+    draft.saleStartAt &&
+    draft.saleEndAt &&
+    new Date(draft.saleStartAt) >= new Date(draft.saleEndAt)
+  )
+    return "Thời gian kết thúc khuyến mãi phải sau thời gian bắt đầu.";
+  return validateVariantMetadata(draft, selected);
 }
 
 async function createSingle() {
-  const validationError = validateDraft(singleDraft, singleMetadata.value)
-  if (validationError) { toast.error(validationError); return }
-  if (pending.value) return
-  pending.value = true
+  const validationError = validateDraft(
+    singleDraft,
+    singleMetadata.value,
+    "single",
+  );
+  if (validationError) {
+    showValidationError(validationError);
+    return;
+  }
+  if (pending.value) return;
+  pending.value = true;
   try {
-    await productVariantsCreate(props.productId, toPayload(singleDraft, [], singleMetadata.value))
-    Object.assign(singleDraft, { ...emptyDraft('Mặc định'), isDefault: true })
-    singleMetadata.value = []
-    await refresh()
-    toast.success('Tạo biến thể mặc định thành công.')
+    await productVariantsCreate(
+      props.productId,
+      toPayload(singleDraft, [], singleMetadata.value),
+    );
+    Object.assign(singleDraft, { ...emptyDraft("Mặc định"), isDefault: true });
+    singleMetadata.value = [];
+    delete weightErrors.single;
+    await refresh();
+    toast.success("Tạo biến thể mặc định thành công.");
   } catch (error) {
-    toast.error(productErrorMessage(error, 'Không thể tạo biến thể.'))
-  } finally { pending.value = false }
+    toast.error(productErrorMessage(error, "Không thể tạo biến thể."));
+  } finally {
+    pending.value = false;
+  }
 }
 
 async function generatePreview() {
-  if (generatingPreview.value || pending.value) return
-  generatingPreview.value = true
-  previewState.value = 'LOADING'
-  previewError.value = ''
+  if (generatingPreview.value || pending.value) return;
+  generatingPreview.value = true;
+  previewState.value = "LOADING";
+  previewError.value = "";
   try {
-    const response = await productVariantsGeneratePreview(props.productId)
-    preview.value = response.data.combinations
-    selectedKeys.value = response.data.combinations.filter((item) => !item.exists).map((item) => item.combinationKey)
-    previewState.value = 'READY'
+    const response = await productVariantsGeneratePreview(props.productId);
+    preview.value = response.data.combinations;
+    selectedKeys.value = response.data.combinations
+      .filter((item) => !item.exists)
+      .map((item) => item.combinationKey);
+    previewState.value = "READY";
   } catch (error) {
-    previewError.value = productErrorMessage(error, 'Không thể tạo ma trận biến thể.')
-    previewState.value = 'ERROR'
-  } finally { generatingPreview.value = false }
+    previewError.value = productErrorMessage(
+      error,
+      "Không thể tạo ma trận biến thể.",
+    );
+    previewState.value = "ERROR";
+  } finally {
+    generatingPreview.value = false;
+  }
 }
 
 async function cancelPreview(returnFocus = true) {
-  preview.value = []
-  selectedKeys.value = []
-  Object.keys(bulkDrafts).forEach((key) => delete bulkDrafts[key])
-  Object.assign(bulkDefaults, { skuPrefix: 'BOOK', originalPrice: '', salePrice: '', isActive: true })
-  previewError.value = ''
-  previewState.value = 'CLOSED'
+  preview.value = [];
+  selectedKeys.value = [];
+  Object.keys(bulkDrafts).forEach((key) => delete bulkDrafts[key]);
+  Object.keys(weightErrors)
+    .filter((key) => key.startsWith("bulk:"))
+    .forEach((key) => delete weightErrors[key]);
+  Object.assign(bulkDefaults, {
+    skuPrefix: "BOOK",
+    originalPrice: "",
+    salePrice: "",
+    isActive: true,
+  });
+  previewError.value = "";
+  previewState.value = "CLOSED";
   if (returnFocus) {
-    await nextTick()
-    document.getElementById('product-matrix-trigger')?.focus()
+    await nextTick();
+    document.getElementById("product-matrix-trigger")?.focus();
   }
 }
 
 function applyDefaults() {
   creatablePreview.value.forEach((item, index) => {
-    const draft = bulkDrafts[item.combinationKey]
-    if (!draft) return
-    draft.sku = `${normalizeSku(bulkDefaults.skuPrefix) || 'BOOK'}-${String(index + 1).padStart(3, '0')}`
-    draft.originalPrice = bulkDefaults.originalPrice
-    draft.salePrice = bulkDefaults.salePrice
-    draft.isActive = bulkDefaults.isActive
-  })
+    const draft = bulkDrafts[item.combinationKey];
+    if (!draft) return;
+    draft.sku = `${normalizeSku(bulkDefaults.skuPrefix) || "BOOK"}-${String(index + 1).padStart(3, "0")}`;
+    draft.originalPrice = bulkDefaults.originalPrice;
+    draft.salePrice = bulkDefaults.salePrice;
+    draft.isActive = bulkDefaults.isActive;
+  });
 }
 
 async function createBulk() {
-  const items = selectedPreview.value
-  if (items.length === 0) return
-  const validationError = items.map((item) => validateDraft(bulkDrafts[item.combinationKey]!)).find(Boolean)
-  if (validationError) { toast.error(validationError); return }
-  pending.value = true
+  const items = selectedPreview.value;
+  if (items.length === 0) return;
+  const validationError = items
+    .map((item) =>
+      validateDraft(
+        bulkDrafts[item.combinationKey]!,
+        [],
+        `bulk:${item.combinationKey}`,
+      ),
+    )
+    .find(Boolean);
+  if (validationError) {
+    showValidationError(validationError);
+    return;
+  }
+  pending.value = true;
   try {
     await productVariantsBulkCreate(props.productId, {
-      variants: items.map((item) => toPayload(bulkDrafts[item.combinationKey]!, item.optionValueIds)),
-    })
-    await cancelPreview(false)
-    await refresh()
-    toast.success(`Đã tạo ${items.length} biến thể.`)
+      variants: items.map((item) =>
+        toPayload(bulkDrafts[item.combinationKey]!, item.optionValueIds),
+      ),
+    });
+    await cancelPreview(false);
+    await refresh();
+    toast.success(`Đã tạo ${items.length} biến thể.`);
   } catch (error) {
-    toast.error(productErrorMessage(error, 'Không thể tạo hàng loạt biến thể.'))
-  } finally { pending.value = false }
+    toast.error(
+      productErrorMessage(error, "Không thể tạo hàng loạt biến thể."),
+    );
+  } finally {
+    pending.value = false;
+  }
 }
 
 async function saveVariant(variant: ProductVariantResponseDto) {
-  const draft = editDrafts[variant.id]
-  if (!draft || pending.value) return
-  const selected = editMetadata[variant.id] ?? []
-  const validationError = validateDraft(draft, selected)
-  if (validationError) { toast.error(validationError); return }
-  pending.value = true
+  const draft = editDrafts[variant.id];
+  if (!draft || pending.value) return;
+  const selected = editMetadata[variant.id] ?? [];
+  const validationError = validateDraft(draft, selected, `edit:${variant.id}`);
+  if (validationError) {
+    showValidationError(validationError);
+    return;
+  }
+  pending.value = true;
   try {
-    const metadata = variantMetadataPayload(draft, selected)
-    const hasSalePrice = draft.salePrice !== ''
+    const metadata = variantMetadataPayload(draft, selected);
+    const hasSalePrice = draft.salePrice !== "";
     await productVariantsUpdate(props.productId, variant.id, {
       name: draft.name.trim(),
       sku: normalizeSku(draft.sku),
       ...metadata,
       originalPrice: draft.originalPrice,
       salePrice: hasSalePrice ? draft.salePrice : null,
-      saleStartAt: hasSalePrice && draft.saleStartAt ? new Date(draft.saleStartAt).toISOString() : null,
-      saleEndAt: hasSalePrice && draft.saleEndAt ? new Date(draft.saleEndAt).toISOString() : null,
+      saleStartAt:
+        hasSalePrice && draft.saleStartAt
+          ? new Date(draft.saleStartAt).toISOString()
+          : null,
+      saleEndAt:
+        hasSalePrice && draft.saleEndAt
+          ? new Date(draft.saleEndAt).toISOString()
+          : null,
       isActive: draft.isActive,
-    })
-    await refresh()
-    toast.success('Cập nhật biến thể thành công.')
+    });
+    await refresh();
+    toast.success("Đã lưu thông tin sản phẩm.");
   } catch (error) {
-    toast.error(productErrorMessage(error, 'Không thể cập nhật biến thể.'))
-  } finally { pending.value = false }
+    toast.error(productErrorMessage(error, "Không thể cập nhật biến thể."));
+  } finally {
+    pending.value = false;
+  }
 }
 
-function updateMetadataValue(draft: VariantDraft, key: VariantMetadataKey, value: string): void {
-  draft[key] = value
+function updateMetadataValue(
+  draft: VariantDraft,
+  key: VariantMetadataKey,
+  value: string,
+): void {
+  draft[key] = value;
+}
+
+function updateWeightValue(
+  draft: VariantDraft,
+  errorKey: string,
+  value: string,
+): void {
+  draft.weightGram = value;
+  const error = validateVariantWeight(value);
+  if (error) weightErrors[errorKey] = error;
+  else delete weightErrors[errorKey];
+}
+
+function showValidationError(error: string): void {
+  toast.error(
+    error.startsWith("Trọng lượng")
+      ? "Vui lòng kiểm tra lại trọng lượng của các biến thể."
+      : error,
+  );
 }
 
 function updateSalePrice(draft: VariantDraft, value: string): void {
-  draft.salePrice = value
+  draft.salePrice = value;
   if (!value) {
-    draft.saleStartAt = ''
-    draft.saleEndAt = ''
+    draft.saleStartAt = "";
+    draft.saleEndAt = "";
   }
 }
 
 function resetVariant(variant: ProductVariantResponseDto): void {
-  hydrateVariant(variant)
+  hydrateVariant(variant);
 }
 
 async function setDefault(variant: ProductVariantResponseDto) {
-  if (pending.value) return
-  pending.value = true
+  if (pending.value) return;
+  pending.value = true;
   try {
-    await productVariantsSetDefault(props.productId, variant.id)
-    await refresh()
-    toast.success('Đã đặt biến thể mặc định.')
+    await productVariantsSetDefault(props.productId, variant.id);
+    await refresh();
+    toast.success("Đã đặt biến thể mặc định.");
   } catch (error) {
-    toast.error(productErrorMessage(error, 'Không thể đặt biến thể mặc định.'))
-  } finally { pending.value = false }
+    toast.error(productErrorMessage(error, "Không thể đặt biến thể mặc định."));
+  } finally {
+    pending.value = false;
+  }
 }
 
 async function confirmDelete() {
-  if (!deleteTarget.value || deleteBlockedReason.value || pending.value) return
-  pending.value = true
+  if (!deleteTarget.value || deleteBlockedReason.value || pending.value) return;
+  pending.value = true;
   try {
-    await productVariantsDelete(props.productId, deleteTarget.value.id)
-    deleteOpen.value = false
-    await refresh()
-    toast.success('Xóa biến thể thành công.')
+    await productVariantsDelete(props.productId, deleteTarget.value.id);
+    deleteOpen.value = false;
+    await refresh();
+    toast.success("Xóa biến thể thành công.");
   } catch (error) {
-    toast.error(productErrorMessage(error, 'Không thể xóa biến thể.'))
-  } finally { pending.value = false }
+    toast.error(productErrorMessage(error, "Không thể xóa biến thể."));
+  } finally {
+    pending.value = false;
+  }
 }
 
 function askDeleteVariant(variant: ProductVariantResponseDto): void {
-  deleteTarget.value = variant
-  deleteOpen.value = true
+  deleteTarget.value = variant;
+  deleteOpen.value = true;
 }
 </script>
 
@@ -329,104 +518,511 @@ function askDeleteVariant(variant: ProductVariantResponseDto): void {
   <section class="space-y-4" aria-labelledby="variants-heading">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h2 id="variants-heading" class="text-lg font-semibold">Biến thể bán hàng</h2>
-        <p class="text-sm text-muted-foreground">SKU và giá được quản lý tại biến thể; tiền VND luôn là số nguyên.</p>
+        <h2 id="variants-heading" class="text-lg font-semibold">
+          Biến thể bán hàng
+        </h2>
+        <p class="text-sm text-muted-foreground">
+          SKU và giá được quản lý tại biến thể; tiền VND luôn là số nguyên.
+        </p>
       </div>
-      <Button v-if="hasOptions && previewState === 'CLOSED'" id="product-matrix-trigger" type="button" variant="outline" :disabled="pending || options.some((option) => option.values.length === 0)" @click="generatePreview">
+      <Button
+        v-if="hasOptions && previewState === 'CLOSED'"
+        id="product-matrix-trigger"
+        type="button"
+        variant="outline"
+        :disabled="
+          pending || options.some((option) => option.values.length === 0)
+        "
+        @click="generatePreview"
+      >
         <RefreshCcw class="mr-2 h-4 w-4" />Tạo ma trận
       </Button>
     </div>
 
     <Card v-if="!hasOptions && variants.length === 0">
-      <CardHeader><CardTitle class="text-base">Biến thể mặc định</CardTitle></CardHeader>
+      <CardHeader
+        ><CardTitle class="text-base">Biến thể mặc định</CardTitle></CardHeader
+      >
       <CardContent class="space-y-4">
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <Input v-model="singleDraft.name" placeholder="Tên biến thể" />
-          <Input :model-value="singleDraft.sku" placeholder="SKU *" @update:model-value="singleDraft.sku = normalizeSku(String($event))" />
-          <VndMoneyInput v-model="singleDraft.originalPrice" placeholder="Giá gốc *" />
-          <VndMoneyInput :model-value="singleDraft.salePrice" placeholder="Giá khuyến mãi" @update:model-value="updateSalePrice(singleDraft, $event)" />
-          <Input v-if="singleDraft.salePrice" v-model="singleDraft.saleStartAt" type="datetime-local" aria-label="Bắt đầu khuyến mãi" />
-          <Input v-if="singleDraft.salePrice" v-model="singleDraft.saleEndAt" type="datetime-local" aria-label="Kết thúc khuyến mãi" />
+          <Input
+            :model-value="singleDraft.sku"
+            placeholder="SKU *"
+            @update:model-value="singleDraft.sku = normalizeSku(String($event))"
+          />
+          <VndMoneyInput
+            v-model="singleDraft.originalPrice"
+            placeholder="Giá gốc *"
+          />
+          <VndMoneyInput
+            :model-value="singleDraft.salePrice"
+            placeholder="Giá khuyến mãi"
+            @update:model-value="updateSalePrice(singleDraft, $event)"
+          />
         </div>
-        <VariantMetadataFields id-prefix="single-variant" :selected="singleMetadata" :draft="singleDraft" @update:selected="singleMetadata = $event" @update:value="(key, value) => updateMetadataValue(singleDraft, key, value)" />
-        <div class="flex flex-wrap items-center justify-between gap-3"><label class="flex items-center gap-2 text-sm"><Checkbox v-model="singleDraft.isActive" />Đang bán</label><Button :disabled="pending" @click="createSingle"><Plus class="mr-2 h-4 w-4" />Tạo biến thể mặc định</Button></div>
+        <VariantPromotionWeightFields
+          id-prefix="single-variant"
+          :sale-price="singleDraft.salePrice"
+          :sale-start-at="singleDraft.saleStartAt"
+          :sale-end-at="singleDraft.saleEndAt"
+          :weight-gram="singleDraft.weightGram"
+          :weight-error="weightErrors.single"
+          @update:sale-start-at="singleDraft.saleStartAt = $event"
+          @update:sale-end-at="singleDraft.saleEndAt = $event"
+          @update:weight="updateWeightValue(singleDraft, 'single', $event)"
+        />
+        <VariantMetadataFields
+          id-prefix="single-variant"
+          :selected="singleMetadata"
+          :draft="singleDraft"
+          @update:selected="singleMetadata = $event"
+          @update:value="
+            (key, value) => updateMetadataValue(singleDraft, key, value)
+          "
+        />
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <label class="flex items-center gap-2 text-sm"
+            ><Checkbox v-model="singleDraft.isActive" />Đang bán</label
+          ><Button :disabled="pending" @click="createSingle"
+            ><Plus class="mr-2 h-4 w-4" />Tạo biến thể mặc định</Button
+          >
+        </div>
       </CardContent>
     </Card>
 
     <Card v-if="previewState === 'LOADING'">
-      <CardContent class="flex items-center gap-2 p-5 text-sm text-muted-foreground"><RefreshCcw class="h-4 w-4 animate-spin" />Đang tạo ma trận biến thể...</CardContent>
+      <CardContent
+        class="flex items-center gap-2 p-5 text-sm text-muted-foreground"
+        ><RefreshCcw class="h-4 w-4 animate-spin" />Đang tạo ma trận biến
+        thể...</CardContent
+      >
     </Card>
 
     <Card v-else-if="previewState === 'ERROR'" class="border-destructive/40">
-      <CardContent class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><p class="text-sm text-destructive">{{ previewError }}</p><div class="flex gap-2"><Button type="button" size="sm" variant="outline" @click="cancelPreview()">Đóng</Button><Button type="button" size="sm" @click="generatePreview"><RefreshCcw class="mr-2 h-4 w-4" />Thử lại</Button></div></CardContent>
+      <CardContent
+        class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
+        ><p class="text-sm text-destructive">{{ previewError }}</p>
+        <div class="flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            @click="cancelPreview()"
+            >Đóng</Button
+          ><Button type="button" size="sm" @click="generatePreview"
+            ><RefreshCcw class="mr-2 h-4 w-4" />Thử lại</Button
+          >
+        </div></CardContent
+      >
     </Card>
 
     <Card v-else-if="previewState === 'READY'">
-      <CardHeader class="flex-row flex-wrap items-center justify-between gap-3"><CardTitle class="text-base">Ma trận dự kiến ({{ preview.length }})</CardTitle><Button type="button" size="sm" variant="outline" @click="cancelPreview()"><X class="mr-2 h-4 w-4" />Hủy tạo ma trận</Button></CardHeader>
+      <CardHeader class="flex-row flex-wrap items-center justify-between gap-3"
+        ><CardTitle class="text-base"
+          >Ma trận dự kiến ({{ preview.length }})</CardTitle
+        ><Button
+          type="button"
+          size="sm"
+          variant="outline"
+          @click="cancelPreview()"
+          ><X class="mr-2 h-4 w-4" />Hủy tạo ma trận</Button
+        ></CardHeader
+      >
       <CardContent class="space-y-4">
-        <p v-if="preview.length === 0" class="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">Chưa có tổ hợp nào để tạo. Hãy kiểm tra các lựa chọn và giá trị.</p>
-        <p v-else-if="creatablePreview.length === 0" class="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">Tất cả tổ hợp đã có biến thể.</p>
-        <div class="grid gap-3 rounded-lg bg-muted/30 p-3 sm:grid-cols-2 lg:grid-cols-5">
+        <p
+          v-if="preview.length === 0"
+          class="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground"
+        >
+          Chưa có tổ hợp nào để tạo. Hãy kiểm tra các lựa chọn và giá trị.
+        </p>
+        <p
+          v-else-if="creatablePreview.length === 0"
+          class="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground"
+        >
+          Tất cả tổ hợp đã có biến thể.
+        </p>
+        <div
+          class="grid gap-3 rounded-lg bg-muted/30 p-3 sm:grid-cols-2 lg:grid-cols-5"
+        >
           <Input v-model="bulkDefaults.skuPrefix" placeholder="Tiền tố SKU" />
-          <VndMoneyInput v-model="bulkDefaults.originalPrice" placeholder="Giá gốc chung" />
-          <VndMoneyInput v-model="bulkDefaults.salePrice" placeholder="Giá bán chung" />
-          <label class="flex items-center gap-2 text-sm"><Checkbox v-model="bulkDefaults.isActive" />Đang bán</label>
-          <Button type="button" variant="outline" @click="applyDefaults"><Check class="mr-2 h-4 w-4" />Áp dụng chung</Button>
+          <VndMoneyInput
+            v-model="bulkDefaults.originalPrice"
+            placeholder="Giá gốc chung"
+          />
+          <VndMoneyInput
+            v-model="bulkDefaults.salePrice"
+            placeholder="Giá bán chung"
+          />
+          <label class="flex items-center gap-2 text-sm"
+            ><Checkbox v-model="bulkDefaults.isActive" />Đang bán</label
+          >
+          <Button type="button" variant="outline" @click="applyDefaults"
+            ><Check class="mr-2 h-4 w-4" />Áp dụng chung</Button
+          >
         </div>
-        <ScrollArea v-if="preview.length" scrollbar-orientation="horizontal" class="hidden w-full md:block">
+        <ScrollArea
+          v-if="preview.length"
+          scrollbar-orientation="horizontal"
+          class="hidden w-full md:block"
+        >
           <div class="pb-3">
-          <table class="w-full min-w-[1500px] text-sm">
-            <thead><tr class="border-b text-left text-muted-foreground"><th class="p-2">Chọn</th><th class="p-2">Tổ hợp</th><th class="p-2">Tên</th><th class="p-2">SKU</th><th class="p-2">Giá gốc</th><th class="p-2">Giá khuyến mãi</th><th class="p-2">Kích hoạt</th><th class="p-2">Mặc định</th></tr></thead>
-            <tbody>
-              <tr v-for="item in preview" :key="item.combinationKey" class="border-b last:border-0" :class="item.exists ? 'opacity-60' : ''">
-                <td class="p-2"><Checkbox v-if="!item.exists" :model-value="selectedKeys.includes(item.combinationKey)" @update:model-value="togglePreview(item, $event)" /><Badge v-else variant="secondary">Đã có</Badge></td>
-                <td class="p-2 font-medium">{{ item.label }}</td>
-                <template v-if="!item.exists && bulkDrafts[item.combinationKey]">
-                  <td class="p-2"><Input v-model="bulkDrafts[item.combinationKey]!.name" /></td>
-                  <td class="p-2"><Input :model-value="bulkDrafts[item.combinationKey]!.sku" @update:model-value="bulkDrafts[item.combinationKey]!.sku = normalizeSku(String($event))" /></td>
-                  <td class="p-2"><VndMoneyInput v-model="bulkDrafts[item.combinationKey]!.originalPrice" /></td>
-                  <td class="p-2"><VndMoneyInput v-model="bulkDrafts[item.combinationKey]!.salePrice" /></td>
-                  <td class="p-2"><Checkbox v-model="bulkDrafts[item.combinationKey]!.isActive" /></td>
-                  <td class="p-2"><Checkbox :model-value="bulkDrafts[item.combinationKey]!.isDefault" @update:model-value="setBulkDefault(item.combinationKey, $event)" /></td>
+            <table class="w-full min-w-[1680px] text-sm">
+              <thead>
+                <tr class="border-b text-left text-muted-foreground">
+                  <th class="p-2">Chọn</th>
+                  <th class="p-2">Tổ hợp</th>
+                  <th class="p-2">Tên</th>
+                  <th class="p-2">SKU</th>
+                  <th class="p-2">Giá gốc</th>
+                  <th class="p-2">Giá khuyến mãi</th>
+                  <th class="p-2">Kích hoạt</th>
+                  <th class="p-2">Mặc định</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template v-for="item in preview" :key="item.combinationKey">
+                  <tr
+                    class="border-b"
+                    :class="item.exists ? 'opacity-60' : ''"
+                  >
+                  <td class="p-2">
+                    <Checkbox
+                      v-if="!item.exists"
+                      :model-value="selectedKeys.includes(item.combinationKey)"
+                      @update:model-value="togglePreview(item, $event)"
+                    /><Badge v-else variant="secondary">Đã có</Badge>
+                  </td>
+                  <td class="p-2 font-medium">{{ item.label }}</td>
+                  <template
+                    v-if="!item.exists && bulkDrafts[item.combinationKey]"
+                  >
+                    <td class="p-2">
+                      <Input v-model="bulkDrafts[item.combinationKey]!.name" />
+                    </td>
+                    <td class="p-2">
+                      <Input
+                        :model-value="bulkDrafts[item.combinationKey]!.sku"
+                        @update:model-value="
+                          bulkDrafts[item.combinationKey]!.sku = normalizeSku(
+                            String($event),
+                          )
+                        "
+                      />
+                    </td>
+                    <td class="p-2">
+                      <VndMoneyInput
+                        v-model="bulkDrafts[item.combinationKey]!.originalPrice"
+                      />
+                    </td>
+                    <td class="p-2">
+                      <VndMoneyInput
+                        v-model="bulkDrafts[item.combinationKey]!.salePrice"
+                      />
+                    </td>
+                    <td class="p-2">
+                      <Checkbox
+                        v-model="bulkDrafts[item.combinationKey]!.isActive"
+                      />
+                    </td>
+                    <td class="p-2">
+                      <Checkbox
+                        :model-value="
+                          bulkDrafts[item.combinationKey]!.isDefault
+                        "
+                        @update:model-value="
+                          setBulkDefault(item.combinationKey, $event)
+                        "
+                      />
+                    </td>
+                  </template>
+                    <td v-else colspan="6" />
+                  </tr>
+                  <tr
+                    v-if="!item.exists && bulkDrafts[item.combinationKey]"
+                    class="border-b last:border-0"
+                  >
+                    <td colspan="8" class="px-2 pb-3">
+                      <VariantPromotionWeightFields
+                        :id-prefix="`bulk-${item.combinationKey}`"
+                        :sale-price="bulkDrafts[item.combinationKey]!.salePrice"
+                        :sale-start-at="
+                          bulkDrafts[item.combinationKey]!.saleStartAt
+                        "
+                        :sale-end-at="
+                          bulkDrafts[item.combinationKey]!.saleEndAt
+                        "
+                        :weight-gram="
+                          bulkDrafts[item.combinationKey]!.weightGram
+                        "
+                        :weight-error="
+                          weightErrors[`bulk:${item.combinationKey}`]
+                        "
+                        :show-weight-helper="false"
+                        @update:sale-start-at="
+                          bulkDrafts[item.combinationKey]!.saleStartAt = $event
+                        "
+                        @update:sale-end-at="
+                          bulkDrafts[item.combinationKey]!.saleEndAt = $event
+                        "
+                        @update:weight="
+                          updateWeightValue(
+                            bulkDrafts[item.combinationKey]!,
+                            `bulk:${item.combinationKey}`,
+                            $event,
+                          )
+                        "
+                      />
+                    </td>
+                  </tr>
                 </template>
-                <td v-else colspan="6" />
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
           </div>
         </ScrollArea>
         <div v-if="preview.length" class="space-y-3 md:hidden">
-          <article v-for="item in preview" :key="item.combinationKey" class="space-y-3 rounded-lg border p-3" :class="item.exists ? 'opacity-70' : ''">
-            <div class="flex items-start justify-between gap-2"><div class="min-w-0"><h4 class="font-medium">{{ item.label }}</h4><p class="text-xs text-muted-foreground">{{ item.exists ? 'Biến thể đã tồn tại' : 'Tổ hợp mới' }}</p></div><Checkbox v-if="!item.exists" :model-value="selectedKeys.includes(item.combinationKey)" aria-label="Chọn tổ hợp" @update:model-value="togglePreview(item, $event)" /><Badge v-else variant="secondary">Đã có</Badge></div>
-            <div v-if="!item.exists && bulkDrafts[item.combinationKey]" class="grid gap-3">
-              <label class="space-y-1 text-xs text-muted-foreground">Tên<Input v-model="bulkDrafts[item.combinationKey]!.name" /></label>
-              <label class="space-y-1 text-xs text-muted-foreground">SKU<Input :model-value="bulkDrafts[item.combinationKey]!.sku" @update:model-value="bulkDrafts[item.combinationKey]!.sku = normalizeSku(String($event))" /></label>
-              <div class="grid gap-3 sm:grid-cols-2"><label class="space-y-1 text-xs text-muted-foreground">Giá gốc<VndMoneyInput v-model="bulkDrafts[item.combinationKey]!.originalPrice" /></label><label class="space-y-1 text-xs text-muted-foreground">Giá khuyến mãi<VndMoneyInput v-model="bulkDrafts[item.combinationKey]!.salePrice" /></label></div>
-              <div class="flex flex-wrap gap-4"><label class="flex items-center gap-2 text-sm"><Checkbox v-model="bulkDrafts[item.combinationKey]!.isActive" />Đang bán</label><label class="flex items-center gap-2 text-sm"><Checkbox :model-value="bulkDrafts[item.combinationKey]!.isDefault" @update:model-value="setBulkDefault(item.combinationKey, $event)" />Mặc định</label></div>
+          <article
+            v-for="item in preview"
+            :key="item.combinationKey"
+            class="space-y-3 rounded-lg border p-3"
+            :class="item.exists ? 'opacity-70' : ''"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <h4 class="font-medium">{{ item.label }}</h4>
+                <p class="text-xs text-muted-foreground">
+                  {{ item.exists ? "Biến thể đã tồn tại" : "Tổ hợp mới" }}
+                </p>
+              </div>
+              <Checkbox
+                v-if="!item.exists"
+                :model-value="selectedKeys.includes(item.combinationKey)"
+                aria-label="Chọn tổ hợp"
+                @update:model-value="togglePreview(item, $event)"
+              /><Badge v-else variant="secondary">Đã có</Badge>
+            </div>
+            <div
+              v-if="!item.exists && bulkDrafts[item.combinationKey]"
+              class="grid gap-3"
+            >
+              <label class="space-y-1 text-xs text-muted-foreground"
+                >Tên<Input v-model="bulkDrafts[item.combinationKey]!.name"
+              /></label>
+              <label class="space-y-1 text-xs text-muted-foreground"
+                >SKU<Input
+                  :model-value="bulkDrafts[item.combinationKey]!.sku"
+                  @update:model-value="
+                    bulkDrafts[item.combinationKey]!.sku = normalizeSku(
+                      String($event),
+                    )
+                  "
+              /></label>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="space-y-1 text-xs text-muted-foreground"
+                  >Giá gốc<VndMoneyInput
+                    v-model="
+                      bulkDrafts[item.combinationKey]!.originalPrice
+                    " /></label
+                ><label class="space-y-1 text-xs text-muted-foreground"
+                  >Giá khuyến mãi<VndMoneyInput
+                    v-model="bulkDrafts[item.combinationKey]!.salePrice"
+                /></label>
+              </div>
+              <VariantPromotionWeightFields
+                :id-prefix="`bulk-mobile-${item.combinationKey}`"
+                :sale-price="bulkDrafts[item.combinationKey]!.salePrice"
+                :sale-start-at="bulkDrafts[item.combinationKey]!.saleStartAt"
+                :sale-end-at="bulkDrafts[item.combinationKey]!.saleEndAt"
+                :weight-gram="bulkDrafts[item.combinationKey]!.weightGram"
+                :weight-error="weightErrors[`bulk:${item.combinationKey}`]"
+                @update:sale-start-at="
+                  bulkDrafts[item.combinationKey]!.saleStartAt = $event
+                "
+                @update:sale-end-at="
+                  bulkDrafts[item.combinationKey]!.saleEndAt = $event
+                "
+                @update:weight="
+                  updateWeightValue(
+                    bulkDrafts[item.combinationKey]!,
+                    `bulk:${item.combinationKey}`,
+                    $event,
+                  )
+                "
+              />
+              <div class="flex flex-wrap gap-4">
+                <label class="flex items-center gap-2 text-sm"
+                  ><Checkbox
+                    v-model="bulkDrafts[item.combinationKey]!.isActive"
+                  />Đang bán</label
+                ><label class="flex items-center gap-2 text-sm"
+                  ><Checkbox
+                    :model-value="bulkDrafts[item.combinationKey]!.isDefault"
+                    @update:model-value="
+                      setBulkDefault(item.combinationKey, $event)
+                    "
+                  />Mặc định</label
+                >
+              </div>
             </div>
           </article>
         </div>
-        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="outline" @click="cancelPreview()">Hủy</Button><Button type="button" :disabled="pending || selectedPreview.length === 0" @click="createBulk"><Plus class="mr-2 h-4 w-4" />Tạo {{ selectedPreview.length }} biến thể</Button></div>
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" @click="cancelPreview()"
+            >Hủy</Button
+          ><Button
+            type="button"
+            :disabled="pending || selectedPreview.length === 0"
+            @click="createBulk"
+            ><Plus class="mr-2 h-4 w-4" />Tạo {{ selectedPreview.length }} biến
+            thể</Button
+          >
+        </div>
       </CardContent>
     </Card>
 
-    <p v-if="variantsQuery.isPending.value" class="text-sm text-muted-foreground">Đang tải biến thể...</p>
-    <p v-else-if="variants.length === 0" class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Chưa có biến thể bán hàng.</p>
+    <p
+      v-if="variantsQuery.isPending.value"
+      class="text-sm text-muted-foreground"
+    >
+      Đang tải biến thể...
+    </p>
+    <p
+      v-else-if="variants.length === 0"
+      class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground"
+    >
+      Chưa có biến thể bán hàng.
+    </p>
     <div v-else class="space-y-3">
       <Card v-for="variant in variants" :key="variant.id">
         <CardContent v-if="editDrafts[variant.id]" class="space-y-3 p-4">
           <div class="grid gap-3 lg:grid-cols-[1.3fr_1fr_1fr_1fr_auto]">
-            <div><div class="mb-1 flex items-center gap-2"><span class="text-xs text-muted-foreground">Tên / lựa chọn</span><Badge v-if="variant.isDefault"><Star class="mr-1 h-3 w-3" />Mặc định</Badge></div><Input v-model="editDrafts[variant.id]!.name" /><p class="mt-1 text-xs text-muted-foreground">{{ variant.optionValues.map((item) => item.label).join(' · ') || 'Không có lựa chọn' }}</p></div>
-            <div><span class="text-xs text-muted-foreground">SKU</span><Input :model-value="editDrafts[variant.id]!.sku" @update:model-value="editDrafts[variant.id]!.sku = normalizeSku(String($event))" /></div>
-            <div><span class="text-xs text-muted-foreground">Giá gốc</span><VndMoneyInput v-model="editDrafts[variant.id]!.originalPrice" /><p class="mt-1 text-xs text-muted-foreground">{{ formatVnd(variant.originalPrice) }}</p></div>
-            <div><span class="text-xs text-muted-foreground">Giá khuyến mãi</span><VndMoneyInput :model-value="editDrafts[variant.id]!.salePrice" @update:model-value="updateSalePrice(editDrafts[variant.id]!, $event)" /></div>
-            <div class="flex items-center justify-end gap-1"><label class="mr-2 flex items-center gap-2 text-xs"><Checkbox v-model="editDrafts[variant.id]!.isActive" />Bán</label><Button type="button" size="icon-sm" variant="ghost" aria-label="Hủy thay đổi biến thể" :disabled="pending" @click="resetVariant(variant)"><RotateCcw class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Lưu biến thể" :disabled="pending" @click="saveVariant(variant)"><Save class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Đặt mặc định" :disabled="pending || variant.isDefault || !editDrafts[variant.id]!.isActive" @click="setDefault(variant)"><Star class="h-4 w-4" /></Button><Button type="button" size="icon-sm" variant="ghost" aria-label="Xóa biến thể" :title="variant.isDefault ? 'Xem lý do không thể xóa' : 'Xóa biến thể'" :disabled="pending" @click="askDeleteVariant(variant)"><Trash2 class="h-4 w-4" /></Button></div>
+            <div>
+              <div class="mb-1 flex items-center gap-2">
+                <span class="text-xs text-muted-foreground">Tên / lựa chọn</span
+                ><Badge v-if="variant.isDefault"
+                  ><Star class="mr-1 h-3 w-3" />Mặc định</Badge
+                >
+              </div>
+              <Input v-model="editDrafts[variant.id]!.name" />
+              <p class="mt-1 text-xs text-muted-foreground">
+                {{
+                  variant.optionValues.map((item) => item.label).join(" · ") ||
+                  "Không có lựa chọn"
+                }}
+              </p>
+            </div>
+            <div>
+              <span class="text-xs text-muted-foreground">SKU</span
+              ><Input
+                :model-value="editDrafts[variant.id]!.sku"
+                @update:model-value="
+                  editDrafts[variant.id]!.sku = normalizeSku(String($event))
+                "
+              />
+            </div>
+            <div>
+              <span class="text-xs text-muted-foreground">Giá gốc</span
+              ><VndMoneyInput v-model="editDrafts[variant.id]!.originalPrice" />
+              <p class="mt-1 text-xs text-muted-foreground">
+                {{ formatVnd(variant.originalPrice) }}
+              </p>
+            </div>
+            <div>
+              <span class="text-xs text-muted-foreground">Giá khuyến mãi</span
+              ><VndMoneyInput
+                :model-value="editDrafts[variant.id]!.salePrice"
+                @update:model-value="
+                  updateSalePrice(editDrafts[variant.id]!, $event)
+                "
+              />
+            </div>
+            <div class="flex items-center justify-end gap-1">
+              <label class="mr-2 flex items-center gap-2 text-xs"
+                ><Checkbox
+                  v-model="editDrafts[variant.id]!.isActive"
+                />Bán</label
+              ><Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Hủy thay đổi biến thể"
+                :disabled="pending"
+                @click="resetVariant(variant)"
+                ><RotateCcw class="h-4 w-4" /></Button
+              ><Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Lưu biến thể"
+                :disabled="pending"
+                @click="saveVariant(variant)"
+                ><Save class="h-4 w-4" /></Button
+              ><Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Đặt mặc định"
+                :disabled="
+                  pending ||
+                  variant.isDefault ||
+                  !editDrafts[variant.id]!.isActive
+                "
+                @click="setDefault(variant)"
+                ><Star class="h-4 w-4" /></Button
+              ><Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Xóa biến thể"
+                :title="
+                  variant.isDefault ? 'Xem lý do không thể xóa' : 'Xóa biến thể'
+                "
+                :disabled="pending"
+                @click="askDeleteVariant(variant)"
+                ><Trash2 class="h-4 w-4"
+              /></Button>
+            </div>
           </div>
-          <div v-if="editDrafts[variant.id]!.salePrice" class="grid gap-3 sm:grid-cols-2"><label class="space-y-1 text-xs text-muted-foreground">Bắt đầu khuyến mãi<Input v-model="editDrafts[variant.id]!.saleStartAt" type="datetime-local" /></label><label class="space-y-1 text-xs text-muted-foreground">Kết thúc khuyến mãi<Input v-model="editDrafts[variant.id]!.saleEndAt" type="datetime-local" /></label></div>
-          <VariantMetadataFields :id-prefix="`variant-${variant.id}`" :selected="editMetadata[variant.id] ?? []" :draft="editDrafts[variant.id]!" @update:selected="editMetadata[variant.id] = $event" @update:value="(key, value) => updateMetadataValue(editDrafts[variant.id]!, key, value)" />
+          <VariantPromotionWeightFields
+            :id-prefix="`variant-${variant.id}`"
+            :sale-price="editDrafts[variant.id]!.salePrice"
+            :sale-start-at="editDrafts[variant.id]!.saleStartAt"
+            :sale-end-at="editDrafts[variant.id]!.saleEndAt"
+            :weight-gram="editDrafts[variant.id]!.weightGram"
+            :weight-error="weightErrors[`edit:${variant.id}`]"
+            @update:sale-start-at="
+              editDrafts[variant.id]!.saleStartAt = $event
+            "
+            @update:sale-end-at="editDrafts[variant.id]!.saleEndAt = $event"
+            @update:weight="
+              updateWeightValue(
+                editDrafts[variant.id]!,
+                `edit:${variant.id}`,
+                $event,
+              )
+            "
+          />
+          <VariantMetadataFields
+            :id-prefix="`variant-${variant.id}`"
+            :selected="editMetadata[variant.id] ?? []"
+            :draft="editDrafts[variant.id]!"
+            @update:selected="editMetadata[variant.id] = $event"
+            @update:value="
+              (key, value) =>
+                updateMetadataValue(editDrafts[variant.id]!, key, value)
+            "
+          />
         </CardContent>
       </Card>
     </div>
   </section>
-  <MasterDataDeleteDialog v-model:open="deleteOpen" :name="deleteTarget?.name ?? ''" :title="deleteBlockedReason ? 'Không thể xóa' : 'Xóa biến thể?'" description="Biến thể đã phát sinh dữ liệu nghiệp vụ sẽ được backend chặn an toàn." :blocked-reason="deleteBlockedReason" :pending="pending" @confirm="confirmDelete" />
+  <MasterDataDeleteDialog
+    v-model:open="deleteOpen"
+    :name="deleteTarget?.name ?? ''"
+    :title="deleteBlockedReason ? 'Không thể xóa' : 'Xóa biến thể?'"
+    description="Biến thể đã phát sinh dữ liệu nghiệp vụ sẽ được backend chặn an toàn."
+    :blocked-reason="deleteBlockedReason"
+    :pending="pending"
+    @confirm="confirmDelete"
+  />
 </template>

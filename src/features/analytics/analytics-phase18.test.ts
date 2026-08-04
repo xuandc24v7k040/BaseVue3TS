@@ -84,6 +84,9 @@ describe("Phase 18 analytics contract", () => {
       '<VisTooltip :triggers="statusTooltipTriggers"',
     );
     expect(dashboardSource).toContain(
+      "relative h-40 min-w-0 self-center [&_path]:cursor-pointer",
+    );
+    expect(dashboardSource).toContain(
       '<VisTooltip :triggers="paymentTooltipTriggers"',
     );
     expect(dashboardSource).toContain('@click="selectStatus(item)"');

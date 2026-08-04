@@ -25,11 +25,6 @@ export interface UpdateProductVariantDto {
      * @nullable
      */
   pageCount?: number | null;
-  /**
-     * @minimum 0
-     * @nullable
-     */
-  weightGram?: number | null;
   /** @nullable */
   packageSize?: string | null;
   /** @pattern ^(0|[1-9]\d{0,12})$ */
@@ -51,4 +46,9 @@ export interface UpdateProductVariantDto {
      * @items.pattern ^[0-7][0-9A-HJKMNP-TV-Z]{25}$
      */
   optionValueIds?: string[];
+  /**
+     * @minimum 1
+     * @maximum 100000
+     */
+  weightGram?: number;
 }

@@ -58,7 +58,6 @@ vi.mock("@tanstack/vue-query", async (importOriginal) => {
         shippingAddress: "Can Tho",
         branchName: "Chi nhánh Cần Thơ",
         branchId: "branch-1",
-        shippingServiceName: "Nội bộ",
         paymentMethod: "COD",
         paymentStatus: "UNPAID",
         customerReceiptConfirmation: {
