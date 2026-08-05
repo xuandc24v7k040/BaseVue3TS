@@ -6,13 +6,10 @@
  * OpenAPI spec version: 1.0
  */
 
-/**
- * @nullable
- */
-export type CheckoutPreviewResponseDtoShippingFeeRule = typeof CheckoutPreviewResponseDtoShippingFeeRule[keyof typeof CheckoutPreviewResponseDtoShippingFeeRule] | null;
+export type ShippingQuoteResponseDtoRouteType = typeof ShippingQuoteResponseDtoRouteType[keyof typeof ShippingQuoteResponseDtoRouteType];
 
 
-export const CheckoutPreviewResponseDtoShippingFeeRule = {
+export const ShippingQuoteResponseDtoRouteType = {
   SAME_PROVINCE: 'SAME_PROVINCE',
   SAME_REGION: 'SAME_REGION',
   ADJACENT_REGION: 'ADJACENT_REGION',

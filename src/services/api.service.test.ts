@@ -8,6 +8,7 @@ import { setupHttpClient } from "@/api/http/client";
 import { setupApiInterceptors } from "@/services/api.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBranchStore } from "@/stores/branch.store";
+import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
 import { toast } from "vue-sonner";
 
 vi.mock("vue-sonner", () => ({ toast: { error: vi.fn() } }));
@@ -41,6 +42,22 @@ beforeEach(() => {
 });
 
 describe("application auth lifecycle bridge", () => {
+  it("uses the storefront branch for customer branch-scoped requests", () => {
+    const pinia = createPinia();
+    const authStore = useAuthStore(pinia);
+    const branchStore = useBranchStore(pinia);
+    const storefrontBranchStore = useStorefrontBranchStore(pinia);
+    authStore.$patch({ user: { type: "CUSTOMER" } as never });
+    branchStore.$patch({ selectedBranchId: "staff-branch" });
+    storefrontBranchStore.$patch({ selectedBranchId: "storefront-branch" });
+
+    setupApiInterceptors(pinia);
+
+    const getSelectedBranchId =
+      setupClient.mock.calls[0]?.[0]?.getSelectedBranchId;
+    expect(getSelectedBranchId?.()).toBe("storefront-branch");
+  });
+
   it("marks the session expired and clears only auth-sensitive queries", () => {
     const pinia = createPinia();
     const queryClient = new QueryClient();

@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCartActions, useCartQuery } from "@/features/cart/api/cart-api";
 import CartItemRow from "@/features/cart/components/CartItemRow.vue";
 import CartSidebar from "@/features/cart/components/CartSidebar.vue";
+import { cartTotalQuantity } from "@/features/cart/utils/cart-display";
 import { cartErrorMessage } from "@/features/cart/utils/cart-error";
 import { useAuthStore } from "@/stores/auth.store";
 import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
@@ -27,6 +28,9 @@ const selectedItemIds = ref(new Set<string>());
 const knownItemIds = ref(new Set<string>());
 const pendingItemIds = ref(new Set<string>());
 const cart = computed(() => cartQuery.data.value ?? null);
+const totalProductQuantity = computed(() =>
+  cartTotalQuantity(cart.value?.items ?? []),
+);
 const eligibleItems = computed(
   () => cart.value?.items.filter((item) => item.isCheckoutEligible) ?? [],
 );
@@ -169,7 +173,7 @@ async function removeItem(itemId: string): Promise<void> {
       <h1 class="mb-4 text-3xl font-bold">
         Giỏ hàng
         <span class="text-base font-medium"
-          >({{ cart.totalQuantity }} sản phẩm)</span
+          >({{ totalProductQuantity }} sản phẩm)</span
         >
       </h1>
 
@@ -199,7 +203,7 @@ async function removeItem(itemId: string): Promise<void> {
                 aria-label="Chọn tất cả sản phẩm hợp lệ"
                 @update:model-value="toggleAll"
               />
-              <strong>Chọn tất cả ({{ eligibleItems.length }} sản phẩm)</strong>
+              <strong>Chọn tất cả ({{ eligibleItems.length }} mặt hàng)</strong>
               <span class="ml-auto hidden text-sm text-[var(--bookora-muted)] lg:block"
                 >Số lượng &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Thành tiền</span
               >

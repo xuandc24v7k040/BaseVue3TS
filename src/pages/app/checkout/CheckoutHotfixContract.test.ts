@@ -214,7 +214,7 @@ describe("Phase 15 checkout UI hotfix contract", () => {
     expect(checkoutSource).toContain("/Icon-VNPAY-QR.webp");
     expect(checkoutSource).toContain("Giao hàng tiêu chuẩn");
     expect(checkoutSource).toContain(
-      "Phí vận chuyển cố định theo khu vực giao hàng",
+      "Phí theo tuyến, loại địa chỉ và khối lượng tính cước",
     );
     expect(checkoutSource).not.toContain("báo giá giao hàng thực tế");
     expect(checkoutSource).toContain("changePaymentMethod");

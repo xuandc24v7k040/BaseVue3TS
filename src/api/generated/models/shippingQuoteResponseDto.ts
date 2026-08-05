@@ -5,6 +5,12 @@
  * Contract OpenAPI chính thức cho backend Bookora. Frontend dùng cookie credentials, cookie accessToken/refreshToken và header X-CSRF-Token cho mutation cần CSRF.
  * OpenAPI spec version: 1.0
  */
+import type { ShippingQuoteResponseDtoDestinationType } from './shippingQuoteResponseDtoDestinationType';
+import type { ShippingQuoteResponseDtoDestinationTypeResolution } from './shippingQuoteResponseDtoDestinationTypeResolution';
+import type { ShippingQuoteResponseDtoPackagingType } from './shippingQuoteResponseDtoPackagingType';
+import type { ShippingQuoteResponseDtoPolicyCode } from './shippingQuoteResponseDtoPolicyCode';
+import type { ShippingQuoteResponseDtoPolicyVersion } from './shippingQuoteResponseDtoPolicyVersion';
+import type { ShippingQuoteResponseDtoRouteType } from './shippingQuoteResponseDtoRouteType';
 import type { ShippingQuoteResponseDtoShippingFeeRule } from './shippingQuoteResponseDtoShippingFeeRule';
 
 export interface ShippingQuoteResponseDto {
@@ -17,4 +23,26 @@ export interface ShippingQuoteResponseDto {
   expiresAt: string;
   requestFingerprint: string;
   shippingFeeRule: ShippingQuoteResponseDtoShippingFeeRule;
+  policyCode: ShippingQuoteResponseDtoPolicyCode;
+  policyVersion: ShippingQuoteResponseDtoPolicyVersion;
+  routeType: ShippingQuoteResponseDtoRouteType;
+  destinationType: ShippingQuoteResponseDtoDestinationType;
+  destinationTypeResolution: ShippingQuoteResponseDtoDestinationTypeResolution;
+  /** @minimum 1 */
+  totalItemQuantity: number;
+  /** @minimum 1 */
+  productWeightGram: number;
+  packagingType: ShippingQuoteResponseDtoPackagingType;
+  /** @minimum 1 */
+  packagingWeightGram: number;
+  /** @minimum 1 */
+  grossWeightGram: number;
+  /**
+     * @minimum 500
+     * @maximum 20000
+     */
+  chargeableWeightGram: number;
+  /** @minimum 0 */
+  fuelSurcharge: number;
+  ruleCode: string;
 }

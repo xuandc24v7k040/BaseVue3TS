@@ -34,7 +34,10 @@ export function setupApiInterceptors(
   let recoveredBranchId: string | null = null
 
   setupHttpClient({
-    getSelectedBranchId: () => branchStore.selectedBranchId ?? storefrontBranchStore.selectedBranchId,
+    getSelectedBranchId: () =>
+      authStore.user?.type === 'CUSTOMER'
+        ? storefrontBranchStore.selectedBranchId
+        : branchStore.selectedBranchId ?? storefrontBranchStore.selectedBranchId,
     onBranchScopeForbidden: () => {
       const invalidBranchId = branchStore.selectedBranchId
       if (!invalidBranchId || recoveredBranchId === invalidBranchId) return

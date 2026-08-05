@@ -101,6 +101,14 @@ const locationForm = reactive<CurrentLocationAddressDto>({
   locationProvider: "VIETMAP",
 });
 const money = new Intl.NumberFormat("vi-VN");
+const SHIPPING_QUOTE_TOAST_ID = "checkout-shipping-quote";
+const SHIPPING_ROUTE_LABELS: Readonly<Record<string, string>> = {
+  SAME_PROVINCE: "Cùng tỉnh/thành",
+  SAME_REGION: "Cùng miền",
+  ADJACENT_REGION: "Hai miền liền kề",
+  FAR_REGION: "Liên miền xa",
+  SPECIAL_STANDARD: "Tuyến tiêu chuẩn đặc biệt",
+};
 const isBusy = computed(
   () =>
     isMutating.value ||
@@ -151,6 +159,14 @@ function formatPrice(value: number | null | undefined): string {
   return `${money.format(value ?? 0)}đ`;
 }
 
+function formatWeightGram(value: number): string {
+  return `${money.format(value)} g`;
+}
+
+function shippingRouteLabel(routeType: string): string {
+  return SHIPPING_ROUTE_LABELS[routeType] ?? routeType;
+}
+
 function requestPayload(): PreviewCheckoutDto {
   return {
     selectedCartItemIds: selectedCartItemIds.value,
@@ -199,6 +215,14 @@ function checkoutErrorMessage(error: unknown): string {
       "Xác nhận vị trí đã hết hạn. Vui lòng lấy lại vị trí hiện tại.",
     CHECKOUT_LOCATION_PROOF_MISMATCH:
       "Thông tin vị trí đã thay đổi. Vui lòng lấy lại vị trí hiện tại.",
+    CHECKOUT_PRODUCT_WEIGHT_INVALID:
+      "Một số sản phẩm chưa có thông tin trọng lượng hợp lệ. Vui lòng thử lại sau.",
+    CHECKOUT_SHIPPING_WEIGHT_LIMIT_EXCEEDED:
+      "Đơn hàng vượt giới hạn khối lượng giao hàng tiêu chuẩn.",
+    CHECKOUT_SHIPPING_POLICY_UNAVAILABLE:
+      "Chưa thể tính phí vận chuyển cho địa chỉ này.",
+    CHECKOUT_PREVIEW_CHANGED:
+      "Phí vận chuyển đã thay đổi. Vui lòng kiểm tra lại đơn hàng.",
   };
   return code
     ? (messages[code] ?? "Không thể cập nhật thông tin thanh toán.")
@@ -290,7 +314,7 @@ async function loadPreview(): Promise<void> {
       await redirectAllInvalid(requestedBranchName);
       return;
     }
-    toast.error(checkoutErrorMessage(error));
+    toast.error(checkoutErrorMessage(error), { id: SHIPPING_QUOTE_TOAST_ID });
     await router.replace({ name: "client-cart" });
   } finally {
     isLoading.value = false;
@@ -571,7 +595,7 @@ async function placeOrder(): Promise<void> {
     }
     if (checkoutErrorCode(error) === "CHECKOUT_PREVIEW_CHANGED") {
       toast.warning(
-        "Giá, phí vận chuyển hoặc tồn kho đã thay đổi. Vui lòng kiểm tra và xác nhận lại.",
+        "Phí vận chuyển đã thay đổi. Vui lòng kiểm tra lại đơn hàng.",
         { id: "checkout-preview-changed" },
       );
       await refreshPreview();
@@ -911,13 +935,32 @@ onBeforeUnmount(() => {
                   <span>
                     <strong class="block">Giao hàng tiêu chuẩn</strong>
                     <small class="text-slate-500">
-                      Phí vận chuyển cố định theo khu vực giao hàng
+                      Phí theo tuyến, loại địa chỉ và khối lượng tính cước
                     </small>
                   </span>
                 </span>
                 <strong>{{
                   draft.shippingQuote ? formatPrice(draft.shippingFee) : "—"
                 }}</strong>
+              </div>
+              <div
+                v-if="draft.shippingQuote"
+                class="mt-3 grid gap-1 text-sm text-slate-600 sm:grid-cols-2"
+              >
+                <p>
+                  Trọng lượng tính cước:
+                  <strong>{{
+                    formatWeightGram(
+                      draft.shippingQuote.chargeableWeightGram,
+                    )
+                  }}</strong>
+                </p>
+                <p>
+                  Tuyến:
+                  <strong>{{
+                    shippingRouteLabel(draft.shippingQuote.routeType)
+                  }}</strong>
+                </p>
               </div>
               <p v-if="!addressInput" class="mt-3 text-sm text-slate-500">
                 Chọn địa chỉ để tính phí vận chuyển.

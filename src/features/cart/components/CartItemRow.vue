@@ -4,6 +4,7 @@ import { computed } from "vue";
 import type { CartItemResponseDto } from "@/api/generated/models";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cartVariantSummary } from "@/features/cart/utils/cart-display";
 
 const props = defineProps<{
   item: CartItemResponseDto;
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 }>();
 
 const priceFormatter = new Intl.NumberFormat("vi-VN");
+const variantSummary = computed(() => cartVariantSummary(props.item));
 
 function formatPrice(value: number): string {
   return `${priceFormatter.format(value)} đ`;
@@ -68,14 +70,11 @@ function updateSelected(value: boolean | "indeterminate"): void {
       >
         {{ item.productName }}
       </RouterLink>
-      <p class="mt-1 text-sm text-[var(--bookora-muted)]">
-        {{ item.variantLabel }}
-      </p>
       <p
-        v-if="item.options.length"
-        class="mt-1 text-xs text-[var(--bookora-muted)]"
+        v-if="variantSummary.visible"
+        class="mt-1 text-sm text-[var(--bookora-muted)]"
       >
-        {{ item.options.map((option) => `${option.name}: ${option.value}`).join(" · ") }}
+        {{ variantSummary.text }}
       </p>
       <div class="mt-3 flex flex-wrap items-baseline gap-2">
         <strong class="text-red-600">{{
