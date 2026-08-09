@@ -14,11 +14,13 @@ import ProductAvailability from "@/features/storefront/components/ProductAvailab
 import ProductCard from "@/features/storefront/components/ProductCard.vue";
 import ProductGallery from "@/features/storefront/components/ProductGallery.vue";
 import ProductVariantSelector from "@/features/storefront/components/ProductVariantSelector.vue";
+import RecentlyViewedSection from "@/features/storefront/components/RecentlyViewedSection.vue";
 import PublicReviewSection from "@/features/engagement/components/PublicReviewSection.vue";
 import WishlistButton from "@/features/engagement/components/WishlistButton.vue";
 import { formatProductDate } from "@/features/products/utils/product-date";
 import { useProductSeo } from "@/features/storefront/composables/use-product-seo";
 import { useVariantSelection } from "@/features/storefront/composables/use-variant-selection";
+import { useRecentlyViewed } from "@/features/storefront/composables/use-recently-viewed";
 import type { VariantQuantities } from "@/features/storefront/composables/use-variant-selection";
 import { storefrontErrorMessage } from "@/features/storefront/utils/storefront-error";
 import { buildPrimaryCategoryBreadcrumb } from "@/features/storefront/utils/product-breadcrumb";
@@ -32,6 +34,7 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const cartActions = useCartActions();
+const recentlyViewed = useRecentlyViewed();
 const slug = computed(() => String(route.params.slug ?? ""));
 const detailQuery = useStorefrontProductDetailQuery(slug);
 const product = computed(() => detailQuery.data.value ?? null);
@@ -100,6 +103,17 @@ watch(availableQuantity, (nextQuantity) => {
   quantity.value =
     nextQuantity > 0 ? Math.min(quantity.value, nextQuantity) : 1;
 });
+
+watch(
+  [() => product.value?.id, () => authStore.status],
+  ([productId, authStatus]) => {
+    if (!productId || authStatus === "unknown") return;
+    if (!recentlyViewed.add(productId)) {
+      toast.error("Không thể cập nhật lịch sử sản phẩm đã xem.");
+    }
+  },
+  { immediate: true },
+);
 
 useProductSeo(computed(() => product.value?.seo ?? null));
 
@@ -329,6 +343,8 @@ async function addToCart(buyNow = false): Promise<void> {
           :variant-id="selectedVariant?.id ?? displayedVariant.id"
         />
       </div>
+
+      <RecentlyViewedSection :exclude-product-id="product.id" />
 
       <div
         class="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"

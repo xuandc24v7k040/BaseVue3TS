@@ -4,6 +4,7 @@ import HomeCategoryStrip from '@/components/client/home/HomeCategoryStrip.vue'
 import HomeHero from '@/components/client/home/HomeHero.vue'
 import MemberPromotionCard from '@/components/client/home/MemberPromotionCard.vue'
 import UpcomingBooksSection from '@/components/client/home/UpcomingBooksSection.vue'
+import RecentlyViewedSection from '@/features/storefront/components/RecentlyViewedSection.vue'
 import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -28,6 +29,8 @@ const categoryItems = computed(() => [
       Không thể tải danh mục.
       <Button type="button" variant="link" @click="categoriesQuery.refetch()">Thử lại</Button>
     </div>
+
+    <RecentlyViewedSection subtitle="Tiếp tục xem những sản phẩm bạn đã quan tâm" />
 
     <div v-if="homeQuery.isPending.value" class="grid gap-5 xl:grid-cols-3">
       <Skeleton class="h-80 xl:col-span-2" /><Skeleton class="h-80" />

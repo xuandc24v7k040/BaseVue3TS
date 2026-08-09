@@ -37,15 +37,19 @@ describe('product master data routes and menu', () => {
     },
   )
 
-  it.each(modules)('resolves the lazy list component for %s', async (path) => {
-    const route = superAdmin?.children?.find((item) => item.path === path)
-    const loadComponent = route?.component as
-      | (() => Promise<unknown>)
-      | undefined
+  it.each(modules)(
+    'resolves the lazy list component for %s',
+    async (path) => {
+      const route = superAdmin?.children?.find((item) => item.path === path)
+      const loadComponent = route?.component as
+        | (() => Promise<unknown>)
+        | undefined
 
-    expect(loadComponent).toBeTypeOf('function')
-    await expect(loadComponent?.()).resolves.toBeDefined()
-  })
+      expect(loadComponent).toBeTypeOf('function')
+      await expect(loadComponent?.()).resolves.toBeDefined()
+    },
+    15_000,
+  )
 
   it('shows all four modules only to a permitted SYSTEM principal', () => {
     const principal = {

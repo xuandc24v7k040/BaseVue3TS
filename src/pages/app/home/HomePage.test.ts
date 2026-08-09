@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { mount, RouterLinkStub } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it, vi } from 'vitest'
 import HomePage from '@/pages/app/home/HomePage.vue'
 
@@ -18,7 +19,7 @@ vi.mock('@/features/storefront/api/storefront-api', async () => {
     rank,
   })
   const query = <T>(data: T) => ({
-    data: ref(data), isPending: ref(false), isError: ref(false), error: ref(null), refetch: vi.fn(),
+    data: ref(data), isPending: ref(false), isError: ref(false), isSuccess: ref(true), error: ref(null), refetch: vi.fn(),
   })
   return {
     useStorefrontCategoriesQuery: () => query([
@@ -29,24 +30,35 @@ vi.mock('@/features/storefront/api/storefront-api', async () => {
       newest: [product('Sách mới thật', 'sach-moi')],
       upcoming: [{ ...product('Sách sắp phát hành thật', 'sap-phat-hanh'), releaseDate: '2027-01-01T00:00:00.000Z' }],
     }),
+    useStorefrontProductSummariesQuery: () => query([]),
   }
 })
 
 describe('HomePage', () => {
   it('renders the approved hierarchy from public API data', () => {
-    const wrapper = mount(HomePage, { global: { stubs: { RouterLink: RouterLinkStub } } })
+    const wrapper = mount(HomePage, {
+      global: { plugins: [createPinia()], stubs: { RouterLink: RouterLinkStub } },
+    })
     expect(wrapper.text()).toContain('Đọc sách hôm nay')
     expect(wrapper.text()).toContain('Văn học')
     expect(wrapper.text()).toContain('Sách bán chạy')
     expect(wrapper.text()).toContain('Ưu đãi thành viên')
     expect(wrapper.text()).toContain('Sách mới thật')
     expect(wrapper.text()).toContain('Sách sắp phát hành thật')
+    expect(wrapper.text()).toContain('Phát hành 01-01-2027')
     expect(wrapper.text()).toContain('Đắc Nhân Tâm')
     expect(wrapper.text()).toContain('Think Again')
+    const upcoming = wrapper
+      .findAllComponents(RouterLinkStub)
+      .find(link => link.text().includes('Sách sắp phát hành thật'))
+    expect(upcoming?.classes()).toContain('min-h-72')
+    expect(upcoming?.find('img').classes()).toContain('h-40')
   })
 
   it('points primary hero actions to compatible product routes', () => {
-    const wrapper = mount(HomePage, { global: { stubs: { RouterLink: RouterLinkStub } } })
+    const wrapper = mount(HomePage, {
+      global: { plugins: [createPinia()], stubs: { RouterLink: RouterLinkStub } },
+    })
     const links = wrapper.findAllComponents(RouterLinkStub)
     expect(links.find(link => link.text() === 'Khám phá ngay')?.props('to')).toBe('/books')
     expect(links.find(link => link.text() === 'Sách mới')?.props('to')).toBe('/books?sort=new')

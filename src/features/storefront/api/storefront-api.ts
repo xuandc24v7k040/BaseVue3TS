@@ -6,6 +6,8 @@ import {
   storefrontHomeGet,
   storefrontProductAvailability,
   storefrontProductDetail,
+  storefrontProductSearchSuggestions,
+  storefrontProductSummaries,
   storefrontProductsList,
 } from "@/api/generated/endpoints/storefront-catalog/storefront-catalog";
 import { storefrontBranchesList } from "@/api/generated/endpoints/storefront-branches/storefront-branches";
@@ -20,6 +22,10 @@ export const storefrontQueryKeys = {
   home: ["storefront", "home"] as const,
   products: (params: StorefrontProductsListParams) =>
     ["storefront", "products", params] as const,
+  searchSuggestions: (q: string, limit: number) =>
+    ["storefront", "search-suggestions", q, limit] as const,
+  productSummaries: (ids: string[]) =>
+    ["storefront", "product-summaries", ids] as const,
   detail: (slug: string) => ["storefront", "detail", slug] as const,
   availability: (
     branchId: string | null,
@@ -74,6 +80,47 @@ export function useStorefrontProductsQuery(
         signal,
       ).then((response) => response.data),
     placeholderData: (previous) => previous,
+  });
+}
+
+export function useStorefrontSearchSuggestionsQuery(
+  query: MaybeRef<string>,
+  limit = 5,
+) {
+  const normalizedQuery = computed(() =>
+    unref(query).trim().replace(/\s+/gu, " "),
+  );
+  return useQuery({
+    queryKey: computed(() =>
+      storefrontQueryKeys.searchSuggestions(normalizedQuery.value, limit),
+    ),
+    queryFn: ({ signal }) =>
+      storefrontProductSearchSuggestions(
+        { q: normalizedQuery.value, limit },
+        undefined,
+        signal,
+      ).then((response) => response.data),
+    enabled: computed(() => normalizedQuery.value.length >= 2),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useStorefrontProductSummariesQuery(ids: MaybeRef<string[]>) {
+  const normalizedIds = computed(() => [...new Set(unref(ids))].slice(0, 12));
+  return useQuery({
+    queryKey: computed(() =>
+      storefrontQueryKeys.productSummaries(normalizedIds.value),
+    ),
+    queryFn: ({ signal }) =>
+      storefrontProductSummaries(
+        { ids: normalizedIds.value },
+        { paramsSerializer: { indexes: null } },
+        signal,
+      ).then((response) => response.data),
+    enabled: computed(() => normalizedIds.value.length > 0),
+    placeholderData: (previous) => previous,
+    retry: 1,
   });
 }
 

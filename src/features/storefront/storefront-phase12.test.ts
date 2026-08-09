@@ -5,6 +5,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent } from "vue";
 import ProductGallery from "@/features/storefront/components/ProductGallery.vue";
+import productGallerySource from "@/features/storefront/components/ProductGallery.vue?raw";
 import ProductVariantSelector from "@/features/storefront/components/ProductVariantSelector.vue";
 import { queryClient } from "@/lib/query-client";
 import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
@@ -397,5 +398,53 @@ describe("variant and gallery UI", () => {
     expect(wrapper.find('button[aria-label="Ảnh tiếp theo"]').exists()).toBe(
       false,
     );
+  });
+
+  it("keeps the final image correct during rapid gallery navigation", async () => {
+    const media = Array.from({ length: 3 }, (_, index) => ({
+      id: `rapid-${index}`,
+      url: `/rapid-${index}.webp`,
+      altText: `Nhanh ${index + 1}`,
+      sortOrder: index,
+      isPrimary: index === 0,
+    }));
+    const wrapper = mount(ProductGallery, {
+      props: { media, productName: "Sách" },
+      global: galleryGlobal,
+    });
+    const next = wrapper.get('button[aria-label="Ảnh tiếp theo"]');
+
+    await next.trigger("click");
+    await next.trigger("click");
+    await next.trigger("click");
+    await next.trigger("click");
+    await next.trigger("click");
+
+    expect(
+      wrapper
+        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+        .attributes("src"),
+    ).toBe("/rapid-2.webp");
+    expect(wrapper.get('button[aria-label^="Phóng to ảnh"]').attributes("aria-label")).toContain(
+      "ảnh 3",
+    );
+  });
+
+  it("uses directional transitions and respects reduced motion", () => {
+    expect(productGallerySource).toContain('<Transition :name="imageTransitionName">');
+    expect(productGallerySource).toContain(':key="selected.id"');
+    expect(productGallerySource).toContain("translateX(100%)");
+    expect(productGallerySource).toContain("translateX(-100%)");
+    expect(productGallerySource).toContain(
+      "transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+    );
+    expect(productGallerySource).toContain("transition: opacity 180ms ease-out");
+    expect(productGallerySource).toContain(
+      "@media (prefers-reduced-motion: reduce)",
+    );
+    expect(productGallerySource).toContain(
+      "cursor-pointer overflow-hidden rounded-lg",
+    );
+    expect(productGallerySource).toContain("disabled:cursor-not-allowed");
   });
 });

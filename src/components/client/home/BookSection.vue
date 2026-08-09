@@ -57,10 +57,10 @@ function scroll(direction: 'previous' | 'next'): void {
       ref="track"
       type="auto"
       scrollbar-orientation="horizontal"
-      class="w-full min-w-0 max-w-full overflow-hidden pb-2"
+      class="w-full min-w-0 max-w-full overflow-hidden pb-1"
     >
       <div
-        class="grid w-max auto-cols-[145px] grid-flow-col gap-2 px-0.5 pt-1 lg:w-full lg:auto-cols-auto lg:grid-flow-row"
+        class="grid w-max auto-cols-[145px] grid-flow-col gap-2 px-0.5 pb-3 pt-1 lg:w-full lg:auto-cols-auto lg:grid-flow-row lg:pb-1"
         :class="books.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'"
       >
         <ProductCard

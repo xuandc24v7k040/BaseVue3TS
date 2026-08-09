@@ -15,16 +15,18 @@ import * as zod from 'zod';
 export const storefrontProductsListQueryPageDefault = 1;
 
 export const storefrontProductsListQueryPageSizeDefault = 12;
+export const storefrontProductsListQueryQMax = 160;
+
 export const storefrontProductsListQueryPriceMinMin = 0;
 
 export const storefrontProductsListQueryPriceMaxMin = 0;
 
-export const storefrontProductsListQuerySortDefault = `popular`;
+
 
 export const StorefrontProductsListQueryParams = zod.strictObject({
   "page": zod.number().min(1).default(storefrontProductsListQueryPageDefault),
   "pageSize": zod.union([zod.literal(12),zod.literal(24),zod.literal(36)]).default(storefrontProductsListQueryPageSizeDefault),
-  "search": zod.string().optional(),
+  "q": zod.string().max(storefrontProductsListQueryQMax).optional().describe('Từ khóa tìm theo tên, tác giả, nhà xuất bản, ISBN hoặc barcode'),
   "categorySlug": zod.string().optional(),
   "priceMin": zod.number().min(storefrontProductsListQueryPriceMinMin).optional(),
   "priceMax": zod.number().min(storefrontProductsListQueryPriceMaxMin).optional(),
@@ -33,7 +35,36 @@ export const StorefrontProductsListQueryParams = zod.strictObject({
   "attribute": zod.array(zod.string()).optional().describe('Bộ lọc thuộc tính dạng ATTRIBUTE_CODE:value'),
   "onSale": zod.boolean().optional(),
   "upcoming": zod.boolean().optional(),
-  "sort": zod.enum(['popular', 'newest', 'price_asc', 'price_desc', 'name_asc', 'release_asc']).default(storefrontProductsListQuerySortDefault)
+  "sort": zod.enum(['relevance', 'popular', 'newest', 'price_asc', 'price_desc', 'name_asc', 'release_asc']).optional().describe('Mặc định relevance khi có q, popular khi không có q')
+})
+
+/**
+ * Lấy gợi ý tìm kiếm sản phẩm public
+ * @summary Lấy gợi ý tìm kiếm sản phẩm public
+ */
+export const storefrontProductSearchSuggestionsQueryQMin = 2;
+export const storefrontProductSearchSuggestionsQueryQMax = 160;
+
+export const storefrontProductSearchSuggestionsQueryLimitDefault = 5;
+export const storefrontProductSearchSuggestionsQueryLimitMax = 8;
+
+
+
+export const StorefrontProductSearchSuggestionsQueryParams = zod.strictObject({
+  "q": zod.string().min(storefrontProductSearchSuggestionsQueryQMin).max(storefrontProductSearchSuggestionsQueryQMax),
+  "limit": zod.number().min(1).max(storefrontProductSearchSuggestionsQueryLimitMax).default(storefrontProductSearchSuggestionsQueryLimitDefault)
+})
+
+/**
+ * Lấy tóm tắt sản phẩm public theo danh sách ID
+ * @summary Lấy tóm tắt sản phẩm public theo danh sách ID
+ */
+export const storefrontProductSummariesQueryIdsMax = 12;
+
+
+
+export const StorefrontProductSummariesQueryParams = zod.strictObject({
+  "ids": zod.array(zod.string()).min(1).max(storefrontProductSummariesQueryIdsMax)
 })
 
 /**

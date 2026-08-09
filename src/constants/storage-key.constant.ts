@@ -5,4 +5,6 @@ export const STORAGE_KEYS = {
   adminBranchContext: 'bookora.admin.selected_branch_context',
   storefrontBranch: 'bookora.storefront.selected_branch',
   storefrontView: 'bookora.storefront.product_view',
+  searchHistory: 'bookora.search-history.v1',
+  recentlyViewedPrefix: 'bookora.recently-viewed.v1',
 } as const

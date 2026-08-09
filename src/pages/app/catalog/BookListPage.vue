@@ -236,10 +236,9 @@ function filterItems(
             <div>
               <h1 class="text-2xl font-bold text-[var(--bookora-green)]">
                 {{
-                  activeCategory?.name ??
-                  (params.search
-                    ? `Kết quả cho “${params.search}”`
-                    : "Tất cả sách")
+                  params.q
+                    ? `Kết quả cho “${params.q}”`
+                    : (activeCategory?.name ?? "Tất cả sách")
                 }}
               </h1>
               <p class="text-sm text-[var(--bookora-muted)]">
@@ -340,6 +339,8 @@ function filterItems(
                 ><SelectTrigger class="w-40" aria-label="Sắp xếp"
                   ><SelectValue /></SelectTrigger
                 ><SelectContent
+                  ><SelectItem v-if="params.q" value="relevance"
+                    >Liên quan nhất</SelectItem
                   ><SelectItem value="popular">Phổ biến</SelectItem
                   ><SelectItem value="newest">Mới nhất</SelectItem
                   ><SelectItem value="price_asc">Giá tăng dần</SelectItem
@@ -424,17 +425,21 @@ function filterItems(
         >
           <Search class="mx-auto size-10 text-[var(--bookora-muted)]" />
           <h2 class="mt-3 text-lg font-semibold">
-            Không tìm thấy sản phẩm phù hợp
+            {{ params.q ? "Không tìm thấy sản phẩm phù hợp." : "Không tìm thấy sản phẩm phù hợp" }}
           </h2>
           <p class="mt-1 text-sm text-[var(--bookora-muted)]">
-            Hãy thử từ khóa hoặc bộ lọc khác.
+            {{
+              params.q
+                ? "Thử từ khóa ngắn hơn hoặc kiểm tra lại chính tả."
+                : "Hãy thử bộ lọc khác."
+            }}
           </p>
           <Button
             type="button"
             variant="outline"
             class="mt-4"
-            @click="resetFilters"
-            >Xóa bộ lọc</Button
+            @click="params.q ? update({ q: undefined }) : resetFilters()"
+            >{{ params.q ? "Xóa tìm kiếm" : "Xóa bộ lọc" }}</Button
           >
         </div>
         <div

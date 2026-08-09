@@ -29,7 +29,7 @@ describe("Phase 17 UI/UX hotfix contracts", () => {
     expect(headerSource).toContain('router.push("/account/wishlist")');
     expect(headerSource).not.toContain("storefront-wishlist-deferred");
     expect(headerSource).not.toContain("Tính năng yêu thích sẽ");
-    expect(headerSource.match(/cursor-pointer/g)).toHaveLength(4);
+    expect(headerSource.match(/cursor-pointer/g)).toHaveLength(6);
   });
 
   it("keeps ProductCard borders stable inside an automatic ScrollArea", () => {
@@ -38,6 +38,7 @@ describe("Phase 17 UI/UX hotfix contracts", () => {
     expect(cardSource).toContain("focus-within:border");
     expect(bookSectionSource).toContain("<ScrollArea");
     expect(bookSectionSource).toContain('type="auto"');
+    expect(bookSectionSource).toContain("pb-3 pt-1");
     expect(bookSectionSource).not.toContain("overflow-x-auto");
   });
 
@@ -47,6 +48,9 @@ describe("Phase 17 UI/UX hotfix contracts", () => {
     );
     expect(detailSource).toContain("min-w-0 flex-1 break-words");
     expect(detailSource).not.toContain(':compact="false"');
+    expect(wishlistButtonSource).toContain(
+      'class="cursor-pointer disabled:cursor-not-allowed"',
+    );
     expect(detailSource).toContain(
       "xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]",
     );
@@ -62,6 +66,12 @@ describe("Phase 17 UI/UX hotfix contracts", () => {
     expect(publicReviewsSource).toContain(
       'class="!flex min-w-0 flex-wrap gap-2"',
     );
+    expect(publicReviewsSource.match(/<RadioGroup\b/g)).toHaveLength(1);
+    expect(publicReviewsSource).toContain("has-[:focus-visible]:ring-2");
+    expect(publicReviewsSource).toContain(
+      "border-[var(--bookora-green)]/45 bg-[var(--bookora-green)]/5 font-semibold",
+    );
+    expect(publicReviewsSource).not.toContain("focus-within:ring-2");
     expect(publicReviewsSource).not.toContain("<ScrollArea");
     expect(publicReviewsSource).not.toContain("lg:hidden");
     expect(publicReviewsSource).not.toContain("lg:flex");

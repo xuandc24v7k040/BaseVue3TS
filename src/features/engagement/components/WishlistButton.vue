@@ -89,6 +89,7 @@ async function toggle(event: MouseEvent): Promise<void> {
     :disabled="mutation.isPending.value || statusPending"
     :aria-pressed="wished"
     :aria-label="wished ? 'Bỏ khỏi sách yêu thích' : 'Thêm vào sách yêu thích'"
+    class="cursor-pointer disabled:cursor-not-allowed"
     @click="toggle"
   >
     <Heart

@@ -17,17 +17,21 @@ defineProps<{ books: PublicProductListItemDto[] }>()
         <ArrowRight aria-hidden="true" class="size-4" />
       </RouterLink>
     </div>
-    <div class="grid w-full min-w-0 max-w-full auto-cols-[130px] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-3 sm:overflow-visible">
+    <div class="grid w-full min-w-0 max-w-full auto-cols-[minmax(210px,240px)] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain px-0.5 pb-2 pt-1 [scrollbar-width:none]">
       <RouterLink
         v-for="book in books"
         :key="book.id"
         :to="`/books/${book.slug}`"
-        class="group min-w-0 rounded-lg border border-[var(--bookora-border)] p-2 text-center transition-colors hover:border-[var(--bookora-green)] hover:bg-[var(--bookora-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+        class="group grid min-h-72 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto_auto] rounded-xl border border-[var(--bookora-border)] bg-background p-3.5 text-center transition-[border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-px hover:border-[var(--bookora-green)]/55 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
       >
-        <time class="text-xs font-bold text-[var(--bookora-ink)]">{{ formatProductDate(book.releaseDate) }}</time>
-        <img :src="book.primaryImage.url" :alt="book.primaryImage.altText || `Bìa sách ${book.name}`" class="mx-auto mt-2 aspect-[2/3] w-full max-w-24 object-contain drop-shadow-sm" width="300" height="450" loading="lazy">
-        <h3 class="mt-2 line-clamp-2 text-xs font-semibold leading-4">{{ book.name }}</h3>
-        <p class="mt-1 truncate text-[10px] text-[var(--bookora-muted)]">{{ book.authors.map(author => author.name).join(', ') }}</p>
+        <time class="mx-auto inline-flex rounded-md bg-[var(--bookora-soft)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--bookora-green)]">
+          Phát hành {{ formatProductDate(book.releaseDate) }}
+        </time>
+        <div class="mt-3 flex min-h-40 items-center justify-center">
+          <img :src="book.primaryImage.url" :alt="book.primaryImage.altText || `Bìa sách ${book.name}`" class="aspect-[2/3] h-40 w-auto max-w-full object-contain drop-shadow-md" width="300" height="450" loading="lazy">
+        </div>
+        <h3 class="mt-3 line-clamp-2 min-h-10 text-sm font-semibold leading-5 transition-colors duration-200 group-hover:text-[var(--bookora-green)]">{{ book.name }}</h3>
+        <p class="mt-1 truncate text-xs text-[var(--bookora-muted)]">{{ book.authors.map(author => author.name).join(', ') || 'Đang cập nhật' }}</p>
       </RouterLink>
     </div>
   </section>

@@ -160,10 +160,10 @@ function toggle(id: string): void {
           <label
             v-for="item in filters"
             :key="item.value"
-            class="inline-flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border px-5 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-[var(--bookora-green)]"
+            class="inline-flex h-10 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border px-5 text-sm font-medium transition-[border-color,background-color,color,box-shadow] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--bookora-green)]/45 has-[:focus-visible]:ring-offset-2"
             :class="
               filter === item.value
-                ? 'border-[var(--bookora-green)] bg-[var(--bookora-soft)] text-[var(--bookora-green)]'
+                ? 'border-[var(--bookora-green)]/45 bg-[var(--bookora-green)]/5 font-semibold text-[var(--bookora-green)]'
                 : 'border-[var(--bookora-border)] bg-background hover:border-[var(--bookora-green)]/50'
             "
           >
@@ -172,26 +172,6 @@ function toggle(id: string): void {
           </label>
         </RadioGroup>
       </div>
-      <RadioGroup
-        :model-value="filter"
-        class="hidden"
-        aria-label="Lọc đánh giá sản phẩm"
-        @update:model-value="changeFilter(String($event))"
-      >
-        <label
-          v-for="item in filters"
-          :key="item.value"
-          class="inline-flex h-9 cursor-pointer items-center justify-center whitespace-nowrap rounded-full border px-3 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-[var(--bookora-green)]"
-          :class="
-            filter === item.value
-              ? 'border-[var(--bookora-green)] bg-[var(--bookora-soft)] text-[var(--bookora-green)]'
-              : 'border-[var(--bookora-border)] bg-background hover:border-[var(--bookora-green)]/50'
-          "
-        >
-          <RadioGroupItem :value="item.value" class="sr-only" />
-          {{ item.label }}
-        </label>
-      </RadioGroup>
     </div>
 
     <div class="relative rounded-xl border bg-background px-5 sm:px-6">

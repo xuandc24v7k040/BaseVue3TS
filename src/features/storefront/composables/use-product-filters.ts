@@ -7,6 +7,7 @@ import type {
 import { STORAGE_KEYS } from "@/constants/storage-key.constant";
 
 const validSorts = new Set<StorefrontProductsListSort>([
+  "relevance",
   "popular",
   "newest",
   "price_asc",
@@ -52,11 +53,12 @@ export function useProductFilters() {
     const sortValue = first(route.query.sort) as
       StorefrontProductsListSort | undefined;
     const pageSizeValue = Number(first(route.query.pageSize));
+    const q = first(route.query.q)?.trim() || undefined;
     return {
       page: Math.max(1, Number(first(route.query.page)) || 1),
       pageSize: (validPageSizes.has(pageSizeValue) ? pageSizeValue : 12) as
         12 | 24 | 36,
-      search: first(route.query.search)?.trim() || undefined,
+      q,
       categorySlug: first(route.query.category)?.trim() || undefined,
       priceMin: positiveNumber(route.query.priceMin),
       priceMax: positiveNumber(route.query.priceMax),
@@ -65,7 +67,12 @@ export function useProductFilters() {
       attribute: list(route.query.attribute),
       onSale: first(route.query.onSale) === "true" || undefined,
       upcoming: first(route.query.upcoming) === "true" || undefined,
-      sort: sortValue && validSorts.has(sortValue) ? sortValue : "popular",
+      sort:
+        sortValue && validSorts.has(sortValue)
+          ? sortValue
+          : q
+            ? "relevance"
+            : "popular",
     };
   });
 

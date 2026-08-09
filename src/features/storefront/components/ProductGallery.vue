@@ -15,6 +15,9 @@ const props = defineProps<{
 }>();
 const selectedIndex = ref(0);
 const lightboxVisible = ref(false);
+const imageTransitionName = ref<"gallery-next" | "gallery-previous">(
+  "gallery-next",
+);
 const selected = computed(() => props.media[selectedIndex.value] ?? null);
 const visibleThumbnails = computed(() =>
   props.media.length > 4 ? props.media.slice(0, 3) : props.media,
@@ -40,8 +43,19 @@ watch(
 
 function move(direction: -1 | 1): void {
   if (!props.media.length) return;
+  imageTransitionName.value =
+    direction === 1 ? "gallery-next" : "gallery-previous";
   selectedIndex.value =
     (selectedIndex.value + direction + props.media.length) % props.media.length;
+}
+
+function selectImage(index: number): void {
+  if (index < 0 || index >= props.media.length || index === selectedIndex.value) {
+    return;
+  }
+  imageTransitionName.value =
+    index > selectedIndex.value ? "gallery-next" : "gallery-previous";
+  selectedIndex.value = index;
 }
 
 function openLightbox(): void {
@@ -50,6 +64,8 @@ function openLightbox(): void {
 
 function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
   if (newIndex >= 0 && newIndex < props.media.length) {
+    imageTransitionName.value =
+      newIndex > selectedIndex.value ? "gallery-next" : "gallery-previous";
     selectedIndex.value = newIndex;
   }
 }
@@ -65,25 +81,26 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
           v-for="(image, index) in visibleThumbnails"
           :key="image.id"
           type="button"
-          class="size-16 shrink-0 overflow-hidden rounded-lg border bg-white p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+          class="size-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border bg-white p-1 transition-[border-color,background-color,box-shadow] duration-180 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
           :class="
             index === selectedIndex
-              ? 'border-[var(--bookora-green)]'
+              ? 'border-[var(--bookora-green)] bg-[var(--bookora-green)]/5 shadow-sm'
               : 'border-[var(--bookora-border)]'
           "
           :aria-label="`Xem ảnh ${index + 1}`"
-          @click="selectedIndex = index"
+          @click="selectImage(index)"
         >
           <img
             :src="image.url"
             :alt="image.altText || `${productName} - ảnh ${index + 1}`"
-            class="size-full object-contain"
+            class="size-full object-contain transition-transform duration-200"
+            :class="index === selectedIndex ? 'scale-[1.03]' : 'scale-100'"
           />
         </button>
         <button
           v-if="hiddenThumbnailCount"
           type="button"
-          class="relative size-16 shrink-0 overflow-hidden rounded-lg border border-[var(--bookora-border)] bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+          class="relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-[var(--bookora-border)] bg-black disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
           :aria-label="`Xem thêm ${hiddenThumbnailCount} ảnh`"
           @click="openLightbox"
         >
@@ -102,20 +119,23 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
       >
         <button
           type="button"
-          class="size-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+          class="relative isolate size-full cursor-zoom-in overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
           :aria-label="`Phóng to ảnh ${selectedIndex + 1} của ${productName}`"
           @click="openLightbox"
         >
-          <img
-            :src="selected.url"
-            :alt="selected.altText || `Bìa sách ${productName}`"
-            class="size-full object-contain drop-shadow-xl"
-          />
+          <Transition :name="imageTransitionName">
+            <img
+              :key="selected.id"
+              :src="selected.url"
+              :alt="selected.altText || `Bìa sách ${productName}`"
+              class="absolute inset-0 size-full transform-gpu object-contain drop-shadow-xl"
+            />
+          </Transition>
         </button>
         <Button
           type="button"
           size="sm"
-          class="absolute bottom-3 right-3 bg-black/65 text-white hover:bg-black/80"
+          class="absolute bottom-3 right-3 cursor-pointer bg-black/65 text-white disabled:cursor-not-allowed hover:bg-black/80"
           @click="openLightbox"
           ><Maximize2 class="size-4" /> Phóng to</Button
         >
@@ -124,7 +144,7 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
           type="button"
           size="icon"
           variant="outline"
-          class="absolute left-2 top-1/2 rounded-full bg-background/90"
+          class="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-background/90 shadow-sm transition-[border-color,color,box-shadow] duration-180 disabled:cursor-not-allowed hover:border-[var(--bookora-green)]/50 hover:text-[var(--bookora-green)] hover:shadow"
           aria-label="Ảnh trước"
           @click="move(-1)"
           ><ChevronLeft class="size-4"
@@ -134,7 +154,7 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
           type="button"
           size="icon"
           variant="outline"
-          class="absolute right-2 top-1/2 rounded-full bg-background/90"
+          class="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-background/90 shadow-sm transition-[border-color,color,box-shadow] duration-180 disabled:cursor-not-allowed hover:border-[var(--bookora-green)]/50 hover:text-[var(--bookora-green)] hover:shadow"
           aria-label="Ảnh tiếp theo"
           @click="move(1)"
           ><ChevronRight class="size-4"
@@ -158,3 +178,53 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
     />
   </section>
 </template>
+
+<style scoped>
+.gallery-next-enter-active,
+.gallery-next-leave-active,
+.gallery-previous-enter-active,
+.gallery-previous-leave-active {
+  transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.gallery-next-enter-active,
+.gallery-previous-enter-active {
+  z-index: 2;
+}
+
+.gallery-next-leave-active,
+.gallery-previous-leave-active {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.gallery-next-enter-from,
+.gallery-previous-leave-to {
+  transform: translateX(100%);
+}
+
+.gallery-next-leave-to,
+.gallery-previous-enter-from {
+  transform: translateX(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-next-enter-active,
+  .gallery-next-leave-active,
+  .gallery-previous-enter-active,
+  .gallery-previous-leave-active {
+    transition: opacity 180ms ease-out;
+    transform: none;
+    will-change: opacity;
+  }
+
+  .gallery-next-enter-from,
+  .gallery-next-leave-to,
+  .gallery-previous-enter-from,
+  .gallery-previous-leave-to {
+    opacity: 0;
+    transform: none;
+  }
+}
+</style>

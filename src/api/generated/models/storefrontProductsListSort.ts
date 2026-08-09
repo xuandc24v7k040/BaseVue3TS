@@ -10,6 +10,7 @@ export type StorefrontProductsListSort = typeof StorefrontProductsListSort[keyof
 
 
 export const StorefrontProductsListSort = {
+  relevance: 'relevance',
   popular: 'popular',
   newest: 'newest',
   price_asc: 'price_asc',

@@ -14,7 +14,11 @@ export type StorefrontProductsListParams = {
  */
 page?: number;
 pageSize?: StorefrontProductsListPageSize;
-search?: string;
+/**
+ * Từ khóa tìm theo tên, tác giả, nhà xuất bản, ISBN hoặc barcode
+ * @maxLength 160
+ */
+q?: string;
 categorySlug?: string;
 /**
  * @minimum 0
@@ -32,5 +36,8 @@ publisher?: string[];
 attribute?: string[];
 onSale?: boolean;
 upcoming?: boolean;
+/**
+ * Mặc định relevance khi có q, popular khi không có q
+ */
 sort?: StorefrontProductsListSort;
 };

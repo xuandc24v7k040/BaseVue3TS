@@ -10,6 +10,7 @@ export type PublicProductListResponseDtoSort = typeof PublicProductListResponseD
 
 
 export const PublicProductListResponseDtoSort = {
+  relevance: 'relevance',
   popular: 'popular',
   newest: 'newest',
   price_asc: 'price_asc',

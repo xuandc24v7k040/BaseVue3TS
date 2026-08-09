@@ -1,17 +1,28 @@
 <script setup lang="ts">
-import { Heart, Search, ShoppingCart, UserRound } from "@lucide/vue";
-import { computed, ref } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { Heart, Search, ShoppingCart, UserRound, X } from "@lucide/vue";
+import { onClickOutside } from "@vueuse/core";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { RouterLink, useRoute, useRouter } from "vue-router";
+import type { LocationQueryRaw } from "vue-router";
 import { toast } from "vue-sonner";
+import type { PublicProductListItemDto } from "@/api/generated/models";
 import BranchSelector from "@/components/client/layout/BranchSelector.vue";
 import ClientBrand from "@/components/client/layout/ClientBrand.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hasSessionHint } from "@/features/auth/session-hint";
-import { useStorefrontCategoriesQuery } from "@/features/storefront/api/storefront-api";
+import {
+  useStorefrontCategoriesQuery,
+  useStorefrontSearchSuggestionsQuery,
+} from "@/features/storefront/api/storefront-api";
 import CategoryMegaMenu from "@/features/storefront/components/CategoryMegaMenu.vue";
+import LiveSearchPanel from "@/features/storefront/components/LiveSearchPanel.vue";
 import MobileCategorySheet from "@/features/storefront/components/MobileCategorySheet.vue";
+import {
+  normalizeSearchText,
+  useSearchHistory,
+} from "@/features/storefront/composables/use-search-history";
 import { useAuthStore } from "@/stores/auth.store";
 import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
 import { useCartQuery } from "@/features/cart/api/cart-api";
@@ -32,8 +43,8 @@ const navigationLinks: HeaderLink[] = [
   { label: "Nhà xuất bản", href: "/books" },
   { label: "Khuyến mãi", href: "/books?onSale=true" },
 ];
-
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const storefrontBranchStore = useStorefrontBranchStore();
 const cartQuery = useCartQuery(
@@ -45,7 +56,45 @@ const cartQuery = useCartQuery(
 );
 const cartQuantity = computed(() => cartQuery.data.value?.totalQuantity ?? 0);
 const categoriesQuery = useStorefrontCategoriesQuery();
-const searchQuery = ref("");
+const searchSuggestions = computed(() => {
+  const categoryNames = (categoriesQuery.data.value ?? []).flatMap(
+    (category) => [
+      category.name,
+      ...category.children.map((child) => child.name),
+    ],
+  );
+  return [...new Set(categoryNames.map((name) => name.trim()).filter(Boolean))].slice(
+    0,
+    5,
+  );
+});
+const initialRouteQuery = Array.isArray(route.query.q)
+  ? route.query.q[0]
+  : route.query.q;
+const searchQuery = ref(typeof initialRouteQuery === "string" ? initialRouteQuery : "");
+const debouncedSearchQuery = ref(normalizeSearchText(searchQuery.value));
+const activeSearchTarget = ref<"desktop" | "mobile" | null>(null);
+const activeSuggestionIndex = ref(-1);
+const desktopSearchRoot = ref<HTMLElement | null>(null);
+const mobileSearchRoot = ref<HTMLElement | null>(null);
+const searchHistory = useSearchHistory();
+const suggestionsQuery = useStorefrontSearchSuggestionsQuery(
+  debouncedSearchQuery,
+  5,
+);
+const suggestions = computed(() => suggestionsQuery.data.value?.items ?? []);
+const suggestionTotal = computed(() => suggestionsQuery.data.value?.total ?? 0);
+const isSuggestionLoading = computed(
+  () =>
+    debouncedSearchQuery.value.length >= 2 &&
+    suggestionsQuery.isFetching.value,
+);
+const isSuggestionError = computed(
+  () =>
+    debouncedSearchQuery.value.length >= 2 && suggestionsQuery.isError.value,
+);
+let searchDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+let lastSuggestionErrorQuery = "";
 const showAccountSkeleton = computed(
   () =>
     hasSessionHint() &&
@@ -69,11 +118,119 @@ const accountSecondaryLabel = computed(() =>
     : "Tài khoản",
 );
 
-function submitSearch(): void {
-  const query = searchQuery.value.trim();
+watch(searchQuery, (value) => {
+  activeSuggestionIndex.value = -1;
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    debouncedSearchQuery.value = normalizeSearchText(value);
+  }, 300);
+});
+
+watch(
+  () => route.query.q,
+  (value) => {
+    const next = Array.isArray(value) ? value[0] : value;
+    const normalized = typeof next === "string" ? next : "";
+    if (normalized === searchQuery.value) return;
+    searchQuery.value = normalized;
+    debouncedSearchQuery.value = normalizeSearchText(normalized);
+  },
+);
+
+watch(
+  () => suggestionsQuery.isError.value,
+  (isError) => {
+    const query = debouncedSearchQuery.value;
+    if (!isError || !activeSearchTarget.value || lastSuggestionErrorQuery === query)
+      return;
+    lastSuggestionErrorQuery = query;
+    toast.error("Không thể tải gợi ý tìm kiếm. Vui lòng thử lại.");
+  },
+);
+
+onClickOutside(desktopSearchRoot, () => {
+  if (activeSearchTarget.value === "desktop") activeSearchTarget.value = null;
+});
+onClickOutside(mobileSearchRoot, () => {
+  if (activeSearchTarget.value === "mobile") activeSearchTarget.value = null;
+});
+onBeforeUnmount(() => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+});
+
+async function submitSearch(value = searchQuery.value): Promise<void> {
+  const query = normalizeSearchText(value);
   if (!query) return;
 
-  void router.push({ path: "/books", query: { search: query } });
+  searchQuery.value = query;
+  debouncedSearchQuery.value = query;
+  if (!searchHistory.add(query)) {
+    toast.error("Không thể cập nhật lịch sử tìm kiếm.");
+  }
+  const nextQuery: LocationQueryRaw =
+    route.path === "/books" ? { ...route.query, q: query } : { q: query };
+  delete nextQuery.page;
+  delete nextQuery.search;
+  activeSearchTarget.value = null;
+  activeSuggestionIndex.value = -1;
+  await router.push({ path: "/books", query: nextQuery });
+}
+
+function focusSearch(target: "desktop" | "mobile"): void {
+  activeSearchTarget.value = target;
+  activeSuggestionIndex.value = -1;
+}
+
+function clearSearchInput(): void {
+  searchQuery.value = "";
+  debouncedSearchQuery.value = "";
+  activeSuggestionIndex.value = -1;
+}
+
+function dismissSearchPanel(): void {
+  activeSearchTarget.value = null;
+  activeSuggestionIndex.value = -1;
+}
+
+async function selectSuggestion(product: PublicProductListItemDto): Promise<void> {
+  dismissSearchPanel();
+  await router.push(`/books/${product.slug}`);
+}
+
+function handleSearchKeydown(event: KeyboardEvent): void {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    activeSearchTarget.value = null;
+    activeSuggestionIndex.value = -1;
+    return;
+  }
+  if (event.key !== "ArrowDown" && event.key !== "ArrowUp" && event.key !== "Enter")
+    return;
+  if (event.key === "Enter") {
+    const product = suggestions.value[activeSuggestionIndex.value];
+    if (!product) return;
+    event.preventDefault();
+    void selectSuggestion(product);
+    return;
+  }
+  if (!suggestions.value.length) return;
+  event.preventDefault();
+  const direction = event.key === "ArrowDown" ? 1 : -1;
+  activeSuggestionIndex.value =
+    (activeSuggestionIndex.value + direction + suggestions.value.length) %
+    suggestions.value.length;
+}
+
+function removeSearchHistory(value: string): void {
+  if (!searchHistory.remove(value)) {
+    toast.error("Không thể cập nhật lịch sử tìm kiếm.");
+  }
+}
+
+function clearSearchHistory(): void {
+  if (!searchHistory.clear()) {
+    toast.error("Không thể cập nhật lịch sử tìm kiếm.");
+  }
 }
 
 function openWishlist(): void {
@@ -100,15 +257,40 @@ async function openCart(): Promise<void> {
       >
         <ClientBrand />
 
-        <form role="search" class="flex min-w-0" @submit.prevent="submitSearch">
+        <form
+          ref="desktopSearchRoot"
+          role="search"
+          class="relative flex min-w-0"
+          @submit.prevent="submitSearch()"
+        >
           <label for="desktop-book-search" class="sr-only">Tìm kiếm sách</label>
           <Input
             id="desktop-book-search"
             v-model="searchQuery"
             aria-label="Tìm kiếm sách"
+            role="combobox"
+            :aria-expanded="activeSearchTarget === 'desktop'"
+            aria-controls="desktop-search-suggestions"
+            :aria-activedescendant="
+              activeSuggestionIndex >= 0
+                ? `search-suggestion-${activeSuggestionIndex}`
+                : undefined
+            "
             placeholder="Bạn đang tìm sách gì?"
-            class="h-12 rounded-r-none border-[var(--bookora-border)] bg-background px-5 shadow-none focus-visible:z-10 focus-visible:border-[var(--bookora-green)] focus-visible:ring-[var(--bookora-green)]/20"
+            class="h-12 rounded-r-none border-[var(--bookora-border)] bg-background px-5 pr-11 shadow-none focus-visible:z-10 focus-visible:border-[var(--bookora-green)] focus-visible:ring-[var(--bookora-green)]/20"
+            autocomplete="off"
+            @focus="focusSearch('desktop')"
+            @keydown="handleSearchKeydown"
           />
+          <button
+            v-if="searchQuery"
+            type="button"
+            aria-label="Xóa từ khóa tìm kiếm"
+            class="absolute right-14 top-1/2 z-20 grid size-9 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-[var(--bookora-muted)] hover:text-[var(--bookora-ink)]"
+            @click="clearSearchInput"
+          >
+            <X class="size-4" />
+          </button>
           <Button
             type="submit"
             aria-label="Tìm kiếm"
@@ -116,6 +298,25 @@ async function openCart(): Promise<void> {
           >
             <Search aria-hidden="true" class="size-5" />
           </Button>
+          <Transition name="search-panel">
+            <LiveSearchPanel
+              v-if="activeSearchTarget === 'desktop'"
+              id="desktop-search-suggestions"
+              :query="normalizeSearchText(searchQuery)"
+              :suggestions="suggestions"
+              :total="suggestionTotal"
+              :history="searchHistory.history.value"
+              :search-suggestions="searchSuggestions"
+              :active-index="activeSuggestionIndex"
+              :is-loading="isSuggestionLoading"
+              :is-error="isSuggestionError"
+              @dismiss="dismissSearchPanel"
+              @submit="submitSearch"
+              @remove-history="removeSearchHistory"
+              @clear-history="clearSearchHistory"
+              @retry="suggestionsQuery.refetch()"
+            />
+          </Transition>
         </form>
 
         <div class="flex items-center gap-5">
@@ -212,15 +413,40 @@ async function openCart(): Promise<void> {
           </button>
         </div>
 
-        <form role="search" class="flex" @submit.prevent="submitSearch">
+        <form
+          ref="mobileSearchRoot"
+          role="search"
+          class="relative flex min-w-0"
+          @submit.prevent="submitSearch()"
+        >
           <label for="mobile-book-search" class="sr-only">Tìm kiếm sách</label>
           <Input
             id="mobile-book-search"
             v-model="searchQuery"
             aria-label="Tìm kiếm sách"
+            role="combobox"
+            :aria-expanded="activeSearchTarget === 'mobile'"
+            aria-controls="mobile-search-suggestions"
+            :aria-activedescendant="
+              activeSuggestionIndex >= 0
+                ? `search-suggestion-${activeSuggestionIndex}`
+                : undefined
+            "
             placeholder="Bạn đang tìm sách gì?"
-            class="h-11 rounded-r-none border-[var(--bookora-border)] bg-background shadow-none focus-visible:z-10 focus-visible:border-[var(--bookora-green)] focus-visible:ring-[var(--bookora-green)]/20"
+            class="h-11 min-w-0 rounded-r-none border-[var(--bookora-border)] bg-background pr-10 shadow-none focus-visible:z-10 focus-visible:border-[var(--bookora-green)] focus-visible:ring-[var(--bookora-green)]/20"
+            autocomplete="off"
+            @focus="focusSearch('mobile')"
+            @keydown="handleSearchKeydown"
           />
+          <button
+            v-if="searchQuery"
+            type="button"
+            aria-label="Xóa từ khóa tìm kiếm"
+            class="absolute right-12 top-1/2 z-20 grid size-9 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-[var(--bookora-muted)] hover:text-[var(--bookora-ink)]"
+            @click="clearSearchInput"
+          >
+            <X class="size-4" />
+          </button>
           <Button
             type="submit"
             aria-label="Tìm kiếm"
@@ -228,6 +454,26 @@ async function openCart(): Promise<void> {
           >
             <Search aria-hidden="true" class="size-5" />
           </Button>
+          <Transition name="search-panel">
+            <LiveSearchPanel
+              v-if="activeSearchTarget === 'mobile'"
+              id="mobile-search-suggestions"
+              mobile
+              :query="normalizeSearchText(searchQuery)"
+              :suggestions="suggestions"
+              :total="suggestionTotal"
+              :history="searchHistory.history.value"
+              :search-suggestions="searchSuggestions"
+              :active-index="activeSuggestionIndex"
+              :is-loading="isSuggestionLoading"
+              :is-error="isSuggestionError"
+              @dismiss="dismissSearchPanel"
+              @submit="submitSearch"
+              @remove-history="removeSearchHistory"
+              @clear-history="clearSearchHistory"
+              @retry="suggestionsQuery.refetch()"
+            />
+          </Transition>
         </form>
 
         <BranchSelector />
@@ -257,3 +503,25 @@ async function openCart(): Promise<void> {
     </div>
   </header>
 </template>
+
+<style scoped>
+.search-panel-enter-active,
+.search-panel-leave-active {
+  transition:
+    opacity 170ms ease,
+    transform 170ms ease;
+}
+
+.search-panel-enter-from,
+.search-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-panel-enter-active,
+  .search-panel-leave-active {
+    transition: none;
+  }
+}
+</style>

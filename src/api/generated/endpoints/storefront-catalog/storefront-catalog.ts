@@ -32,6 +32,10 @@ import type {
   StorefrontProductAvailability200,
   StorefrontProductAvailabilityParams,
   StorefrontProductDetail200,
+  StorefrontProductSearchSuggestions200,
+  StorefrontProductSearchSuggestionsParams,
+  StorefrontProductSummaries200,
+  StorefrontProductSummariesParams,
   StorefrontProductsList200,
   StorefrontProductsListParams
 } from '../../models';
@@ -245,6 +249,150 @@ export function useStorefrontProductsList<TData = Awaited<ReturnType<typeof stor
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getStorefrontProductsListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
+ * Lấy gợi ý tìm kiếm sản phẩm public
+ * @summary Lấy gợi ý tìm kiếm sản phẩm public
+ */
+export const storefrontProductSearchSuggestions = (
+    params: MaybeRef<StorefrontProductSearchSuggestionsParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      params = unref(params);
+
+      return customInstance<StorefrontProductSearchSuggestions200>(
+      {url: `/storefront/products/search-suggestions`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getStorefrontProductSearchSuggestionsQueryKey = (params?: MaybeRef<StorefrontProductSearchSuggestionsParams>,) => {
+    return [
+    'storefront','products','search-suggestions', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getStorefrontProductSearchSuggestionsQueryOptions = <TData = Awaited<ReturnType<typeof storefrontProductSearchSuggestions>>, TError = ErrorType<ErrorResponseDto>>(params: MaybeRef<StorefrontProductSearchSuggestionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof storefrontProductSearchSuggestions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getStorefrontProductSearchSuggestionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof storefrontProductSearchSuggestions>>> = ({ signal }) => storefrontProductSearchSuggestions(params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof storefrontProductSearchSuggestions>>, TError, TData>
+}
+
+export type StorefrontProductSearchSuggestionsQueryResult = NonNullable<Awaited<ReturnType<typeof storefrontProductSearchSuggestions>>>
+export type StorefrontProductSearchSuggestionsQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary Lấy gợi ý tìm kiếm sản phẩm public
+ */
+
+export function useStorefrontProductSearchSuggestions<TData = Awaited<ReturnType<typeof storefrontProductSearchSuggestions>>, TError = ErrorType<ErrorResponseDto>>(
+ params: MaybeRef<StorefrontProductSearchSuggestionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof storefrontProductSearchSuggestions>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStorefrontProductSearchSuggestionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
+ * Lấy tóm tắt sản phẩm public theo danh sách ID
+ * @summary Lấy tóm tắt sản phẩm public theo danh sách ID
+ */
+export const storefrontProductSummaries = (
+    params: MaybeRef<StorefrontProductSummariesParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      params = unref(params);
+
+      return customInstance<StorefrontProductSummaries200>(
+      {url: `/storefront/products/summaries`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getStorefrontProductSummariesQueryKey = (params?: MaybeRef<StorefrontProductSummariesParams>,) => {
+    return [
+    'storefront','products','summaries', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getStorefrontProductSummariesQueryOptions = <TData = Awaited<ReturnType<typeof storefrontProductSummaries>>, TError = ErrorType<ErrorResponseDto>>(params: MaybeRef<StorefrontProductSummariesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof storefrontProductSummaries>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getStorefrontProductSummariesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof storefrontProductSummaries>>> = ({ signal }) => storefrontProductSummaries(params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof storefrontProductSummaries>>, TError, TData>
+}
+
+export type StorefrontProductSummariesQueryResult = NonNullable<Awaited<ReturnType<typeof storefrontProductSummaries>>>
+export type StorefrontProductSummariesQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary Lấy tóm tắt sản phẩm public theo danh sách ID
+ */
+
+export function useStorefrontProductSummaries<TData = Awaited<ReturnType<typeof storefrontProductSummaries>>, TError = ErrorType<ErrorResponseDto>>(
+ params: MaybeRef<StorefrontProductSummariesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof storefrontProductSummaries>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStorefrontProductSummariesQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

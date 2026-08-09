@@ -120,7 +120,7 @@ describe("storefront hotfix contracts", () => {
     expect(gallery).toContain("VueEasyLightbox");
     expect(gallery).toContain(':visible="lightboxVisible"');
     expect(gallery).toContain('@on-index-change="syncLightboxIndex"');
-    expect(gallery).toContain('@click="selectedIndex = index"');
+    expect(gallery).toContain('@click="selectImage(index)"');
     expect(branch).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
     expect(branch.indexOf("<ScrollArea")).toBeLessThan(
       branch.indexOf("<DialogFooter"),

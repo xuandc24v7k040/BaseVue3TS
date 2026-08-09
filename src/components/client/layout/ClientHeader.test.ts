@@ -8,7 +8,7 @@ import ClientHeader from '@/components/client/layout/ClientHeader.vue'
 
 vi.mock('@/features/storefront/api/storefront-api', async () => {
   const { ref } = await import('vue')
-  const query = <T>(data: T) => ({ data: ref(data), isPending: ref(false), isError: ref(false), error: ref(null), refetch: vi.fn() })
+  const query = <T>(data: T) => ({ data: ref(data), isPending: ref(false), isFetching: ref(false), isError: ref(false), error: ref(null), refetch: vi.fn() })
   return {
     useStorefrontCategoriesQuery: () => query([
       { id: '01J00000000000000000000000', name: 'Văn học', slug: 'van-hoc', imageUrl: null, sortOrder: 1, children: [{ id: '01J00000000000000000000001', name: 'Tiểu thuyết', slug: 'tieu-thuyet', imageUrl: null, sortOrder: 1, children: [] }] },
@@ -18,6 +18,7 @@ vi.mock('@/features/storefront/api/storefront-api', async () => {
       { id: '01J00000000000000000000001', code: 'hau-giang', name: 'Hậu Giang', address: 'Vị Thanh', province: 'Hậu Giang', ward: null },
       { id: '01J00000000000000000000002', code: 'ho-chi-minh', name: 'Hồ Chí Minh', address: 'Quận 1', province: 'Hồ Chí Minh', ward: null },
     ]),
+    useStorefrontSearchSuggestionsQuery: () => query({ items: [], total: 0 }),
   }
 })
 
@@ -77,7 +78,12 @@ describe('ClientHeader', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(router.currentRoute.value.fullPath).toBe('/books?search=s%C3%A1ch+k%E1%BB%B9+n%C4%83ng')
+    expect(router.currentRoute.value.path).toBe('/books')
+    expect(router.currentRoute.value.query).toMatchObject({
+      q: 'sách kỹ năng',
+      author: 'j-k-rowling',
+    })
+    expect(router.currentRoute.value.query.page).toBeUndefined()
   })
 
   it('left-aligns the desktop wishlist labels', async () => {
@@ -128,6 +134,44 @@ describe('ClientHeader', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/')
+  })
+
+  it('opens the live panel, stores submitted history and closes with Escape', async () => {
+    const { wrapper } = await mountHeader()
+    const input = wrapper.get<HTMLInputElement>('#desktop-book-search')
+
+    await input.trigger('focus')
+    expect(wrapper.text()).toContain('Gợi ý phù hợp')
+    expect(wrapper.text()).toContain('Gợi ý tìm kiếm')
+    expect(wrapper.text()).not.toContain('Từ khóa phổ biến')
+    expect(wrapper.text()).toContain('Văn học')
+    expect(wrapper.text()).toContain('Tiểu thuyết')
+
+    await input.setValue('  Chú   Thuật  ')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(JSON.parse(localStorage.getItem('bookora.search-history.v1') ?? '[]')).toEqual([
+      'Chú Thuật',
+    ])
+
+    await input.trigger('focus')
+    await input.trigger('keydown', { key: 'Escape' })
+    expect(wrapper.text()).not.toContain('Gợi ý phù hợp')
+  })
+
+  it('submits a search suggestion derived from public categories', async () => {
+    const { router, wrapper } = await mountHeader()
+    const input = wrapper.get<HTMLInputElement>('#desktop-book-search')
+
+    await input.trigger('focus')
+    const suggestion = wrapper
+      .findAll('button')
+      .find(button => button.text().trim() === 'Tiểu thuyết')
+    await suggestion?.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/books')
+    expect(router.currentRoute.value.query.q).toBe('Tiểu thuyết')
   })
 
   it('opens the branch selector and confirms another local branch', async () => {
