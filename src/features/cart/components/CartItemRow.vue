@@ -51,7 +51,7 @@ function updateSelected(value: boolean | "indeterminate"): void {
     />
 
     <RouterLink
-      :to="`/books/${item.productSlug}`"
+      :to="`/san-pham/${item.productSlug}`"
       class="grid aspect-[3/4] w-20 place-items-center overflow-hidden rounded-md bg-[var(--bookora-soft)] sm:w-[92px]"
     >
       <img
@@ -65,7 +65,7 @@ function updateSelected(value: boolean | "indeterminate"): void {
 
     <div class="min-w-0">
       <RouterLink
-        :to="`/books/${item.productSlug}`"
+        :to="`/san-pham/${item.productSlug}`"
         class="font-bold hover:text-[var(--bookora-green)]"
       >
         {{ item.productName }}

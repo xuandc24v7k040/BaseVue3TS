@@ -6,14 +6,13 @@ import {
   storefrontHomeGet,
   storefrontProductAvailability,
   storefrontProductDetail,
+  storefrontProductRelatedList,
   storefrontProductSearchSuggestions,
   storefrontProductSummaries,
   storefrontProductsList,
 } from "@/api/generated/endpoints/storefront-catalog/storefront-catalog";
 import { storefrontBranchesList } from "@/api/generated/endpoints/storefront-branches/storefront-branches";
-import type {
-  StorefrontProductsListParams,
-} from "@/api/generated/models";
+import type { StorefrontProductsListParams } from "@/api/generated/models";
 
 export const storefrontQueryKeys = {
   all: ["storefront"] as const,
@@ -27,15 +26,10 @@ export const storefrontQueryKeys = {
   productSummaries: (ids: string[]) =>
     ["storefront", "product-summaries", ids] as const,
   detail: (slug: string) => ["storefront", "detail", slug] as const,
-  availability: (
-    branchId: string | null,
-    productId: string,
-  ) =>
-    [
-      "storefront-availability",
-      branchId,
-      productId,
-    ] as const,
+  relatedProducts: (productId: string) =>
+    ["storefront", "related-products", productId] as const,
+  availability: (branchId: string | null, productId: string) =>
+    ["storefront-availability", branchId, productId] as const,
 };
 
 export function useStorefrontBranchesQuery() {
@@ -136,16 +130,31 @@ export function useStorefrontProductDetailQuery(slug: MaybeRef<string>) {
   });
 }
 
+export function useStorefrontRelatedProductsQuery(productId: MaybeRef<string>) {
+  return useQuery({
+    queryKey: computed(() =>
+      storefrontQueryKeys.relatedProducts(unref(productId)),
+    ),
+    queryFn: ({ signal }) =>
+      storefrontProductRelatedList(
+        unref(productId),
+        { limit: 3 },
+        undefined,
+        signal,
+      ).then((response) => response.data),
+    enabled: computed(() => Boolean(unref(productId))),
+    retry: 1,
+    staleTime: 60_000,
+  });
+}
+
 export function useStorefrontAvailabilityQuery(
   branchId: MaybeRef<string | null>,
   productId: MaybeRef<string>,
 ) {
   return useQuery({
     queryKey: computed(() =>
-      storefrontQueryKeys.availability(
-        unref(branchId),
-        unref(productId),
-      ),
+      storefrontQueryKeys.availability(unref(branchId), unref(productId)),
     ),
     queryFn: ({ signal }) =>
       storefrontProductAvailability(

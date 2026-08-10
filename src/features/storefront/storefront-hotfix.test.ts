@@ -54,9 +54,9 @@ describe("storefront hotfix contracts", () => {
   it("maps URL arrays to singular contract keys and resets the page on filter updates", async () => {
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: "/books", component: { template: "<div />" } }],
+      routes: [{ path: "/san-pham", component: { template: "<div />" } }],
     });
-    await router.push("/books?page=4&author=a&author=b&publisher=kim-dong");
+    await router.push("/san-pham?page=4&author=a&author=b&publisher=kim-dong");
 
     const filtersRef: { current?: ReturnType<typeof useProductFilters> } = {};
     mount(

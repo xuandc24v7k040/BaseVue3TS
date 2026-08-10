@@ -47,12 +47,12 @@ describe("buildPrimaryCategoryBreadcrumb", () => {
       {
         id: "parent",
         label: "Văn học",
-        to: { path: "/books", query: { category: "van-hoc" } },
+        to: { path: "/san-pham", query: { category: "van-hoc" } },
       },
       {
         id: "primary",
         label: "Manga - Comic",
-        to: { path: "/books", query: { category: "manga-comic" } },
+        to: { path: "/san-pham", query: { category: "manga-comic" } },
       },
     ]);
     expect(items.map((item) => item.label)).not.toContain("Tiểu thuyết");
@@ -73,7 +73,7 @@ describe("buildPrimaryCategoryBreadcrumb", () => {
       {
         id: "primary",
         label: "Văn học",
-        to: { path: "/books", query: { category: "van-hoc" } },
+        to: { path: "/san-pham", query: { category: "van-hoc" } },
       },
     ]);
   });

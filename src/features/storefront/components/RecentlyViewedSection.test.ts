@@ -92,4 +92,22 @@ describe("RecentlyViewedSection", () => {
     expect(mocks.clear).toHaveBeenCalledOnce();
     expect(wrapper.find("section").exists()).toBe(false);
   });
+
+  it("shows pointer cursors on both available carousel controls", async () => {
+    const wrapper = mount(RecentlyViewedSection, {
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    const scroller = wrapper.get<HTMLElement>(".recent-scrollbar");
+    Object.defineProperties(scroller.element, {
+      scrollLeft: { configurable: true, value: 10 },
+      clientWidth: { configurable: true, value: 200 },
+      scrollWidth: { configurable: true, value: 600 },
+    });
+
+    await scroller.trigger("scroll");
+    await nextTick();
+
+    expect(wrapper.get('button[aria-label="Xem sản phẩm trước"]').classes()).toContain("cursor-pointer");
+    expect(wrapper.get('button[aria-label="Xem sản phẩm tiếp theo"]').classes()).toContain("cursor-pointer");
+  });
 });

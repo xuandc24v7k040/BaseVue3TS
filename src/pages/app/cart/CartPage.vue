@@ -141,15 +141,18 @@ async function removeItem(itemId: string): Promise<void> {
       <span>/</span><span aria-current="page">Giỏ hàng</span>
     </nav>
 
-    <div v-if="cartQuery.isPending.value" class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div
+      v-if="cartQuery.isPending.value"
+      class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"
+    >
       <div class="space-y-3 rounded-xl border p-5">
         <Skeleton class="h-8 w-52" />
         <Skeleton v-for="index in 4" :key="index" class="h-36 w-full" />
       </div>
       <div class="space-y-3">
-        <Skeleton class="h-40 w-full" /><Skeleton class="h-56 w-full" /><Skeleton
-          class="h-64 w-full"
-        />
+        <Skeleton class="h-40 w-full" /><Skeleton
+          class="h-56 w-full"
+        /><Skeleton class="h-64 w-full" />
       </div>
     </div>
 
@@ -161,7 +164,12 @@ async function removeItem(itemId: string): Promise<void> {
         <AlertTriangle class="mx-auto size-14 text-amber-600" />
         <h1 class="mt-4 text-2xl font-bold">Không thể tải giỏ hàng</h1>
         <p class="mt-2 text-sm text-[var(--bookora-muted)]">
-          {{ cartErrorMessage(cartQuery.error.value, "Không thể tải giỏ hàng. Vui lòng thử lại.") }}
+          {{
+            cartErrorMessage(
+              cartQuery.error.value,
+              "Không thể tải giỏ hàng. Vui lòng thử lại.",
+            )
+          }}
         </p>
         <Button type="button" class="mt-5" @click="cartQuery.refetch()">
           <RefreshCcw class="size-4" /> Thử lại
@@ -188,15 +196,15 @@ async function removeItem(itemId: string): Promise<void> {
         </AlertDescription>
       </Alert>
 
-      <div class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div
+        class="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]"
+      >
         <main class="min-w-0">
           <section
             v-if="cart.items.length"
             class="overflow-hidden rounded-xl border bg-background shadow-sm"
           >
-            <div
-              class="flex min-h-14 items-center gap-3 px-4 sm:px-6"
-            >
+            <div class="flex min-h-14 items-center gap-3 px-4 sm:px-6">
               <Checkbox
                 :model-value="allSelected"
                 :disabled="eligibleItems.length === 0"
@@ -204,7 +212,8 @@ async function removeItem(itemId: string): Promise<void> {
                 @update:model-value="toggleAll"
               />
               <strong>Chọn tất cả ({{ eligibleItems.length }} mặt hàng)</strong>
-              <span class="ml-auto hidden text-sm text-[var(--bookora-muted)] lg:block"
+              <span
+                class="ml-auto hidden text-sm text-[var(--bookora-muted)] lg:block"
                 >Số lượng &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Thành tiền</span
               >
             </div>
@@ -225,13 +234,15 @@ async function removeItem(itemId: string): Promise<void> {
             class="grid min-h-[360px] place-items-center rounded-xl border border-dashed bg-background p-8 text-center"
           >
             <div>
-              <BookOpen class="mx-auto size-16 text-[var(--bookora-green)]/40" />
+              <BookOpen
+                class="mx-auto size-16 text-[var(--bookora-green)]/40"
+              />
               <h2 class="mt-4 text-2xl font-bold">Giỏ hàng đang trống</h2>
               <p class="mt-2 text-sm text-[var(--bookora-muted)]">
                 Hãy chọn thêm những cuốn sách bạn yêu thích.
               </p>
               <Button as-child class="mt-5">
-                <RouterLink to="/books">Tiếp tục mua sắm</RouterLink>
+                <RouterLink to="/san-pham">Tiếp tục mua sắm</RouterLink>
               </Button>
             </div>
           </section>

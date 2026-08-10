@@ -614,6 +614,8 @@ export * from './storefrontHomeGet200';
 export * from './storefrontProductAvailability200';
 export * from './storefrontProductAvailabilityParams';
 export * from './storefrontProductDetail200';
+export * from './storefrontProductRelatedList200';
+export * from './storefrontProductRelatedListParams';
 export * from './storefrontProductReviewsList200';
 export * from './storefrontProductReviewsListParams';
 export * from './storefrontProductSearchSuggestions200';

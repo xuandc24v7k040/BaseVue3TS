@@ -27,7 +27,9 @@ const money = new Intl.NumberFormat("vi-VN");
       </p>
       <div v-if="orderQuery.data.value" class="mt-6 rounded-xl bg-slate-50 p-5">
         <p class="text-sm text-slate-500">Mã đơn hàng</p>
-        <p class="mt-1 text-xl font-bold">{{ orderQuery.data.value.orderCode }}</p>
+        <p class="mt-1 text-xl font-bold">
+          {{ orderQuery.data.value.orderCode }}
+        </p>
         <p class="mt-3 text-sm">
           Tổng thanh toán:
           <strong class="text-green-700"
@@ -47,7 +49,7 @@ const money = new Intl.NumberFormat("vi-VN");
           </RouterLink>
         </Button>
         <Button as-child variant="outline">
-          <RouterLink to="/books">Tiếp tục mua sắm</RouterLink>
+          <RouterLink to="/san-pham">Tiếp tục mua sắm</RouterLink>
         </Button>
       </div>
     </div>

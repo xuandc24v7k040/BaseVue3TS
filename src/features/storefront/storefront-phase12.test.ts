@@ -6,6 +6,52 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent } from "vue";
 import ProductGallery from "@/features/storefront/components/ProductGallery.vue";
 import productGallerySource from "@/features/storefront/components/ProductGallery.vue?raw";
+
+vi.mock("embla-carousel-vue", async () => {
+  const { ref } = await import("vue");
+
+  type SelectListener = (api: TestCarouselApi) => void;
+  interface TestCarouselApi {
+    canScrollNext: () => boolean;
+    canScrollPrev: () => boolean;
+    off: (event: string, listener: SelectListener) => TestCarouselApi;
+    on: (event: string, listener: SelectListener) => TestCarouselApi;
+    reInit: () => void;
+    scrollNext: () => void;
+    scrollPrev: () => void;
+    scrollTo: (index: number) => void;
+    selectedScrollSnap: () => number;
+  }
+
+  return {
+    default: () => {
+      let selectedIndex = 0;
+      const selectListeners = new Set<SelectListener>();
+      const api: TestCarouselApi = {
+        canScrollNext: () => true,
+        canScrollPrev: () => true,
+        off: (event, listener) => {
+          if (event === "select") selectListeners.delete(listener);
+          return api;
+        },
+        on: (event, listener) => {
+          if (event === "select") selectListeners.add(listener);
+          return api;
+        },
+        reInit: () => {},
+        scrollNext: () => api.scrollTo((selectedIndex + 1) % 3),
+        scrollPrev: () => api.scrollTo((selectedIndex + 2) % 3),
+        scrollTo: (index) => {
+          selectedIndex = index;
+          selectListeners.forEach((listener) => listener(api));
+        },
+        selectedScrollSnap: () => selectedIndex,
+      };
+
+      return [ref(null), ref(api)];
+    },
+  };
+});
 import ProductVariantSelector from "@/features/storefront/components/ProductVariantSelector.vue";
 import { queryClient } from "@/lib/query-client";
 import { useStorefrontBranchStore } from "@/stores/storefront-branch.store";
@@ -278,12 +324,14 @@ describe("variant and gallery UI", () => {
     await wrapper.findAll('button[aria-label^="Xem ảnh"]')[1]?.trigger("click");
     expect(
       wrapper
-        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+        .find<HTMLImageElement>('[aria-hidden="false"] button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/two.webp");
     expect(wrapper.find('[data-testid="easy-lightbox"]').exists()).toBe(false);
 
-    await wrapper.find('button[aria-label^="Phóng to ảnh"]').trigger("click");
+    await wrapper
+      .find('[aria-hidden="false"] button[aria-label^="Phóng to ảnh"]')
+      .trigger("click");
     expect(
       wrapper.get('[data-testid="easy-lightbox"]').attributes("data-index"),
     ).toBe("1");
@@ -301,7 +349,7 @@ describe("variant and gallery UI", () => {
       .trigger("click");
     expect(
       wrapper
-        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+        .find<HTMLImageElement>('[aria-hidden="false"] button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/one.webp");
   });
@@ -358,7 +406,7 @@ describe("variant and gallery UI", () => {
       ?.trigger("click");
     expect(
       wrapper
-        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+        .find<HTMLImageElement>('[aria-hidden="false"] button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/image-2.webp");
 
@@ -372,7 +420,7 @@ describe("variant and gallery UI", () => {
       .trigger("click");
     expect(
       wrapper
-        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+        .find<HTMLImageElement>('[aria-hidden="false"] button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/image-3.webp");
   });
@@ -422,26 +470,28 @@ describe("variant and gallery UI", () => {
 
     expect(
       wrapper
-        .find<HTMLImageElement>('button[aria-label^="Phóng to ảnh"] img')
+        .find<HTMLImageElement>('[aria-hidden="false"] button[aria-label^="Phóng to ảnh"] img')
         .attributes("src"),
     ).toBe("/rapid-2.webp");
-    expect(wrapper.get('button[aria-label^="Phóng to ảnh"]').attributes("aria-label")).toContain(
-      "ảnh 3",
-    );
+    expect(
+      wrapper
+        .get('[aria-hidden="false"] button[aria-label^="Phóng to ảnh"]')
+        .attributes("aria-label"),
+    ).toContain("ảnh 3");
+    expect(
+      wrapper.get('button[aria-label="Xem ảnh 3"]').attributes("aria-current"),
+    ).toBe("true");
   });
 
-  it("uses directional transitions and respects reduced motion", () => {
-    expect(productGallerySource).toContain('<Transition :name="imageTransitionName">');
-    expect(productGallerySource).toContain(':key="selected.id"');
-    expect(productGallerySource).toContain("translateX(100%)");
-    expect(productGallerySource).toContain("translateX(-100%)");
-    expect(productGallerySource).toContain(
-      "transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1)",
-    );
-    expect(productGallerySource).toContain("transition: opacity 180ms ease-out");
-    expect(productGallerySource).toContain(
-      "@media (prefers-reduced-motion: reduce)",
-    );
+  it("uses the shared carousel and removes the custom transition engine", () => {
+    expect(productGallerySource).toContain("<Carousel");
+    expect(productGallerySource).toContain("<CarouselContent");
+    expect(productGallerySource).toContain("<CarouselItem");
+    expect(productGallerySource).toContain('carouselApi.value.scrollNext()');
+    expect(productGallerySource).toContain('carouselApi.value.scrollPrev()');
+    expect(productGallerySource).not.toContain("<Transition");
+    expect(productGallerySource).not.toContain("imageTransitionName");
+    expect(productGallerySource).not.toContain("gallery-next-enter-active");
     expect(productGallerySource).toContain(
       "cursor-pointer overflow-hidden rounded-lg",
     );

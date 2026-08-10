@@ -4,10 +4,23 @@ import {
   ChevronRight,
   Maximize2,
 } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  watch,
+} from "vue";
 import VueEasyLightbox from "vue-easy-lightbox";
 import type { PublicProductMediaDto } from "@/api/generated/models";
 import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
 const props = defineProps<{
   media: PublicProductMediaDto[];
@@ -15,9 +28,12 @@ const props = defineProps<{
 }>();
 const selectedIndex = ref(0);
 const lightboxVisible = ref(false);
-const imageTransitionName = ref<"gallery-next" | "gallery-previous">(
-  "gallery-next",
-);
+const carouselApi = shallowRef<CarouselApi>();
+const carouselOptions = {
+  align: "start" as const,
+  duration: 30,
+  loop: true,
+};
 const selected = computed(() => props.media[selectedIndex.value] ?? null);
 const visibleThumbnails = computed(() =>
   props.media.length > 4 ? props.media.slice(0, 3) : props.media,
@@ -35,16 +51,35 @@ const lightboxImages = computed(() =>
 
 watch(
   () => props.media.map((item) => item.id).join(","),
-  () => {
+  async () => {
     selectedIndex.value = 0;
     lightboxVisible.value = false;
+    await nextTick();
+    carouselApi.value?.reInit();
+    carouselApi.value?.scrollTo(0, true);
   },
 );
 
+function syncSelectedImage(api: CarouselApi): void {
+  if (!api) return;
+  selectedIndex.value = api.selectedScrollSnap();
+}
+
+function setCarouselApi(api: CarouselApi): void {
+  if (!api) return;
+  carouselApi.value = api;
+  syncSelectedImage(api);
+  api.on("select", syncSelectedImage);
+}
+
 function move(direction: -1 | 1): void {
   if (!props.media.length) return;
-  imageTransitionName.value =
-    direction === 1 ? "gallery-next" : "gallery-previous";
+  if (carouselApi.value) {
+    direction === 1
+      ? carouselApi.value.scrollNext()
+      : carouselApi.value.scrollPrev();
+    return;
+  }
   selectedIndex.value =
     (selectedIndex.value + direction + props.media.length) % props.media.length;
 }
@@ -53,8 +88,10 @@ function selectImage(index: number): void {
   if (index < 0 || index >= props.media.length || index === selectedIndex.value) {
     return;
   }
-  imageTransitionName.value =
-    index > selectedIndex.value ? "gallery-next" : "gallery-previous";
+  if (carouselApi.value) {
+    carouselApi.value.scrollTo(index);
+    return;
+  }
   selectedIndex.value = index;
 }
 
@@ -64,11 +101,13 @@ function openLightbox(): void {
 
 function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
   if (newIndex >= 0 && newIndex < props.media.length) {
-    imageTransitionName.value =
-      newIndex > selectedIndex.value ? "gallery-next" : "gallery-previous";
-    selectedIndex.value = newIndex;
+    selectImage(newIndex);
   }
 }
+
+onBeforeUnmount(() => {
+  carouselApi.value?.off("select", syncSelectedImage);
+});
 </script>
 
 <template>
@@ -88,6 +127,7 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
               : 'border-[var(--bookora-border)]'
           "
           :aria-label="`Xem ảnh ${index + 1}`"
+          :aria-current="index === selectedIndex ? 'true' : undefined"
           @click="selectImage(index)"
         >
           <img
@@ -117,21 +157,38 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
       <div
         class="relative order-1 flex aspect-[4/5] items-center justify-center overflow-hidden rounded-xl bg-[var(--bookora-cream)] p-5 sm:order-2"
       >
-        <button
-          type="button"
-          class="relative isolate size-full cursor-zoom-in overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
-          :aria-label="`Phóng to ảnh ${selectedIndex + 1} của ${productName}`"
-          @click="openLightbox"
+        <Carousel
+          class="size-full"
+          :opts="carouselOptions"
+          aria-label="Ảnh sản phẩm"
+          @init-api="setCarouselApi"
         >
-          <Transition :name="imageTransitionName">
-            <img
-              :key="selected.id"
-              :src="selected.url"
-              :alt="selected.altText || `Bìa sách ${productName}`"
-              class="absolute inset-0 size-full transform-gpu object-contain drop-shadow-xl"
-            />
-          </Transition>
-        </button>
+          <CarouselContent
+            class="-ml-0 h-full"
+            data-testid="product-gallery-track"
+          >
+            <CarouselItem
+              v-for="(image, index) in media"
+              :key="image.id"
+              class="h-full pl-0"
+              :aria-hidden="selectedIndex !== index"
+            >
+              <button
+                type="button"
+                class="relative isolate size-full cursor-zoom-in overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
+                :aria-label="`Phóng to ảnh ${index + 1} của ${productName}`"
+                :tabindex="selectedIndex === index ? 0 : -1"
+                @click="openLightbox"
+              >
+                <img
+                  :src="image.url"
+                  :alt="image.altText || `Bìa sách ${productName}`"
+                  class="size-full object-contain drop-shadow-xl"
+                />
+              </button>
+            </CarouselItem>
+          </CarouselContent>
+        </Carousel>
         <Button
           type="button"
           size="sm"
@@ -178,53 +235,3 @@ function syncLightboxIndex(_oldIndex: number, newIndex: number): void {
     />
   </section>
 </template>
-
-<style scoped>
-.gallery-next-enter-active,
-.gallery-next-leave-active,
-.gallery-previous-enter-active,
-.gallery-previous-leave-active {
-  transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
-  will-change: transform;
-}
-
-.gallery-next-enter-active,
-.gallery-previous-enter-active {
-  z-index: 2;
-}
-
-.gallery-next-leave-active,
-.gallery-previous-leave-active {
-  z-index: 1;
-  pointer-events: none;
-}
-
-.gallery-next-enter-from,
-.gallery-previous-leave-to {
-  transform: translateX(100%);
-}
-
-.gallery-next-leave-to,
-.gallery-previous-enter-from {
-  transform: translateX(-100%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gallery-next-enter-active,
-  .gallery-next-leave-active,
-  .gallery-previous-enter-active,
-  .gallery-previous-leave-active {
-    transition: opacity 180ms ease-out;
-    transform: none;
-    will-change: opacity;
-  }
-
-  .gallery-next-enter-from,
-  .gallery-next-leave-to,
-  .gallery-previous-enter-from,
-  .gallery-previous-leave-to {
-    opacity: 0;
-    transform: none;
-  }
-}
-</style>

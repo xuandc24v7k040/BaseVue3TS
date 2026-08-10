@@ -43,7 +43,9 @@ async function startCheckout(): Promise<void> {
       query: { items: serializeCheckoutCartItemIds(props.selectedItemIds) },
     });
   } catch {
-    toast.error("Không thể bắt đầu thanh toán. Vui lòng kiểm tra lại giỏ hàng.");
+    toast.error(
+      "Không thể bắt đầu thanh toán. Vui lòng kiểm tra lại giỏ hàng.",
+    );
   } finally {
     isStartingCheckout.value = false;
   }
@@ -87,7 +89,9 @@ const commitments = [
           }}</strong>
         </p>
         <p class="mt-1 leading-5 text-[var(--bookora-muted)]">
-          {{ branchStore.selectedBranch?.address ?? "Vui lòng chọn chi nhánh." }}
+          {{
+            branchStore.selectedBranch?.address ?? "Vui lòng chọn chi nhánh."
+          }}
         </p>
         <BranchSelector class="mt-3" />
       </div>
@@ -148,7 +152,7 @@ const commitments = [
         {{ isStartingCheckout ? "Đang chuẩn bị..." : "Tiến hành thanh toán" }}
       </Button>
       <Button as-child variant="outline" class="mt-2 h-11 w-full">
-        <RouterLink to="/books">
+        <RouterLink to="/san-pham">
           <ShoppingCart class="size-4.5" /> Tiếp tục mua sắm
         </RouterLink>
       </Button>

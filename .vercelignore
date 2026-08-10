@@ -1,0 +1,10 @@
+.gitnexus
+dist
+
+.claude
+.agents
+.vscode
+
+.env
+.env.*
+!.env.example

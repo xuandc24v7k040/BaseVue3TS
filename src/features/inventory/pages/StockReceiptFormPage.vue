@@ -260,6 +260,10 @@ function addSelectedVariants() {
   delete errors.value.items;
 }
 
+function clearNoteError(): void {
+  if (note.value.trim()) delete errors.value.note;
+}
+
 function removeItem(index: number) {
   items.value.splice(index, 1);
 }
@@ -391,6 +395,7 @@ onBeforeUnmount(() => {
             :aria-invalid="Boolean(errors.note)"
             aria-describedby="receipt-note-error"
             placeholder="Ghi chú nội bộ cho phiếu nhập..."
+            @input="clearNoteError"
           />
           <p
             v-if="errors.note"

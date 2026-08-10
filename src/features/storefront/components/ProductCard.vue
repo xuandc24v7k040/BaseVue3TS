@@ -47,7 +47,7 @@ function formatPrice(price: number): string {
     />
 
     <RouterLink
-      :to="`/books/${product.slug}`"
+      :to="`/san-pham/${product.slug}`"
       class="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)] focus-visible:ring-offset-2"
     >
       <div
@@ -73,7 +73,7 @@ function formatPrice(price: number): string {
 
     <div class="min-w-0 pt-3" :class="view === 'list' ? 'pt-1 pr-10' : ''">
       <RouterLink
-        :to="`/books/${product.slug}`"
+        :to="`/san-pham/${product.slug}`"
         class="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
       >
         <h3

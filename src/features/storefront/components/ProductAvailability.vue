@@ -28,7 +28,7 @@ const isCustomer = computed(
   () =>
     authStore.status === "authenticated" && authStore.user?.type === "CUSTOMER",
 );
-const returnTo = computed(() => `/books/${props.productSlug}`);
+const returnTo = computed(() => `/san-pham/${props.productSlug}`);
 const addressesQuery = useCustomerAddresses({ enabled: isCustomer });
 const defaultAddress = computed(
   () => addressesQuery.data.value?.find((address) => address.isDefault) ?? null,

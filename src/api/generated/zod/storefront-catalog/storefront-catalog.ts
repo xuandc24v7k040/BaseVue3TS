@@ -68,6 +68,23 @@ export const StorefrontProductSummariesQueryParams = zod.strictObject({
 })
 
 /**
+ * Lấy tối đa 3 sản phẩm liên quan public
+ * @summary Lấy tối đa 3 sản phẩm liên quan public
+ */
+export const StorefrontProductRelatedListParams = zod.strictObject({
+  "productId": zod.ulid()
+})
+
+export const storefrontProductRelatedListQueryLimitDefault = 3;
+export const storefrontProductRelatedListQueryLimitMax = 3;
+
+
+
+export const StorefrontProductRelatedListQueryParams = zod.strictObject({
+  "limit": zod.number().min(1).max(storefrontProductRelatedListQueryLimitMax).default(storefrontProductRelatedListQueryLimitDefault)
+})
+
+/**
  * Lấy tồn kho public của các biến thể theo chi nhánh
  * @summary Lấy tồn kho public của các biến thể theo chi nhánh
  */

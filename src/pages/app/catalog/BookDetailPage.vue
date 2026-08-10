@@ -4,16 +4,15 @@ import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { toast } from "vue-sonner";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useStorefrontAvailabilityQuery,
   useStorefrontProductDetailQuery,
 } from "@/features/storefront/api/storefront-api";
 import ProductAvailability from "@/features/storefront/components/ProductAvailability.vue";
-import ProductCard from "@/features/storefront/components/ProductCard.vue";
 import ProductGallery from "@/features/storefront/components/ProductGallery.vue";
 import ProductVariantSelector from "@/features/storefront/components/ProductVariantSelector.vue";
+import RelatedProductsSection from "@/features/storefront/components/RelatedProductsSection.vue";
 import RecentlyViewedSection from "@/features/storefront/components/RecentlyViewedSection.vue";
 import PublicReviewSection from "@/features/engagement/components/PublicReviewSection.vue";
 import WishlistButton from "@/features/engagement/components/WishlistButton.vue";
@@ -126,7 +125,7 @@ async function addToCart(buyNow = false): Promise<void> {
     toast.info("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
     await router.push({
       path: "/login",
-      query: { returnTo: `/books/${slug.value}` },
+      query: { returnTo: `/san-pham/${slug.value}` },
     });
     return;
   }
@@ -185,7 +184,9 @@ async function addToCart(buyNow = false): Promise<void> {
           }}
         </p>
         <Button as-child class="mt-5"
-          ><RouterLink to="/books">Quay lại danh sách sách</RouterLink></Button
+          ><RouterLink to="/san-pham"
+            >Quay lại danh sách sản phẩm</RouterLink
+          ></Button
         >
       </div>
     </div>
@@ -195,7 +196,7 @@ async function addToCart(buyNow = false): Promise<void> {
         class="flex flex-wrap items-center gap-2 text-sm text-[var(--bookora-muted)]"
       >
         <RouterLink to="/">Trang chủ</RouterLink><span>/</span
-        ><RouterLink to="/books">Sách</RouterLink
+        ><RouterLink to="/san-pham">Sản phẩm</RouterLink
         ><template
           v-for="category in categoryBreadcrumbItems"
           :key="category.id"
@@ -347,7 +348,7 @@ async function addToCart(buyNow = false): Promise<void> {
       <RecentlyViewedSection :exclude-product-id="product.id" />
 
       <div
-        class="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"
+        class="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"
       >
         <section
           class="min-w-0 rounded-xl border border-[var(--bookora-border)] bg-background p-5 sm:p-6"
@@ -414,40 +415,10 @@ async function addToCart(buyNow = false): Promise<void> {
             </div>
           </dl>
         </section>
-        <section
-          class="min-w-0 rounded-xl border border-[var(--bookora-border)] bg-background p-5"
-        >
-          <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-xl font-bold">Sản phẩm liên quan</h2>
-            <RouterLink
-              to="/books"
-              class="text-sm font-semibold text-[var(--bookora-green)]"
-              >Xem tất cả →</RouterLink
-            >
-          </div>
-          <ScrollArea
-            v-if="product.relatedProducts.length"
-            type="auto"
-            scrollbar-orientation="horizontal"
-            class="w-full min-w-0 max-w-full overflow-hidden pb-3"
-          >
-            <div
-              class="grid w-max auto-cols-[155px] grid-flow-col gap-3 pb-1 sm:w-full sm:grid-cols-2 sm:grid-flow-row"
-            >
-              <ProductCard
-                v-for="related in product.relatedProducts"
-                :key="related.id"
-                :product="related"
-              />
-            </div>
-          </ScrollArea>
-          <p
-            v-else
-            class="py-8 text-center text-sm text-[var(--bookora-muted)]"
-          >
-            Chưa có sản phẩm liên quan.
-          </p>
-        </section>
+        <RelatedProductsSection
+          :product-id="product.id"
+          :category-slug="product.primaryCategory?.slug"
+        />
       </div>
     </div>
   </div>

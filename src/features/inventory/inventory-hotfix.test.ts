@@ -114,11 +114,16 @@ describe("inventory hotfix contract", () => {
       'next.note = "Vui lòng nhập ghi chú phiếu nhập."',
     );
     expect(formSource).toContain('aria-describedby="receipt-note-error"');
+    expect(formSource).toContain("function clearNoteError(): void");
+    expect(formSource).toContain(
+      "if (note.value.trim()) delete errors.value.note;",
+    );
+    expect(formSource).toContain('@input="clearNoteError"');
     expect(formSource).toContain('class="ml-auto shrink-0 shadow-sm"');
     expect(formSource).toContain("<VndMoneyInput");
     expect(formSource).toContain('placeholder="Không bắt buộc"');
     expect(formSource).toContain(
-      '!/^\\d{1,13}(\\.\\d{1,2})?$/.test(item.costPrice)',
+      "!/^\\d{1,13}(\\.\\d{1,2})?$/.test(item.costPrice)",
     );
     expect(formSource).not.toContain(
       "size-5 shrink-0 border-2 border-primary/70",

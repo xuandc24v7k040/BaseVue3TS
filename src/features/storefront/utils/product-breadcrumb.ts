@@ -4,7 +4,7 @@ export interface ProductCategoryBreadcrumbItem {
   id: string;
   label: string;
   to: {
-    path: "/books";
+    path: "/san-pham";
     query: { category: string };
   };
 }
@@ -23,7 +23,7 @@ function toBreadcrumbItem(category: {
     id: category.id,
     label: category.name,
     to: {
-      path: "/books",
+      path: "/san-pham",
       query: { category: category.slug },
     },
   };

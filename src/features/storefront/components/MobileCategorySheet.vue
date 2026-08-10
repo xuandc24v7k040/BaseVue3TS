@@ -94,7 +94,7 @@ const open = ref(false);
             <CollapsibleContent class="grid pb-2 pl-3 pr-2">
               <SheetClose as-child>
                 <RouterLink
-                  :to="`/books?category=${category.slug}`"
+                  :to="`/san-pham?category=${category.slug}`"
                   class="rounded-md px-3 py-2 text-sm font-medium text-[var(--bookora-green)] hover:bg-[var(--bookora-soft)]"
                   >Xem tất cả {{ category.name }}</RouterLink
                 >
@@ -105,7 +105,7 @@ const open = ref(false);
                 as-child
               >
                 <RouterLink
-                  :to="`/books?category=${child.slug}`"
+                  :to="`/san-pham?category=${child.slug}`"
                   class="rounded-md px-3 py-2 text-sm hover:bg-[var(--bookora-soft)]"
                   >{{ child.name }}</RouterLink
                 >

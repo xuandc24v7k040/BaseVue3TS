@@ -249,7 +249,7 @@ const attention = computed(() => [
             />
             <div class="min-w-0">
               <RouterLink
-                :to="`/books/${item.product.slug}`"
+                :to="`/san-pham/${item.product.slug}`"
                 class="line-clamp-2 min-h-10 break-words font-medium leading-5 [overflow-wrap:anywhere]"
                 >{{ item.product.name }}</RouterLink
               >

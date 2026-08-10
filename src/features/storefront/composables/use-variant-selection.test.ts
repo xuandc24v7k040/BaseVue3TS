@@ -44,11 +44,10 @@ function product(variants: PublicVariantDto[]): PublicProductDetailDto {
     options: [],
     variants,
     attributes: [],
-    relatedProducts: [],
     seo: {
       title: "Sách",
       description: "Sách",
-      canonicalPath: "/books/sach",
+      canonicalPath: "/san-pham/sach",
       imageUrl: null,
     },
   };

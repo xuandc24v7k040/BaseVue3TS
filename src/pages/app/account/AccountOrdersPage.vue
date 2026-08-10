@@ -230,7 +230,7 @@ async function changePage(page: number, replace = false): Promise<void> {
       <PackageOpen class="mx-auto size-12 text-slate-300" />
       <p class="mt-3 font-medium">{{ emptyMessage }}</p>
       <Button as-child class="mt-4">
-        <RouterLink to="/books">Mua sắm ngay</RouterLink>
+        <RouterLink to="/san-pham">Mua sắm ngay</RouterLink>
       </Button>
     </div>
 

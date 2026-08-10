@@ -154,7 +154,7 @@ useResizeObserver(scroller, updateScrollControls);
           size="icon"
           variant="outline"
           aria-label="Xem sản phẩm trước"
-          class="absolute left-0 top-1/2 z-10 size-9 -translate-y-1/2 rounded-full bg-background shadow-sm transition-colors duration-150 hover:border-[var(--bookora-green)]/45 hover:text-[var(--bookora-green)]"
+          class="absolute left-0 top-1/2 z-10 size-9 -translate-y-1/2 cursor-pointer rounded-full bg-background shadow-sm transition-colors duration-150 hover:border-[var(--bookora-green)]/45 hover:text-[var(--bookora-green)] disabled:cursor-not-allowed"
           @click="scroll(-1)"
         >
           <ChevronLeft class="size-4" />
@@ -171,12 +171,14 @@ useResizeObserver(scroller, updateScrollControls);
               class="group relative grid h-28 w-[min(82vw,300px)] shrink-0 snap-start grid-cols-[68px_minmax(0,1fr)] gap-2.5 rounded-lg border border-[var(--bookora-border)] bg-background p-2.5 pr-9 transition-[border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-px hover:border-[var(--bookora-green)]/60 hover:shadow-sm sm:w-[300px] lg:w-[calc((100%_-_3rem)/4)] lg:min-w-[260px]"
             >
               <RouterLink
-                :to="`/books/${product.slug}`"
+                :to="`/san-pham/${product.slug}`"
                 class="flex h-full items-center justify-center overflow-hidden rounded-md bg-[var(--bookora-cream)] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
               >
                 <img
                   :src="product.primaryImage.url"
-                  :alt="product.primaryImage.altText || `Bìa sách ${product.name}`"
+                  :alt="
+                    product.primaryImage.altText || `Bìa sách ${product.name}`
+                  "
                   class="h-full w-full object-contain"
                   width="68"
                   height="96"
@@ -185,7 +187,7 @@ useResizeObserver(scroller, updateScrollControls);
               </RouterLink>
               <div class="flex min-w-0 flex-col justify-center">
                 <RouterLink
-                  :to="`/books/${product.slug}`"
+                  :to="`/san-pham/${product.slug}`"
                   class="line-clamp-2 text-sm font-semibold leading-5 group-hover:text-[var(--bookora-green)] focus-visible:outline-none focus-visible:underline"
                 >
                   {{ product.name }}
@@ -197,8 +199,14 @@ useResizeObserver(scroller, updateScrollControls);
                     "Đang cập nhật"
                   }}
                 </p>
-                <strong class="mt-2 whitespace-nowrap text-sm text-[var(--bookora-green)]">
-                  {{ new Intl.NumberFormat("vi-VN").format(product.price.current) }}đ
+                <strong
+                  class="mt-2 whitespace-nowrap text-sm text-[var(--bookora-green)]"
+                >
+                  {{
+                    new Intl.NumberFormat("vi-VN").format(
+                      product.price.current,
+                    )
+                  }}đ
                 </strong>
               </div>
               <button
@@ -218,7 +226,7 @@ useResizeObserver(scroller, updateScrollControls);
           size="icon"
           variant="outline"
           aria-label="Xem sản phẩm tiếp theo"
-          class="absolute right-0 top-1/2 z-10 size-9 -translate-y-1/2 rounded-full bg-background shadow-sm transition-colors duration-150 hover:border-[var(--bookora-green)]/45 hover:text-[var(--bookora-green)]"
+          class="absolute right-0 top-1/2 z-10 size-9 -translate-y-1/2 cursor-pointer rounded-full bg-background shadow-sm transition-colors duration-150 hover:border-[var(--bookora-green)]/45 hover:text-[var(--bookora-green)] disabled:cursor-not-allowed"
           @click="scroll(1)"
         >
           <ChevronRight class="size-4" />

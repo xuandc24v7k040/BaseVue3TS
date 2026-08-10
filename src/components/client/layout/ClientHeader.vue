@@ -33,15 +33,15 @@ interface HeaderLink {
 }
 
 const navigationLinks: HeaderLink[] = [
-  { label: "Sách mới", href: "/books?sort=newest" },
-  { label: "Sách bán chạy", href: "/books?sort=popular" },
+  { label: "Sách mới", href: "/san-pham?sort=newest" },
+  { label: "Sách bán chạy", href: "/san-pham?sort=popular" },
   {
     label: "Sách sắp phát hành",
-    href: "/books?upcoming=true&sort=release_asc",
+    href: "/san-pham?upcoming=true&sort=release_asc",
   },
-  { label: "Tác giả", href: "/books" },
-  { label: "Nhà xuất bản", href: "/books" },
-  { label: "Khuyến mãi", href: "/books?onSale=true" },
+  { label: "Tác giả", href: "/san-pham" },
+  { label: "Nhà xuất bản", href: "/san-pham" },
+  { label: "Khuyến mãi", href: "/san-pham?onSale=true" },
 ];
 const router = useRouter();
 const route = useRoute();
@@ -63,15 +63,16 @@ const searchSuggestions = computed(() => {
       ...category.children.map((child) => child.name),
     ],
   );
-  return [...new Set(categoryNames.map((name) => name.trim()).filter(Boolean))].slice(
-    0,
-    5,
-  );
+  return [
+    ...new Set(categoryNames.map((name) => name.trim()).filter(Boolean)),
+  ].slice(0, 5);
 });
 const initialRouteQuery = Array.isArray(route.query.q)
   ? route.query.q[0]
   : route.query.q;
-const searchQuery = ref(typeof initialRouteQuery === "string" ? initialRouteQuery : "");
+const searchQuery = ref(
+  typeof initialRouteQuery === "string" ? initialRouteQuery : "",
+);
 const debouncedSearchQuery = ref(normalizeSearchText(searchQuery.value));
 const activeSearchTarget = ref<"desktop" | "mobile" | null>(null);
 const activeSuggestionIndex = ref(-1);
@@ -86,8 +87,7 @@ const suggestions = computed(() => suggestionsQuery.data.value?.items ?? []);
 const suggestionTotal = computed(() => suggestionsQuery.data.value?.total ?? 0);
 const isSuggestionLoading = computed(
   () =>
-    debouncedSearchQuery.value.length >= 2 &&
-    suggestionsQuery.isFetching.value,
+    debouncedSearchQuery.value.length >= 2 && suggestionsQuery.isFetching.value,
 );
 const isSuggestionError = computed(
   () =>
@@ -141,7 +141,11 @@ watch(
   () => suggestionsQuery.isError.value,
   (isError) => {
     const query = debouncedSearchQuery.value;
-    if (!isError || !activeSearchTarget.value || lastSuggestionErrorQuery === query)
+    if (
+      !isError ||
+      !activeSearchTarget.value ||
+      lastSuggestionErrorQuery === query
+    )
       return;
     lastSuggestionErrorQuery = query;
     toast.error("Không thể tải gợi ý tìm kiếm. Vui lòng thử lại.");
@@ -168,12 +172,12 @@ async function submitSearch(value = searchQuery.value): Promise<void> {
     toast.error("Không thể cập nhật lịch sử tìm kiếm.");
   }
   const nextQuery: LocationQueryRaw =
-    route.path === "/books" ? { ...route.query, q: query } : { q: query };
+    route.path === "/san-pham" ? { ...route.query, q: query } : { q: query };
   delete nextQuery.page;
   delete nextQuery.search;
   activeSearchTarget.value = null;
   activeSuggestionIndex.value = -1;
-  await router.push({ path: "/books", query: nextQuery });
+  await router.push({ path: "/san-pham", query: nextQuery });
 }
 
 function focusSearch(target: "desktop" | "mobile"): void {
@@ -192,9 +196,11 @@ function dismissSearchPanel(): void {
   activeSuggestionIndex.value = -1;
 }
 
-async function selectSuggestion(product: PublicProductListItemDto): Promise<void> {
+async function selectSuggestion(
+  product: PublicProductListItemDto,
+): Promise<void> {
   dismissSearchPanel();
-  await router.push(`/books/${product.slug}`);
+  await router.push(`/san-pham/${product.slug}`);
 }
 
 function handleSearchKeydown(event: KeyboardEvent): void {
@@ -204,7 +210,11 @@ function handleSearchKeydown(event: KeyboardEvent): void {
     activeSuggestionIndex.value = -1;
     return;
   }
-  if (event.key !== "ArrowDown" && event.key !== "ArrowUp" && event.key !== "Enter")
+  if (
+    event.key !== "ArrowDown" &&
+    event.key !== "ArrowUp" &&
+    event.key !== "Enter"
+  )
     return;
   if (event.key === "Enter") {
     const product = suggestions.value[activeSuggestionIndex.value];

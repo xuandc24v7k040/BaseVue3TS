@@ -32,6 +32,8 @@ import type {
   StorefrontProductAvailability200,
   StorefrontProductAvailabilityParams,
   StorefrontProductDetail200,
+  StorefrontProductRelatedList200,
+  StorefrontProductRelatedListParams,
   StorefrontProductSearchSuggestions200,
   StorefrontProductSearchSuggestionsParams,
   StorefrontProductSummaries200,
@@ -393,6 +395,83 @@ export function useStorefrontProductSummaries<TData = Awaited<ReturnType<typeof 
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getStorefrontProductSummariesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+/**
+ * Lấy tối đa 3 sản phẩm liên quan public
+ * @summary Lấy tối đa 3 sản phẩm liên quan public
+ */
+export const storefrontProductRelatedList = (
+    productId: MaybeRef<string>,
+    params?: MaybeRef<StorefrontProductRelatedListParams>,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
+) => {
+      productId = unref(productId);
+params = unref(params);
+
+      return customInstance<StorefrontProductRelatedList200>(
+      {url: `/storefront/products/${productId}/related`, method: 'GET',
+        params: unref(params), signal
+    },
+      options);
+    }
+
+
+
+
+export const getStorefrontProductRelatedListQueryKey = (productId: MaybeRef<string>,
+    params?: MaybeRef<StorefrontProductRelatedListParams>,) => {
+    return [
+    'storefront','products',productId,'related', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getStorefrontProductRelatedListQueryOptions = <TData = Awaited<ReturnType<typeof storefrontProductRelatedList>>, TError = ErrorType<ErrorResponseDto>>(productId: MaybeRef<string>,
+    params?: MaybeRef<StorefrontProductRelatedListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof storefrontProductRelatedList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  getStorefrontProductRelatedListQueryKey(productId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof storefrontProductRelatedList>>> = ({ signal }) => storefrontProductRelatedList(productId,params, requestOptions, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => unref(productId) !== null && unref(productId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof storefrontProductRelatedList>>, TError, TData>
+}
+
+export type StorefrontProductRelatedListQueryResult = NonNullable<Awaited<ReturnType<typeof storefrontProductRelatedList>>>
+export type StorefrontProductRelatedListQueryError = ErrorType<ErrorResponseDto>
+
+
+/**
+ * @summary Lấy tối đa 3 sản phẩm liên quan public
+ */
+
+export function useStorefrontProductRelatedList<TData = Awaited<ReturnType<typeof storefrontProductRelatedList>>, TError = ErrorType<ErrorResponseDto>>(
+ productId: MaybeRef<string>,
+    params?: MaybeRef<StorefrontProductRelatedListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof storefrontProductRelatedList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStorefrontProductRelatedListQueryOptions(productId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -9,7 +9,6 @@ import type { PublicAttributeDto } from './publicAttributeDto';
 import type { PublicCategoryResponseDto } from './publicCategoryResponseDto';
 import type { PublicNamedEntityDto } from './publicNamedEntityDto';
 import type { PublicOptionDto } from './publicOptionDto';
-import type { PublicProductListItemDto } from './publicProductListItemDto';
 import type { PublicProductMediaDto } from './publicProductMediaDto';
 import type { PublicProductPrimaryCategoryDto } from './publicProductPrimaryCategoryDto';
 import type { PublicSeoDto } from './publicSeoDto';
@@ -48,6 +47,5 @@ export interface PublicProductDetailDto {
   options: PublicOptionDto[];
   variants: PublicVariantDto[];
   attributes: PublicAttributeDto[];
-  relatedProducts: PublicProductListItemDto[];
   seo: PublicSeoDto;
 }

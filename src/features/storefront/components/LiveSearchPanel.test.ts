@@ -21,9 +21,24 @@ const baseProduct = {
   name: "Chú Thuật Hồi Chiến",
   slug: "chu-thuat-hoi-chien",
   authors: [{ id: "author", name: "J. K. Rowling", slug: "j-k-rowling" }],
-  publisher: { id: "publisher", name: "Nhà xuất bản Kim Đồng", slug: "kim-dong" },
-  primaryImage: { id: "media", url: "/cover.webp", altText: null, sortOrder: 0, isPrimary: true },
-  price: { current: 29_000, original: 30_000, onSale: true, discountPercent: 3 },
+  publisher: {
+    id: "publisher",
+    name: "Nhà xuất bản Kim Đồng",
+    slug: "kim-dong",
+  },
+  primaryImage: {
+    id: "media",
+    url: "/cover.webp",
+    altText: null,
+    sortOrder: 0,
+    isPrimary: true,
+  },
+  price: {
+    current: 29_000,
+    original: 30_000,
+    onSale: true,
+    discountPercent: 3,
+  },
   releaseDate: null,
   rank: null,
   averageRating: 4.8,
@@ -38,7 +53,13 @@ function mountPanel(activeIndex = -1) {
       query: "chu",
       suggestions: [
         baseProduct,
-        { ...baseProduct, id: "second", name: "Chú Bé Mang Pyjama Sọc", isBestMatch: false, isBestSeller: true },
+        {
+          ...baseProduct,
+          id: "second",
+          name: "Chú Bé Mang Pyjama Sọc",
+          isBestMatch: false,
+          isBestSeller: true,
+        },
       ],
       total: 2,
       history: [],
@@ -70,8 +91,12 @@ describe("LiveSearchPanel", () => {
 
     expect(wrapper.find("mark").text()).toBe("Chú");
     expect(wrapper.text()).toContain("J. K. Rowling · Nhà xuất bản Kim Đồng");
-    expect(wrapper.find('[data-search-badge="best-match"]').text()).toContain("Đúng nhất");
-    expect(wrapper.find('[data-search-badge="best-seller"]').text()).toContain("Bán chạy");
+    expect(wrapper.find('[data-search-badge="best-match"]').text()).toContain(
+      "Đúng nhất",
+    );
+    expect(wrapper.find('[data-search-badge="best-seller"]').text()).toContain(
+      "Bán chạy",
+    );
     expect(wrapper.text()).not.toMatch(/Còn hàng|Sắp hết hàng|Sắp về hàng/u);
   });
 
@@ -100,7 +125,7 @@ describe("LiveSearchPanel", () => {
 
   it("keeps the result CTA outside an automatic ScrollArea", () => {
     const wrapper = mountPanel();
-    const scrollBody = wrapper.get('[data-search-scroll-body]');
+    const scrollBody = wrapper.get("[data-search-scroll-body]");
     const cta = wrapper.get("section > button");
 
     expect(scrollBody.classes()).toContain("overflow-hidden");
@@ -114,9 +139,7 @@ describe("LiveSearchPanel", () => {
     const rows = wrapper.findAll('a[role="option"]');
 
     expect(rows).toHaveLength(2);
-    expect(rows[0]?.attributes("href")).toBe(
-      "/books/chu-thuat-hoi-chien",
-    );
+    expect(rows[0]?.attributes("href")).toBe("/san-pham/chu-thuat-hoi-chien");
     await rows[0]?.trigger("click");
     expect(wrapper.emitted("dismiss")).toHaveLength(1);
     expect(wrapper.emitted("select")).toBeUndefined();

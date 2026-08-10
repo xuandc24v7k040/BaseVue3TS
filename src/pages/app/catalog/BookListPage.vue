@@ -124,8 +124,8 @@ function filterItems(
       <RouterLink to="/" class="hover:text-[var(--bookora-green)]"
         >Trang chủ</RouterLink
       ><span>/</span>
-      <RouterLink to="/books" class="hover:text-[var(--bookora-green)]"
-        >Sách</RouterLink
+      <RouterLink to="/san-pham" class="hover:text-[var(--bookora-green)]"
+        >Sản phẩm</RouterLink
       >
       <template v-if="activeCategory"
         ><span>/</span
@@ -238,7 +238,7 @@ function filterItems(
                 {{
                   params.q
                     ? `Kết quả cho “${params.q}”`
-                    : (activeCategory?.name ?? "Tất cả sách")
+                    : (activeCategory?.name ?? "Tất cả sản phẩm")
                 }}
               </h1>
               <p class="text-sm text-[var(--bookora-muted)]">
@@ -425,7 +425,11 @@ function filterItems(
         >
           <Search class="mx-auto size-10 text-[var(--bookora-muted)]" />
           <h2 class="mt-3 text-lg font-semibold">
-            {{ params.q ? "Không tìm thấy sản phẩm phù hợp." : "Không tìm thấy sản phẩm phù hợp" }}
+            {{
+              params.q
+                ? "Không tìm thấy sản phẩm phù hợp."
+                : "Không tìm thấy sản phẩm phù hợp"
+            }}
           </h2>
           <p class="mt-1 text-sm text-[var(--bookora-muted)]">
             {{

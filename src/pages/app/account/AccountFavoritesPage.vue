@@ -90,7 +90,7 @@ const money = new Intl.NumberFormat("vi-VN");
         </p>
       </div>
       <Button as-child variant="outline">
-        <RouterLink to="/books">
+        <RouterLink to="/san-pham">
           <BookOpen class="size-4" /> Tiếp tục mua sắm
         </RouterLink>
       </Button>
@@ -116,7 +116,7 @@ const money = new Intl.NumberFormat("vi-VN");
           Hãy lưu sách bạn quan tâm để xem lại nhanh hơn.
         </p>
         <Button as-child class="mt-4">
-          <RouterLink to="/books">Khám phá sách</RouterLink>
+          <RouterLink to="/san-pham">Khám phá sản phẩm</RouterLink>
         </Button>
       </div>
     </Card>
@@ -127,7 +127,7 @@ const money = new Intl.NumberFormat("vi-VN");
         class="grid min-w-0 gap-4 border-b p-4 last:border-0 sm:grid-cols-[5rem_minmax(0,1fr)] lg:grid-cols-[5rem_minmax(0,1.4fr)_minmax(9rem,0.7fr)_minmax(8rem,0.6fr)_auto] lg:items-center"
       >
         <RouterLink
-          :to="`/books/${item.product.slug}`"
+          :to="`/san-pham/${item.product.slug}`"
           class="w-20 shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bookora-green)]"
         >
           <img
@@ -146,7 +146,7 @@ const money = new Intl.NumberFormat("vi-VN");
 
         <div class="min-w-0">
           <RouterLink
-            :to="`/books/${item.product.slug}`"
+            :to="`/san-pham/${item.product.slug}`"
             class="line-clamp-2 min-h-10 break-words font-semibold leading-5 [overflow-wrap:anywhere] hover:text-[var(--bookora-green)]"
           >
             {{ item.product.name }}
@@ -198,7 +198,7 @@ const money = new Intl.NumberFormat("vi-VN");
           class="flex items-center justify-end gap-2 sm:col-span-2 lg:col-span-1"
         >
           <Button as-child size="sm" variant="outline">
-            <RouterLink :to="`/books/${item.product.slug}`">
+            <RouterLink :to="`/san-pham/${item.product.slug}`">
               Xem chi tiết
             </RouterLink>
           </Button>

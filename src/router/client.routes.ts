@@ -12,12 +12,12 @@ export const clientRoutes: RouteRecordRaw[] = [
         component: () => import("@/pages/app/home/HomePage.vue"),
       },
       {
-        path: "books",
+        path: "san-pham",
         name: "client-book-list",
         component: () => import("@/pages/app/catalog/BookListPage.vue"),
       },
       {
-        path: "books/:slug",
+        path: "san-pham/:slug",
         name: "client-book-detail",
         component: () => import("@/pages/app/catalog/BookDetailPage.vue"),
       },
@@ -25,6 +25,23 @@ export const clientRoutes: RouteRecordRaw[] = [
         path: "search",
         name: "client-search",
         component: () => import("@/pages/app/catalog/SearchResultPage.vue"),
+      },
+      {
+        path: "books",
+        redirect: (to) => ({
+          name: "client-book-list",
+          query: to.query,
+          hash: to.hash,
+        }),
+      },
+      {
+        path: "books/:slug",
+        redirect: (to) => ({
+          name: "client-book-detail",
+          params: to.params,
+          query: to.query,
+          hash: to.hash,
+        }),
       },
       {
         path: "cart",
